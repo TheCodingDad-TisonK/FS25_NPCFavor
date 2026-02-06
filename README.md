@@ -2,7 +2,7 @@
 
 [![FS25 Version](https://img.shields.io/badge/FS25-Compatible-green)](https://www.farming-simulator.com/)
 [![Version](https://img.shields.io/badge/Version-1.0.0.0-blue)](https://github.com/YourName/FS25_NPCFavor/releases)
-[![License](https://img.shields.io/badge/License-CC%20NC%20ND-red)](LICENSE)
+[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](LICENSE)
 
 **Breathe life into your farmland!** This mod adds a living, breathing community of NPC (Non-Player Character) neighbors to Farming Simulator 25. They work their own fields, follow daily schedules, and will eventually ask you for favors, creating a dynamic layer of social simulation and small tasks alongside your main farming operations.
 
