@@ -82,7 +82,7 @@ A: Yes, in V1.0.0.0, detailed 3D models are a placeholder. The core systems are 
 
 ## 📝 License & Credits
 
-*   **Original Idea:** Lion2009
+*   **Original Idea:** Lion2008
 *   **Implementation & Coding:** TisonK
 *   **License:** All rights reserved. Unauthorized redistribution, copying, or claiming this code as your own is strictly prohibited. This is a free mod for the community.
 
