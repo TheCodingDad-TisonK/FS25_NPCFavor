@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="92">
+    <author>TisonK</author>
+    <version>1.0.0.0</version>
+    <modName>FS25_NPCFavor</modName>
+    <title>
+        <en>NPC Favor - Living Neighborhood</en>
+        <de>NPC Gefallen - Lebendige Nachbarschaft</de>
+        <fr>Faveur PNJ - Voisinage Vivant</fr>
+        <pl>Przysługa NPC - Żywe Sąsiedztwo</pl>
+        <es>Favor NPC - Vecindario Vivo</es>
+        <it>Favore NPC - Quartiere Vivente</it>
+        <cz>NPC Laskavost - Živé sousedství</cz>
+        <br>Favor NPC - Vizinhança Viva</br>
+        <uk>Послуга NPC - Живе сусідство</uk>
+        <ru>Услуга NPC - Живой район</ru>
+    </title>
+    <description>
+        <en>Adds living NPC neighbors who work their fields and ask for favors. Realistic neighborhood simulation.</en>
+        <de>Fügt lebendige NPC-Nachbarn hinzu, die ihre Felder bearbeiten und um Gefallen bitten. Realistische Nachbarschaftssimulation.</de>
+        <fr>Ajoute des voisins PNJ vivants qui travaillent leurs champs et demandent des faveurs. Simulation de quartier réaliste.</fr>
+        <pl>Dodaje żywych sąsiadów NPC, którzy pracują na polach i proszą o przysługi. Realistyczna symulacja sąsiedztwa.</pl>
+        <es>Añade vecinos NPC vivos que trabajan sus campos y piden favores. Simulación de vecindario realista.</es>
+        <it>Aggiunge vicini NPC viventi che lavorano i loro campi e chiedono favori. Simulazione realistica del quartiere.</it>
+        <cz>Přidává živé sousedy NPC, kteří pracují na svých polích a žádají o laskavosti. Realistická simulace sousedství.</cz>
+        <br>Adiciona vizinhos NPC vivos que trabalham seus campos e pedem favores. Simulação realista de vizinhança.</br>
+        <uk>Додає живих сусідів NPC, які працюють на своїх полях і просять послуг. Реалістична симуляція сусідства.</uk>
+        <ru>Добавляет живых соседей NPC, которые работают на своих полях и просят об услугах. Реалистичная симуляция района.</ru>
+    </description>
+    <iconFilename>icon.dds</iconFilename>
+    
+    <multiplayer supported="true"/>
+    
+    <extraSourceFiles>
+        <sourceFile filename="main.lua" />
+        <sourceFile filename="src/NPCSystem.lua" />
+        <sourceFile filename="src/scripts/NPCAI.lua" />
+        <sourceFile filename="src/scripts/NPCFavorSystem.lua" />
+        <sourceFile filename="src/scripts/NPCEntity.lua" />
+        <sourceFile filename="src/scripts/NPCScheduler.lua" />
+        <sourceFile filename="src/scripts/NPCRelationshipManager.lua" />
+        <sourceFile filename="src/scripts/NPCInteractionUI.lua" />
+        <sourceFile filename="src/settings/NPCSettings.lua" />
+        <sourceFile filename="src/settings/NPCSettingsIntegration.lua" />
+        <sourceFile filename="src/settings/NPCConfig.lua" />
+        <sourceFile filename="src/settings/NPCFavorSettingsManager.lua" />
+        <sourceFile filename="src/settings/NPCFavorGUI.lua" />
+        <sourceFile filename="src/utils/VectorHelper.lua" />
+        <sourceFile filename="src/utils/TimeHelper.lua" />
+    </extraSourceFiles>
+
+    <l10n>
+        <!-- Section Titles -->
+        <text name="npc_section">
+            <en>NPC Favor System</en>
+            <de>NPC-Gefallen-System</de>
+            <fr>Système de Faveur PNJ</fr>
+            <pl>System Przysług NPC</pl>
+            <es>Sistema Favor NPC</es>
+            <it>Sistema Favore NPC</it>
+            <cz>Systém NPC Laskavostí</cz>
+            <br>Sistema Favor NPC</br>
+            <uk>Система послуг NPC</uk>
+            <ru>Система услуг NPC</ru>
+        </text>
+
+        <!-- Settings -->
+        <text name="npc_enabled_short">
+            <en>Enable NPC System</en>
+            <de>NPC-System aktivieren</de>
+            <fr>Activer système PNJ</fr>
+            <pl>Włącz system NPC</pl>
+            <es>Activar sistema NPC</es>
+            <it>Attiva sistema NPC</it>
+            <cz>Povolit systém NPC</cz>
+            <br>Ativar sistema NPC</br>
+            <uk>Увімкнути систему NPC</uk>
+            <ru>Включить систему NPC</ru>
+        </text>
+        
+        <text name="npc_enabled_long">
+            <en>Enable or disable the living NPC neighborhood system</en>
+            <de>Lebendiges NPC-Nachbarschaftssystem aktivieren oder deaktivieren</de>
+            <fr>Activer ou désactiver le système de quartier PNJ vivant</fr>
+            <pl>Włącz lub wyłącz system żywego sąsiedztwa NPC</pl>
+            <es>Activar o desactivar el sistema de vecindario NPC vivo</es>
+            <it>Attiva o disattiva il sistema di quartiere NPC vivente</it>
+            <cz>Povolit nebo zakázat systém živého sousedství NPC</cz>
+            <br>Ativar ou desativar o sistema de vizinhança NPC viva</br>
+            <uk>Увімкнути або вимкнути систему живого сусідства NPC</uk>
+            <ru>Включить или выключить систему живого района NPC</ru>
+        </text>
+        
+        <text name="npc_max_count_short">
+            <en>Max NPC Count</en>
+            <de>Max. NPC-Anzahl</de>
+            <fr>Nombre max PNJ</fr>
+            <pl>Maks. liczba NPC</pl>
+            <es>Máx. NPC</es>
+            <it>Max NPC</it>
+            <cz>Max. počet NPC</cz>
+            <br>Máx. NPC</br>
+            <uk>Макс. кількість NPC</uk>
+            <ru>Макс. количество NPC</ru>
+        </text>
+        
+        <text name="npc_max_count_long">
+            <en>Maximum number of active NPCs in the world</en>
+            <de>Maximale Anzahl aktiver NPCs in der Welt</de>
+            <fr>Nombre maximum de PNJ actifs dans le monde</fr>
+            <pl>Maksymalna liczba aktywnych NPC w świecie</pl>
+            <es>Número máximo de NPC activos en el mundo</es>
+            <it>Numero massimo di NPC attivi nel mondo</it>
+            <cz>Maximální počet aktivních NPC ve světě</cz>
+            <br>Número máximo de NPC ativos no mundo</br>
+            <uk>Максимальна кількість активних NPC у світі</uk>
+            <ru>Максимальное количество активных NPC в мире</ru>
+        </text>
+        
+        <text name="npc_work_time_short">
+            <en>NPC Work Hours</en>
+            <de>NPC-Arbeitszeiten</de>
+            <fr>Heures de travail PNJ</fr>
+            <pl>Godziny pracy NPC</pl>
+            <es>Horas trabajo NPC</es>
+            <it>Ore lavoro NPC</it>
+            <cz>Pracovní doba NPC</cz>
+            <br>Horas trabalho NPC</br>
+            <uk>Години роботи NPC</uk>
+            <ru>Рабочие часы NPC</ru>
+        </text>
+        
+        <text name="npc_work_time_long">
+            <en>Time of day when NPCs work on their fields (24h format)</en>
+            <de>Tageszeit, zu der NPCs auf ihren Feldern arbeiten (24h-Format)</de>
+            <fr>Heure de la journée où les PNJ travaillent sur leurs champs (format 24h)</fr>
+            <pl>Godziny, w których NPC pracują na polach (format 24h)</pl>
+            <es>Hora del día en que los NPC trabajan en sus campos (formato 24h)</es>
+            <it>Ora del giorno in cui gli NPC lavorano nei loro campi (formato 24h)</it>
+            <cz>Denní doba, kdy NPC pracují na svých polích (24h formát)</cz>
+            <br>Hora do dia em que os NPC trabalham em seus campos (formato 24h)</br>
+            <uk>Час доби, коли NPC працюють на полях (24-годинний формат)</uk>
+            <ru>Время суток, когда NPC работают на своих полях (24-часовой формат)</ru>
+        </text>
+        
+        <text name="npc_favor_frequency_short">
+            <en>Favor Frequency</en>
+            <de>Gefallen-Häufigkeit</de>
+            <fr>Fréquence faveurs</fr>
+            <pl>Częstotliwość przysług</pl>
+            <es>Frecuencia favores</es>
+            <it>Frequenza favori</it>
+            <cz>Četnost laskavostí</cz>
+            <br>Frequência favores</br>
+            <uk>Частота послуг</uk>
+            <ru>Частота услуг</ru>
+        </text>
+        
+        <text name="npc_favor_frequency_long">
+            <en>How often NPCs ask for favors (in game days)</en>
+            <de>Wie oft NPCs um Gefallen bitten (in Spieltagen)</de>
+            <fr>Fréquence à laquelle les PNJ demandent des faveurs (en jours de jeu)</fr>
+            <pl>Jak często NPC proszą o przysługi (w dniach gry)</pl>
+            <es>Con qué frecuencia los NPC piden favores (en días de juego)</es>
+            <it>Quanto spesso gli NPC chiedono favori (in giorni di gioco)</it>
+            <cz>Jak často NPC žádají o laskavosti (ve herních dnech)</cz>
+            <br>Com que frequência os NPC pedem favores (em dias de jogo)</br>
+            <uk>Як часто NPC просять послуг (в ігрових днях)</uk>
+            <ru>Как часто NPC просят об услугах (в игровых днях)</ru>
+        </text>
+        
+        <text name="npc_show_names_short">
+            <en>Show NPC Names</en>
+            <de>NPC-Namen anzeigen</de>
+            <fr>Afficher noms PNJ</fr>
+            <pl>Pokazuj nazwy NPC</pl>
+            <es>Mostrar nombres NPC</es>
+            <it>Mostra nomi NPC</it>
+            <cz>Zobrazit jména NPC</cz>
+            <br>Mostrar nomes NPC</br>
+            <uk>Показувати імена NPC</uk>
+            <ru>Показывать имена NPC</ru>
+        </text>
+        
+        <text name="npc_show_names_long">
+            <en>Display NPC names above their heads</en>
+            <de>NPC-Namen über ihren Köpfen anzeigen</de>
+            <fr>Afficher les noms des PNJ au-dessus de leur tête</fr>
+            <pl>Wyświetlaj nazwy NPC nad ich głowami</pl>
+            <es>Mostrar nombres de NPC sobre sus cabezas</es>
+            <it>Mostra nomi NPC sopra le loro teste</it>
+            <cz>Zobrazovat jména NPC nad jejich hlavami</cz>
+            <br>Mostrar nomes NPC acima de suas cabeças</br>
+            <uk>Відображати імена NPC над їхніми головами</uk>
+            <ru>Отображать имена NPC над их головами</ru>
+        </text>
+        
+        <text name="npc_debug_short">
+            <en>Debug Mode</en>
+            <de>Debug-Modus</de>
+            <fr>Mode debug</fr>
+            <pl>Tryb debug</pl>
+            <es>Modo debug</es>
+            <it>Modalità debug</it>
+            <cz>Režim ladění</cz>
+            <br>Modo debug</br>
+            <uk>Режим налагодження</uk>
+            <ru>Режим отладки</ru>
+        </text>
+        
+        <text name="npc_debug_long">
+            <en>Show debug information and NPC paths</en>
+            <de>Debug-Informationen und NPC-Pfade anzeigen</de>
+            <fr>Afficher les informations de débogage et les chemins PNJ</fr>
+            <pl>Pokazuj informacje debug i ścieżki NPC</pl>
+            <es>Mostrar información debug y rutas NPC</es>
+            <it>Mostra informazioni debug e percorsi NPC</it>
+            <cz>Zobrazovat ladící informace a cesty NPC</cz>
+            <br>Mostrar informações debug e rotas NPC</br>
+            <uk>Показувати налагоджувальну інформацію та шляхи NPC</uk>
+            <ru>Показывать отладочную информацию и пути NPC</ru>
+        </text>
+        
+        <text name="npc_reset">
+            <en>Reset NPC System</en>
+            <de>NPC-System zurücksetzen</de>
+            <fr>Réinitialiser système PNJ</fr>
+            <pl>Resetuj system NPC</pl>
+            <es>Restablecer sistema NPC</es>
+            <it>Ripristina sistema NPC</it>
+            <cz>Resetovat systém NPC</cz>
+            <br>Restaurar sistema NPC</br>
+            <uk>Скинути систему NPC</uk>
+            <ru>Сбросить систему NPC</ru>
+        </text>
+
+        <!-- NPC Names -->
+        <text name="npc_name_1">
+            <en>Old MacDonald</en>
+            <de>Alt-MacDonald</de>
+            <fr>Vieux MacDonald</fr>
+            <pl>Stary MacDonald</pl>
+            <es>Viejo MacDonald</es>
+            <it>Vecchio MacDonald</it>
+            <cz>Starý MacDonald</cz>
+            <br>Velho MacDonald</br>
+            <uk>Старий МакДональд</uk>
+            <ru>Старый МакДональд</ru>
+        </text>
+        
+        <text name="npc_name_2">
+            <en>Farmer Joe</en>
+            <de>Bauer Joe</de>
+            <fr>Fermier Joe</fr>
+            <pl>Rolnik Joe</pl>
+            <es>Granjero Joe</es>
+            <it>Agricoltore Joe</it>
+            <cz>Farmář Joe</cz>
+            <br>Fazendeiro Joe</br>
+            <uk>Фермер Джо</uk>
+            <ru>Фермер Джо</ru>
+        </text>
+        
+        <text name="npc_name_3">
+            <en>Mrs. Henderson</en>
+            <de>Frau Henderson</de>
+            <fr>Mme Henderson</fr>
+            <pl>Pani Henderson</pl>
+            <es>Sra. Henderson</es>
+            <it>Signora Henderson</it>
+            <cz>Paní Hendersonová</cz>
+            <br>Sra. Henderson</br>
+            <uk>Пані Хендерсон</uk>
+            <ru>Миссис Хендерсон</ru>
+        </text>
+        
+        <text name="npc_name_4">
+            <en>Young Peter</en>
+            <de>Junger Peter</de>
+            <fr>Jeune Pierre</fr>
+            <pl>Młody Piotr</pl>
+            <es>Joven Pedro</es>
+            <it>Giovane Pietro</it>
+            <cz>Mladý Petr</cz>
+            <br>Jovem Pedro</br>
+            <uk>Молодий Пітер</uk>
+            <ru>Молодой Питер</ru>
+        </text>
+        
+        <text name="npc_name_5">
+            <en>Anna Schmidt</en>
+            <de>Anna Schmidt</de>
+            <fr>Anna Schmidt</fr>
+            <pl>Anna Schmidt</pl>
+            <es>Anna Schmidt</es>
+            <it>Anna Schmidt</it>
+            <cz>Anna Schmidtová</cz>
+            <br>Anna Schmidt</br>
+            <uk>Анна Шмідт</uk>
+            <ru>Анна Шмидт</ru>
+        </text>
+        
+        <text name="npc_name_6">
+            <en>Hans Bauer</en>
+            <de>Hans Bauer</de>
+            <fr>Hans Bauer</fr>
+            <pl>Hans Bauer</pl>
+            <es>Hans Bauer</es>
+            <it>Hans Bauer</it>
+            <cz>Hans Bauer</cz>
+            <br>Hans Bauer</br>
+            <uk>Ганс Бауер</uk>
+            <ru>Ганс Бауэр</ru>
+        </text>
+
+        <!-- Interaction Texts -->
+        <text name="npc_interact_hint">
+            <en>Press [E] to talk</en>
+            <de>Drücke [E] zum Reden</de>
+            <fr>Appuyez sur [E] pour parler</fr>
+            <pl>Naciśnij [E] aby rozmawiać</pl>
+            <es>Presiona [E] para hablar</es>
+            <it>Premi [E] per parlare</it>
+            <cz>Stiskněte [E] pro rozhovor</cz>
+            <br>Pressione [E] para falar</br>
+            <uk>Натисніть [E] для розмови</uk>
+            <ru>Нажмите [E] для разговора</ru>
+        </text>
+        
+        <text name="npc_dialog_hello">
+            <en>Hello there, neighbor!</en>
+            <de>Hallo, Nachbar!</de>
+            <fr>Bonjour, voisin !</fr>
+            <pl>Witaj, sąsiedzie!</pl>
+            <es>¡Hola, vecino!</es>
+            <it>Ciao, vicino!</it>
+            <cz>Ahoj, sousede!</cz>
+            <br>Olá, vizinho!</br>
+            <uk>Привіт, сусіде!</uk>
+            <ru>Привет, сосед!</ru>
+        </text>
+        
+        <text name="npc_dialog_favor_ask">
+            <en>Could you help me with something?</en>
+            <de>Könntest du mir bei etwas helfen?</de>
+            <fr>Pourriez-vous m'aider avec quelque chose ?</fr>
+            <pl>Czy mógłbyś mi z czymś pomóc?</pl>
+            <es>¿Podrías ayudarme con algo?</es>
+            <it>Potresti aiutarmi con qualcosa?</it>
+            <cz>Mohl byste mi s něčím pomoci?</cz>
+            <br>Você poderia me ajudar com algo?</br>
+            <uk>Чи могли б ви мені з чимось допомогти?</uk>
+            <ru>Могли бы вы помочь мне с чем-то?</ru>
+        </text>
+        
+        <text name="npc_dialog_favor_accepted">
+            <en>Thank you so much! I'll remember this.</en>
+            <de>Vielen Dank! Ich werde mich daran erinnern.</de>
+            <fr>Merci beaucoup ! Je m'en souviendrai.</fr>
+            <pl>Dziękuję bardzo! Zapamiętam to.</pl>
+            <es>¡Muchas gracias! Lo recordaré.</es>
+            <it>Grazie mille! Me lo ricorderò.</it>
+            <cz>Mnohokrát děkuji! Zapamatuji si to.</cz>
+            <br>Muito obrigado! Vou me lembrar disso.</br>
+            <uk>Щиро дякую! Я запам'ятаю це.</uk>
+            <ru>Большое спасибо! Я запомню это.</ru>
+        </text>
+        
+        <text name="npc_dialog_favor_declined">
+            <en>Maybe another time then.</en>
+            <de>Vielleicht ein anderes Mal.</de>
+            <fr>Peut-être une autre fois alors.</fr>
+            <pl>Może innym razem.</pl>
+            <es>Quizás en otro momento.</es>
+            <it>Forse un'altra volta allora.</it>
+            <cz>Možná někdy jindy.</cz>
+            <br>Talvez em outra hora então.</br>
+            <uk>Можливо, іншим разом.</uk>
+            <ru>Может быть, в другой раз.</ru>
+        </text>
+
+        <!-- Favor Types -->
+        <text name="npc_favor_borrow_tractor">
+            <en>Borrow my tractor</en>
+            <de>Meinen Traktor ausleihen</de>
+            <fr>Emprunter mon tracteur</fr>
+            <pl>Pożycz mój ciągnik</pl>
+            <es>Pedir prestado mi tractor</es>
+            <it>Prendere in prestito il mio trattore</it>
+            <cz>Půjčit si můj traktor</cz>
+            <br>Pegar emprestado meu trator</br>
+            <uk>Позичити мій трактор</uk>
+            <ru>Одолжить мой трактор</ru>
+        </text>
+        
+        <text name="npc_favor_help_harvest">
+            <en>Help with harvest</en>
+            <de>Bei der Ernte helfen</de>
+            <fr>Aider à la récolte</fr>
+            <pl>Pomóż w żniwach</pl>
+            <es>Ayudar con la cosecha</es>
+            <it>Aiutare con il raccolto</it>
+            <cz>Pomoc se sklizní</cz>
+            <br>Ajudar com a colheita</br>
+            <uk>Допомогти з жнивами</uk>
+            <ru>Помочь с уборкой урожая</ru>
+        </text>
+        
+        <text name="npc_favor_transport_goods">
+            <en>Transport goods to market</en>
+            <de>Waren zum Markt transportieren</de>
+            <fr>Transporter des marchandises au marché</fr>
+            <pl>Przetransportuj towary na rynek</pl>
+            <es>Transportar bienes al mercado</es>
+            <it>Trasportare merci al mercato</it>
+            <cz>Přepravit zboží na trh</cz>
+            <br>Transportar bens para o mercado</br>
+            <uk>Транспортувати товари на ринок</uk>
+            <ru>Перевезти товары на рынок</ru>
+        </text>
+        
+        <text name="npc_favor_fix_fence">
+            <en>Fix broken fence</en>
+            <de>Kaputten Zaun reparieren</de>
+            <fr>Réparer la clôture cassée</fr>
+            <pl>Napraw zepsuty płot</pl>
+            <es>Arreglar valla rota</es>
+            <it>Sistemare recinto rotto</it>
+            <cz>Opravit rozbitý plot</cz>
+            <br>Consertar cerca quebrada</br>
+            <uk>Полагодити зламаний паркан</uk>
+            <ru>Починить сломанный забор</ru>
+        </text>
+        
+        <text name="npc_favor_deliver_seeds">
+            <en>Deliver seeds to my farm</en>
+            <de>Samen zu meiner Farm liefern</de>
+            <fr>Livrer des graines à ma ferme</fr>
+            <pl>Dostarcz nasiona na moją farmę</pl>
+            <es>Entregar semillas a mi granja</es>
+            <it>Consegnare semi alla mia fattoria</it>
+            <cz>Dodat semena na mou farmu</cz>
+            <br>Entregar sementes na minha fazenda</br>
+            <uk>Доставити насіння на мою ферму</uk>
+            <ru>Доставить семена на мою ферму</ru>
+        </text>
+
+        <!-- Notification Messages -->
+        <text name="npc_notification_favor_request">
+            <en>%s is asking for a favor!</en>
+            <de>%s bittet um einen Gefallen!</de>
+            <fr>%s demande une faveur !</fr>
+            <pl>%s prosi o przysługę!</pl>
+            <es>¡%s está pidiendo un favor!</es>
+            <it>%s sta chiedendo un favore!</it>
+            <cz>%s žádá o laskavost!</cz>
+            <br>%s está pedindo um favor!</br>
+            <uk>%s просить послуги!</uk>
+            <ru>%s просит об услуге!</ru>
+        </text>
+        
+        <text name="npc_notification_favor_completed">
+            <en>You helped %s. Relationship improved!</en>
+            <de>Du hast %s geholfen. Beziehung verbessert!</de>
+            <fr>Vous avez aidé %s. Relation améliorée !</fr>
+            <pl>Pomogłeś %s. Relacja ulepszona!</pl>
+            <es>Ayudaste a %s. ¡Relación mejorada!</es>
+            <it>Hai aiutato %s. Relazione migliorata!</it>
+            <cz>Pomohl jste %s. Vztah vylepšen!</cz>
+            <br>Você ajudou %s. Relacionamento melhorado!</br>
+            <uk>Ви допомогли %s. Відносини покращилися!</uk>
+            <ru>Вы помогли %s. Отношения улучшены!</ru>
+        </text>
+        
+        <text name="npc_notification_npc_working">
+            <en>%s is now working on their field</en>
+            <de>%s arbeitet jetzt auf seinem Feld</de>
+            <fr>%s travaille maintenant sur son champ</fr>
+            <pl>%s pracuje teraz na swoim polu</pl>
+            <es>%s ahora está trabajando en su campo</es>
+            <it>%s ora sta lavorando nel suo campo</it>
+            <cz>%s nyní pracuje na svém poli</cz>
+            <br>%s agora está trabalhando em seu campo</br>
+            <uk>%s зараз працює на своєму полі</uk>
+            <ru>%s теперь работает на своем поле</ru>
+        </text>
+    </l10n>
+</modDesc>

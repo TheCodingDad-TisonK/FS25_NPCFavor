@@ -1,0 +1,377 @@
+-- =========================================================
+-- FS25 NPC Favor Mod - Settings Data (NPCSettings)
+-- =========================================================
+
+---@class NPCSettings
+NPCSettings = {}
+local NPCSettings_mt = Class(NPCSettings)
+
+function NPCSettings.new()
+    local self = setmetatable({}, NPCSettings_mt)
+    self:resetToDefaults(false)
+    return self
+end
+
+function NPCSettings:resetToDefaults(saveImmediately)
+    saveImmediately = saveImmediately ~= false
+
+    -- Core
+    self.enabled = true
+    self.maxNPCs = 8
+    self.npcWorkStart = 8
+    self.npcWorkEnd = 17
+    self.favorFrequency = 3
+    self.npcSpawnDistance = 150
+
+    -- Display
+    self.showNames = true
+    self.showNotifications = true
+    self.showFavorList = true
+    self.showRelationshipBars = true
+    self.showNPCPaths = false
+    self.nameDisplayDistance = 50
+    self.notificationDuration = 4000
+
+    -- Gameplay
+    self.enableFavors = true
+    self.enableGifts = true
+    self.enableRelationshipSystem = true
+    self.npcHelpPlayer = true
+    self.npcSocialize = true
+    self.npcDriveVehicles = true
+    self.allowMultipleFavors = true
+    self.maxActiveFavors = 5
+    self.favorTimeLimit = true
+    self.relationshipDecay = false
+    self.decayRate = 1
+
+    -- Difficulty
+    self.favorDifficulty = "normal"
+    self.relationshipGainMultiplier = 1.0
+    self.relationshipLossMultiplier = 1.0
+    self.favorRewardMultiplier = 1.0
+    self.favorPenaltyMultiplier = 1.0
+
+    -- AI
+    self.npcActivityLevel = "normal"
+    self.npcMovementSpeed = 1.0
+    self.npcWorkDuration = 1.0
+    self.npcBreakFrequency = 1.0
+    self.npcSocialFrequency = 1.0
+
+    -- Debug
+    self.debugMode = false
+    self.showPaths = false
+    self.showSpawnPoints = false
+    self.showAIDecisions = false
+    self.showRelationshipChanges = false
+    self.logToFile = false
+
+    -- Sound
+    self.soundEffects = true
+    self.voiceLines = true
+    self.uiSounds = true
+    self.notificationSound = true
+
+    -- Performance
+    self.updateFrequency = "normal"
+    self.npcRenderDistance = 200
+    self.npcUpdateDistance = 300
+    self.batchUpdates = true
+    self.maxUpdatesPerFrame = 5
+
+    -- Multiplayer
+    self.syncNPCs = true
+    self.syncRelationships = true
+    self.syncFavors = true
+
+    if saveImmediately then
+        self:save()
+    end
+end
+
+function NPCSettings:getSavegameXmlPath()
+    if not (g_currentMission and g_currentMission.missionInfo and g_currentMission.missionInfo.savegameDirectory) then
+        return nil
+    end
+    return g_currentMission.missionInfo.savegameDirectory .. "/npc_favor_settings.xml"
+end
+
+function NPCSettings:load()
+    local xmlPath = self:getSavegameXmlPath()
+    if not xmlPath or not (g_fileIO and g_fileIO:fileExists(xmlPath)) then
+        self:resetToDefaults(true)
+        return
+    end
+
+    local xml = XMLFile.load("npc_settings", xmlPath)
+    if not xml then
+        self:resetToDefaults(true)
+        return
+    end
+
+    local function getBool(path, default) return xml:getBool("NPCSettings."..path, default) end
+    local function getInt(path, default) return xml:getInt("NPCSettings."..path, default) end
+    local function getFloat(path, default) return xml:getFloat("NPCSettings."..path, default) end
+    local function getString(path, default) return xml:getString("NPCSettings."..path, default) end
+
+    -- Core
+    self.enabled = getBool("enabled", self.enabled)
+    self.maxNPCs = getInt("maxNPCs", self.maxNPCs)
+    self.npcWorkStart = getInt("npcWorkStart", self.npcWorkStart)
+    self.npcWorkEnd = getInt("npcWorkEnd", self.npcWorkEnd)
+    self.favorFrequency = getInt("favorFrequency", self.favorFrequency)
+    self.npcSpawnDistance = getInt("npcSpawnDistance", self.npcSpawnDistance)
+
+    -- Display
+    self.showNames = getBool("showNames", self.showNames)
+    self.showNotifications = getBool("showNotifications", self.showNotifications)
+    self.showFavorList = getBool("showFavorList", self.showFavorList)
+    self.showRelationshipBars = getBool("showRelationshipBars", self.showRelationshipBars)
+    self.showNPCPaths = getBool("showNPCPaths", self.showNPCPaths)
+    self.nameDisplayDistance = getInt("nameDisplayDistance", self.nameDisplayDistance)
+    self.notificationDuration = getInt("notificationDuration", self.notificationDuration)
+
+    -- Gameplay
+    self.enableFavors = getBool("enableFavors", self.enableFavors)
+    self.enableGifts = getBool("enableGifts", self.enableGifts)
+    self.enableRelationshipSystem = getBool("enableRelationshipSystem", self.enableRelationshipSystem)
+    self.npcHelpPlayer = getBool("npcHelpPlayer", self.npcHelpPlayer)
+    self.npcSocialize = getBool("npcSocialize", self.npcSocialize)
+    self.npcDriveVehicles = getBool("npcDriveVehicles", self.npcDriveVehicles)
+    self.allowMultipleFavors = getBool("allowMultipleFavors", self.allowMultipleFavors)
+    self.maxActiveFavors = getInt("maxActiveFavors", self.maxActiveFavors)
+    self.favorTimeLimit = getBool("favorTimeLimit", self.favorTimeLimit)
+    self.relationshipDecay = getBool("relationshipDecay", self.relationshipDecay)
+    self.decayRate = getFloat("decayRate", self.decayRate)
+
+    -- Difficulty
+    self.favorDifficulty = getString("favorDifficulty", self.favorDifficulty)
+    self.relationshipGainMultiplier = getFloat("relationshipGainMultiplier", self.relationshipGainMultiplier)
+    self.relationshipLossMultiplier = getFloat("relationshipLossMultiplier", self.relationshipLossMultiplier)
+    self.favorRewardMultiplier = getFloat("favorRewardMultiplier", self.favorRewardMultiplier)
+    self.favorPenaltyMultiplier = getFloat("favorPenaltyMultiplier", self.favorPenaltyMultiplier)
+
+    -- AI
+    self.npcActivityLevel = getString("npcActivityLevel", self.npcActivityLevel)
+    self.npcMovementSpeed = getFloat("npcMovementSpeed", self.npcMovementSpeed)
+    self.npcWorkDuration = getFloat("npcWorkDuration", self.npcWorkDuration)
+    self.npcBreakFrequency = getFloat("npcBreakFrequency", self.npcBreakFrequency)
+    self.npcSocialFrequency = getFloat("npcSocialFrequency", self.npcSocialFrequency)
+
+    -- Debug
+    self.debugMode = getBool("debugMode", self.debugMode)
+    self.showPaths = getBool("showPaths", self.showPaths)
+    self.showSpawnPoints = getBool("showSpawnPoints", self.showSpawnPoints)
+    self.showAIDecisions = getBool("showAIDecisions", self.showAIDecisions)
+    self.showRelationshipChanges = getBool("showRelationshipChanges", self.showRelationshipChanges)
+    self.logToFile = getBool("logToFile", self.logToFile)
+
+    -- Sound
+    self.soundEffects = getBool("soundEffects", self.soundEffects)
+    self.voiceLines = getBool("voiceLines", self.voiceLines)
+    self.uiSounds = getBool("uiSounds", self.uiSounds)
+    self.notificationSound = getBool("notificationSound", self.notificationSound)
+
+    -- Performance
+    self.updateFrequency = getString("updateFrequency", self.updateFrequency)
+    self.npcRenderDistance = getInt("npcRenderDistance", self.npcRenderDistance)
+    self.npcUpdateDistance = getInt("npcUpdateDistance", self.npcUpdateDistance)
+    self.batchUpdates = getBool("batchUpdates", self.batchUpdates)
+    self.maxUpdatesPerFrame = getInt("maxUpdatesPerFrame", self.maxUpdatesPerFrame)
+
+    -- Multiplayer
+    self.syncNPCs = getBool("syncNPCs", self.syncNPCs)
+    self.syncRelationships = getBool("syncRelationships", self.syncRelationships)
+    self.syncFavors = getBool("syncFavors", self.syncFavors)
+
+    xml:delete()
+    self:validateSettings()
+end
+
+function NPCSettings:save()
+    local xmlPath = self:getSavegameXmlPath()
+    if not xmlPath then return end
+
+    if g_fileIO and g_fileIO.createFolder and not g_fileIO:fileExists(g_currentMission.missionInfo.savegameDirectory) then
+        g_fileIO:createFolder(g_currentMission.missionInfo.savegameDirectory)
+    end
+
+    local xml = XMLFile.create("npc_settings", xmlPath, "NPCSettings")
+    if not xml then return end
+
+    local function setBool(path, value) xml:setBool("NPCSettings."..path, value) end
+    local function setInt(path, value) xml:setInt("NPCSettings."..path, value) end
+    local function setFloat(path, value) xml:setFloat("NPCSettings."..path, value) end
+    local function setString(path, value) xml:setString("NPCSettings."..path, value) end
+
+    -- Core
+    setBool("enabled", self.enabled)
+    setInt("maxNPCs", self.maxNPCs)
+    setInt("npcWorkStart", self.npcWorkStart)
+    setInt("npcWorkEnd", self.npcWorkEnd)
+    setInt("favorFrequency", self.favorFrequency)
+    setInt("npcSpawnDistance", self.npcSpawnDistance)
+
+    -- Display
+    setBool("showNames", self.showNames)
+    setBool("showNotifications", self.showNotifications)
+    setBool("showFavorList", self.showFavorList)
+    setBool("showRelationshipBars", self.showRelationshipBars)
+    setBool("showNPCPaths", self.showNPCPaths)
+    setInt("nameDisplayDistance", self.nameDisplayDistance)
+    setInt("notificationDuration", self.notificationDuration)
+
+    -- Gameplay
+    setBool("enableFavors", self.enableFavors)
+    setBool("enableGifts", self.enableGifts)
+    setBool("enableRelationshipSystem", self.enableRelationshipSystem)
+    setBool("npcHelpPlayer", self.npcHelpPlayer)
+    setBool("npcSocialize", self.npcSocialize)
+    setBool("npcDriveVehicles", self.npcDriveVehicles)
+    setBool("allowMultipleFavors", self.allowMultipleFavors)
+    setInt("maxActiveFavors", self.maxActiveFavors)
+    setBool("favorTimeLimit", self.favorTimeLimit)
+    setBool("relationshipDecay", self.relationshipDecay)
+    setFloat("decayRate", self.decayRate)
+
+    -- Difficulty
+    setString("favorDifficulty", self.favorDifficulty)
+    setFloat("relationshipGainMultiplier", self.relationshipGainMultiplier)
+    setFloat("relationshipLossMultiplier", self.relationshipLossMultiplier)
+    setFloat("favorRewardMultiplier", self.favorRewardMultiplier)
+    setFloat("favorPenaltyMultiplier", self.favorPenaltyMultiplier)
+
+    -- AI
+    setString("npcActivityLevel", self.npcActivityLevel)
+    setFloat("npcMovementSpeed", self.npcMovementSpeed)
+    setFloat("npcWorkDuration", self.npcWorkDuration)
+    setFloat("npcBreakFrequency", self.npcBreakFrequency)
+    setFloat("npcSocialFrequency", self.npcSocialFrequency)
+
+    -- Debug
+    setBool("debugMode", self.debugMode)
+    setBool("showPaths", self.showPaths)
+    setBool("showSpawnPoints", self.showSpawnPoints)
+    setBool("showAIDecisions", self.showAIDecisions)
+    setBool("showRelationshipChanges", self.showRelationshipChanges)
+    setBool("logToFile", self.logToFile)
+
+    -- Sound
+    setBool("soundEffects", self.soundEffects)
+    setBool("voiceLines", self.voiceLines)
+    setBool("uiSounds", self.uiSounds)
+    setBool("notificationSound", self.notificationSound)
+
+    -- Performance
+    setString("updateFrequency", self.updateFrequency)
+    setInt("npcRenderDistance", self.npcRenderDistance)
+    setInt("npcUpdateDistance", self.npcUpdateDistance)
+    setBool("batchUpdates", self.batchUpdates)
+    setInt("maxUpdatesPerFrame", self.maxUpdatesPerFrame)
+
+    -- Multiplayer
+    setBool("syncNPCs", self.syncNPCs)
+    setBool("syncRelationships", self.syncRelationships)
+    setBool("syncFavors", self.syncFavors)
+
+    xml:save()
+    xml:delete()
+end
+
+function NPCSettings:validateSettings()
+    self.maxNPCs = math.max(1, math.min(50, self.maxNPCs))
+    self.npcWorkStart = math.max(0, math.min(23, self.npcWorkStart))
+    self.npcWorkEnd = math.max(0, math.min(23, self.npcWorkEnd))
+    self.favorFrequency = math.max(1, math.min(30, self.favorFrequency))
+    self.maxActiveFavors = math.max(1, math.min(20, self.maxActiveFavors))
+    self.npcSpawnDistance = math.max(50, math.min(1000, self.npcSpawnDistance))
+    self.nameDisplayDistance = math.max(10, math.min(500, self.nameDisplayDistance))
+    self.npcRenderDistance = math.max(50, math.min(1000, self.npcRenderDistance))
+    self.npcUpdateDistance = math.max(100, math.min(2000, self.npcUpdateDistance))
+    self.notificationDuration = math.max(1000, math.min(10000, self.notificationDuration))
+    self.decayRate = math.max(0, math.min(10, self.decayRate))
+
+    self.relationshipGainMultiplier = math.max(0.1, math.min(5.0, self.relationshipGainMultiplier))
+    self.relationshipLossMultiplier = math.max(0.1, math.min(5.0, self.relationshipLossMultiplier))
+    self.favorRewardMultiplier = math.max(0.1, math.min(5.0, self.favorRewardMultiplier))
+    self.favorPenaltyMultiplier = math.max(0.1, math.min(5.0, self.favorPenaltyMultiplier))
+
+    self.npcMovementSpeed = math.max(0.1, math.min(5.0, self.npcMovementSpeed))
+    self.npcWorkDuration = math.max(0.1, math.min(5.0, self.npcWorkDuration))
+    self.npcBreakFrequency = math.max(0.1, math.min(5.0, self.npcBreakFrequency))
+    self.npcSocialFrequency = math.max(0.1, math.min(5.0, self.npcSocialFrequency))
+    self.maxUpdatesPerFrame = math.max(1, math.min(50, self.maxUpdatesPerFrame))
+
+    local validDifficulties = {"easy","normal","hard"}
+    if not Utils.containsValue(validDifficulties, self.favorDifficulty) then
+        self.favorDifficulty = "normal"
+    end
+
+    local validActivityLevels = {"low","normal","high"}
+    if not Utils.containsValue(validActivityLevels, self.npcActivityLevel) then
+        self.npcActivityLevel = "normal"
+    end
+
+    local validUpdateFrequencies = {"low","normal","high"}
+    if not Utils.containsValue(validUpdateFrequencies, self.updateFrequency) then
+        self.updateFrequency = "normal"
+    end
+
+    self.enabled = not not self.enabled
+    self.showNames = not not self.showNames
+    self.showNotifications = not not self.showNotifications
+    self.debugMode = not not self.debugMode
+    self.enableFavors = not not self.enableFavors
+end
+
+-- Helpers
+function NPCSettings:getDifficultyMultiplier()
+    local multipliers = {easy=0.7, normal=1.0, hard=1.5}
+    return multipliers[self.favorDifficulty] or 1.0
+end
+
+function NPCSettings:getActivityLevelMultiplier()
+    local multipliers = {low=0.5, normal=1.0, high=1.5}
+    return multipliers[self.npcActivityLevel] or 1.0
+end
+
+function NPCSettings:getUpdateFrequencyValue()
+    local frequencies = {low=0.5, normal=1.0, high=2.0}
+    return frequencies[self.updateFrequency] or 1.0
+end
+
+function NPCSettings:isWorkTime(hour)
+    return hour >= self.npcWorkStart and hour < self.npcWorkEnd
+end
+
+function NPCSettings:getWorkDuration()
+    local duration = self.npcWorkEnd - self.npcWorkStart
+    if duration < 0 then duration = duration + 24 end
+    return duration
+end
+
+function NPCSettings:shouldUpdateNPC(npc, distanceToPlayer)
+    if distanceToPlayer <= self.npcUpdateDistance then return true end
+    if distanceToPlayer <= self.npcUpdateDistance * 2 then
+        return math.random() < 0.1
+    end
+    return false
+end
+
+function NPCSettings:shouldRenderNPC(npc, distanceToPlayer)
+    return distanceToPlayer <= self.npcRenderDistance
+end
+
+function NPCSettings:getEffectiveMaxNPCs()
+    local baseMax = self.maxNPCs
+    if self.updateFrequency == "low" then return math.floor(baseMax * 0.7)
+    elseif self.updateFrequency == "high" then return math.floor(baseMax * 1.3) end
+    return baseMax
+end
+
+function NPCSettings:applyPerformanceSettings()
+    if not g_NPCSystem or not g_NPCSystem.entityManager then return end
+    g_NPCSystem.entityManager.maxVisibleDistance = self.npcRenderDistance
+    g_NPCSystem.entityManager.updateBatchSize = self.maxUpdatesPerFrame
+end
