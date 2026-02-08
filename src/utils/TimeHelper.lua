@@ -1,4 +1,36 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- TIME CONVERSION:
+-- [x] Milliseconds to hours/minutes/seconds (msToHMS)
+-- [x] Milliseconds to days/hours/minutes/seconds (msToDHMS)
+-- [x] Long and short time formatting
+-- [x] Time comparison helpers (isSameDay, daysBetween, hoursBetween)
+-- [ ] Relative time formatting ("2 hours ago", "yesterday")
+-- [ ] Localized time format strings (12h vs 24h based on language)
+--
+-- GAME TIME:
+-- [x] Current game hour, minute, day, month, year accessors
+-- [x] Formatted game time string output
+-- [x] Time prediction (predictFutureTime, getTimeUntil)
+-- [ ] Game time speed multiplier awareness for accurate real-time estimates
+-- [ ] Alarm/timer system for scheduling NPC events at specific game times
+--
+-- SEASONS:
+-- [x] Growing season detection (April-October)
+-- [x] Winter detection (December-February)
+-- [ ] Full four-season classification (spring, summer, autumn, winter)
+-- [ ] Southern hemisphere season support for map variety
+-- [ ] Weather-aware time checks (rainy day behavior, etc.)
+--
+-- TIME OF DAY:
+-- [x] Morning, afternoon, evening, night classification
+-- [x] getTimeOfDay returns string label for current period
+-- [ ] Dawn/dusk transition periods for NPC schedule blending
+-- [ ] Configurable time-of-day thresholds per NPC personality
+-- =========================================================
+
+-- =========================================================
 -- Time Helper Utilities
 -- =========================================================
 -- Time conversion and formatting utilities
@@ -74,6 +106,11 @@ end
 
 function TimeHelper.getGameHour()
     if g_currentMission and g_currentMission.environment then
+        -- Derive from dayTime (ms since midnight) for reliability
+        local dayTime = g_currentMission.environment.dayTime
+        if dayTime then
+            return math.floor(dayTime / 3600000)
+        end
         return g_currentMission.environment.currentHour or 12
     end
     return 12
@@ -81,6 +118,11 @@ end
 
 function TimeHelper.getGameMinute()
     if g_currentMission and g_currentMission.environment then
+        -- Derive from dayTime (ms since midnight) for reliability
+        local dayTime = g_currentMission.environment.dayTime
+        if dayTime then
+            return math.floor((dayTime % 3600000) / 60000)
+        end
         return g_currentMission.environment.currentMinute or 0
     end
     return 0

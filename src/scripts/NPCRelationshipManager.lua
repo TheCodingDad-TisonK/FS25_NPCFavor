@@ -1,4 +1,31 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- RELATIONSHIP TIERS:
+-- [x] Five-tier relationship system (stranger to best_friend)
+-- [x] Color-coded relationship levels for UI display
+-- [x] Per-tier benefits (discounts, favor access, equipment borrowing)
+-- [ ] Seasonal relationship events (holidays, harvest festivals)
+-- [ ] Rival NPC relationships (befriending one may upset another)
+--
+-- MOOD & DECAY:
+-- [x] Temporary mood system with expiration timers
+-- [x] Mood modifiers affecting relationship change magnitude
+-- [x] Automatic cleanup of expired moods and old history
+-- [ ] Passive relationship decay over time for inactive NPCs
+-- [ ] Weather/season influence on NPC mood baseline
+-- [ ] NPC memory of past slights with grudge mechanic
+--
+-- GIFTS & BENEFITS:
+-- [x] Gift system with per-day limits and personality modifiers
+-- [x] Trade discounts scaling with relationship tier
+-- [x] Equipment borrowing unlocked at friend tier
+-- [ ] NPC-initiated gift giving at best_friend tier
+-- [ ] Shared resource pools between best friends
+-- [ ] Unlock exclusive items/vehicles through max relationship
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Relationship Manager
 -- =========================================================
 -- Manages relationships between player and NPCs
@@ -263,8 +290,8 @@ function NPCRelationshipManager:canApplyRelationshipChange(npcId, reason, change
         self.giftTracker[npcId] = {day = day, count = 0}
     end
     
-    -- Check specific limits
-    if reason == "DAILY_INTERACTION" then
+    -- Check specific limits (reason strings are lowercase to match callers)
+    if reason == "daily_interaction" then
         if self.dailyInteractionTracker[npcId].count >= 1 then
             return false
         end
@@ -304,7 +331,8 @@ end
 
 function NPCRelationshipManager:updateNPCMood(npcId, change, reason)
     local moodChange = 0
-    
+    change = change or 0
+
     -- Determine mood change based on relationship change
     if change > 0 then
         moodChange = 0.1 * (change / 10) -- Positive mood for positive changes
@@ -768,6 +796,23 @@ function NPCRelationshipManager:getNPCBenefits(npcId)
     
     local level = self:getRelationshipLevel(npc.relationship)
     return level.benefits or {}
+end
+
+function NPCRelationshipManager:update(dt)
+    self.updateTimer = (self.updateTimer or 0) + dt
+    -- Run relationship housekeeping every 60 seconds (not every frame)
+    if self.updateTimer >= 60 then
+        self.updateTimer = 0
+        for _, npc in ipairs(self.npcSystem.activeNPCs) do
+            if npc.isActive then
+                self:updateNPCMood(npc.id)
+                local level = self:getRelationshipLevel(npc.relationship)
+                self:updateNPCBehaviorForRelationship(npc, level)
+            end
+        end
+        -- Cleanup expired moods and old history
+        self:cleanupExpiredData()
+    end
 end
 
 function NPCRelationshipManager:cleanupExpiredData()

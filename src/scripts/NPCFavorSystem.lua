@@ -1,4 +1,33 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- FAVOR TYPES:
+-- [x] Seven favor types across vehicle, fieldwork, transport, repair, delivery, financial, security
+-- [x] Difficulty-scaled rewards and penalties per favor type
+-- [x] Equipment and relationship requirements for favor eligibility
+-- [ ] Seasonal favors (snow clearing in winter, irrigation in summer)
+-- [ ] Chain favors that unlock follow-up quests from the same NPC
+-- [ ] Community favors involving multiple NPCs cooperating
+--
+-- GENERATION & TRACKING:
+-- [x] Weighted random NPC selection based on relationship and personality
+-- [x] Time-of-day probability scaling for favor generation
+-- [x] Multi-step favor progression with location-based checkpoints
+-- [x] Notification queue system with cooldown between messages
+-- [ ] Favor journal UI showing active, completed, and failed history
+-- [ ] Map markers for favor objectives and delivery destinations
+--
+-- COMPLETION & REWARDS:
+-- [x] Favor completion with relationship and money rewards
+-- [x] Failure and abandonment penalty system with reputation impact
+-- [x] Statistics tracking (fastest completion, total earnings, etc.)
+-- [x] Save/restore of active favors across game sessions
+-- [ ] Bonus rewards for completing favors ahead of deadline
+-- [ ] Reputation system affecting all NPC interactions globally
+-- [ ] Tiered reward multipliers for consecutive favor streaks
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Favor System
 -- =========================================================
 -- Manages favor requests, tracking, and completion
@@ -196,7 +225,9 @@ function NPCFavorSystem:tryGenerateFavorRequest(dt)
     -- Reduce probability if we have many active favors
     local favorFactor = math.max(0.1, 1.0 - (activeFavorCount / maxActiveFavors))
     
-    local probability = baseProbability * timeFactor * favorFactor * (dt / 1000) -- Adjust for dt
+    -- Note: dt is already in seconds (NPCSystem divides by 1000)
+    -- This function gates on a 10-second cooldown (line 170), so no dt scaling needed
+    local probability = baseProbability * timeFactor * favorFactor
     
     if math.random() < probability then
         self:generateFavorRequest()
@@ -260,49 +291,56 @@ function NPCFavorSystem:generateTaskData(favorType, npc)
 end
 
 function NPCFavorSystem:findNearestSellPoint(x, z)
-    -- Find the nearest sell point
+    -- Find the nearest sell/unloading point using FS25 storageSystem API
     if not g_currentMission or not g_currentMission.storageSystem then
         return {x = x + 500, y = 0, z = z + 500} -- Default far location
     end
-    
-    -- This is a simplified version - in reality, you'd query the game's sell points
+
     local sellPoints = {}
-    
-    -- Try to find sell points in the mission
-    if g_currentMission.sellingStations then
-        for _, station in pairs(g_currentMission.sellingStations) do
-            if station and station.nodeId then
-                local sx, sy, sz = getWorldTranslation(station.nodeId)
-                if sx then
-                    table.insert(sellPoints, {
-                        x = sx,
-                        y = sy,
-                        z = sz,
-                        name = station.name or "Sell Point"
-                    })
+
+    -- Use FS25's unloading stations API (sell points are unloading stations)
+    local ok, unloadingStations = pcall(function()
+        return g_currentMission.storageSystem:getUnloadingStations()
+    end)
+
+    if ok and unloadingStations then
+        for _, station in pairs(unloadingStations) do
+            if station then
+                local nodeId = station.rootNode or station.nodeId
+                if nodeId then
+                    local okPos, sx, sy, sz = pcall(getWorldTranslation, nodeId)
+                    if okPos and sx then
+                        table.insert(sellPoints, {
+                            x = sx,
+                            y = sy,
+                            z = sz,
+                            name = station:getName() or "Sell Point"
+                        })
+                    end
                 end
             end
         end
     end
-    
+
     -- Find nearest
     local nearest = nil
     local nearestDist = math.huge
-    
+
     for _, point in ipairs(sellPoints) do
-        local dist = VectorHelper.distance3D(x, 0, z, point.x, 0, point.z)
+        local dist = VectorHelper.distance2D(x, z, point.x, point.z)
         if dist < nearestDist then
             nearestDist = dist
             nearest = point
         end
     end
-    
+
     if nearest then
         return nearest
     end
-    
-    -- Fallback
-    return {x = x + 500, y = 0, z = z + 500}
+
+    -- Fallback: random direction from NPC home
+    local angle = math.random() * math.pi * 2
+    return {x = x + math.cos(angle) * 500, y = 0, z = z + math.sin(angle) * 500}
 end
 
 function NPCFavorSystem:generateFavorRequest()
@@ -1120,6 +1158,64 @@ end
 
 function NPCFavorSystem:getActiveFavors()
     return self.activeFavors
+end
+
+--- Restore an active favor from saved data (called during loadFromXMLFile).
+-- Reconstructs the favor structure from minimal saved fields and re-inserts it
+-- into the active favors list with recalculated expiration time.
+-- @param savedFavor  Table with npcId, npcName, type, description, timeRemaining, progress, reward
+function NPCFavorSystem:restoreFavor(savedFavor)
+    if not savedFavor or not savedFavor.type or savedFavor.type == "" then
+        return
+    end
+
+    -- Look up the favor type definition
+    local favorType = nil
+    for _, ft in ipairs(self.favorTypes) do
+        if ft.id == savedFavor.type then
+            favorType = ft
+            break
+        end
+    end
+
+    local currentTime = g_currentMission and g_currentMission.time or 0
+
+    local favor = {
+        id = #self.activeFavors + #self.completedFavors + #self.failedFavors + 1,
+        npcId = savedFavor.npcId or 0,
+        npcName = savedFavor.npcName or "",
+        type = savedFavor.type,
+        name = favorType and favorType.name or savedFavor.type,
+        description = savedFavor.description or (favorType and favorType.description or ""),
+        difficulty = favorType and favorType.difficulty or 1,
+        category = favorType and favorType.category or "misc",
+
+        status = "active",
+        progress = savedFavor.progress or 0,
+        progressDetails = {},
+
+        createdTime = currentTime,
+        expirationTime = currentTime + (savedFavor.timeRemaining or 0),
+        timeRemaining = savedFavor.timeRemaining or 0,
+        estimatedCompletionTime = nil,
+
+        requirements = favorType and favorType.requirements or {},
+        reward = favorType and favorType.reward or { relationship = 10, money = savedFavor.reward or 0, xp = 0 },
+        penalty = favorType and favorType.penalty or { relationship = -5, reputation = -10 },
+
+        location = nil,
+        taskData = {},
+        startTime = currentTime,
+        completionTime = nil,
+        completionDuration = nil,
+        playerNotes = "",
+        priority = 1,
+        currentStep = 1,
+        totalSteps = 1,
+        steps = {}
+    }
+
+    table.insert(self.activeFavors, favor)
 end
 
 function NPCFavorSystem:getCompletedFavors()

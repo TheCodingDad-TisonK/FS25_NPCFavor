@@ -1,4 +1,31 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- MATH OPERATIONS:
+-- [x] 2D and 3D distance calculations
+-- [x] Scalar and vector linear interpolation (lerp)
+-- [x] Value clamping (scalar and vector)
+-- [x] Dot product and cross product
+-- [ ] Smoothstep / ease-in-out interpolation for smoother NPC movement
+-- [ ] Bezier curve evaluation for curved NPC walking paths
+--
+-- GEOMETRY:
+-- [x] Point-in-circle and point-in-rectangle tests
+-- [x] Random point generation in circle and rectangle regions
+-- [x] Angle calculation between two points
+-- [x] Vector normalization and rotation
+-- [x] Perpendicular and reflection vectors
+-- [x] MoveTowards with max distance delta
+-- [ ] Point-in-polygon test for irregular NPC activity zones
+-- [ ] Line segment intersection for path collision detection
+-- [ ] Closest point on line segment (for NPC-to-road snapping)
+--
+-- PERFORMANCE:
+-- [ ] Squared distance variants to avoid sqrt in hot paths
+-- [ ] Lookup table for sin/cos in frequently called rotation code
+-- =========================================================
+
+-- =========================================================
 -- Vector Helper Utilities
 -- =========================================================
 -- Math utilities for vector operations

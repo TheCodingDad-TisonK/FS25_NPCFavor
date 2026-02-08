@@ -1,4 +1,25 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- UI HELPERS:
+-- [x] Settings button creation for parent menu integration
+-- [x] Section header and enable toggle injection into game menus
+-- [ ] Slider controls for numeric settings (interaction radius, NPC count)
+-- [ ] Dropdown/multi-select for NPC personality presets
+-- [ ] Visual preview of setting changes before applying
+-- [ ] Tooltip enrichment with current value and default value display
+--
+-- SETTINGS MANAGEMENT:
+-- [x] Generic get/set with default value fallback
+-- [x] Auto-save on toggle change
+-- [ ] Settings validation (min/max bounds, type checking)
+-- [ ] Settings reset to defaults (per-setting and bulk reset)
+-- [ ] Import/export settings as shareable XML for community presets
+-- [ ] Settings change event callbacks for live-updating systems
+-- [ ] Per-savegame settings profiles (different configs per farm)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Settings Helper
 -- =========================================================
 -- Utility functions for handling settings

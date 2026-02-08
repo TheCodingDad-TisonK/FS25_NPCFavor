@@ -1,3 +1,26 @@
+-- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- UI WIDGETS:
+-- [x] Inject settings section into general settings layout
+-- [x] BinaryOption: Enable NPC System with save-on-toggle
+-- [x] BinaryOption: Show NPC Names with save-on-toggle
+-- [x] BinaryOption: Show Notifications with save-on-toggle
+-- [x] BinaryOption: Debug Mode with save-on-toggle
+-- [x] BinaryOption: Enable Favors with save-on-toggle
+-- [x] NumberOption: Max NPC Count (1-50) with save-on-change
+-- [x] Refresh UI to sync widget state from settings object
+-- [x] Reset button (MENU_EXTRA_1) with resetToDefaults and UI refresh
+-- [x] Safe text lookup helper (getTextSafe) with fallback to key
+-- FUTURE ENHANCEMENTS:
+-- [ ] Animated toggle transitions for binary options
+-- [ ] Tooltip popups with detailed explanations on hover/focus
+-- [ ] Category tabs or accordion sections (Display, Gameplay, AI, Debug)
+-- [ ] Live preview of NPC density when adjusting Max NPC Count
+-- [ ] Confirmation dialog before resetting all settings to defaults
+-- [ ] Visual indicator for settings that differ from defaults
+-- =========================================================
+
 ---@class NPCSettingsUI
 NPCSettingsUI = {}
 local NPCSettingsUI_mt = Class(NPCSettingsUI)
