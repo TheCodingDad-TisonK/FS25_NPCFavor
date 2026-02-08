@@ -32,43 +32,43 @@ function NPCSettingsUI:inject()
 
     self.enabledOption = UIHelper.createBinaryOption(
         layout, "npc_enabled", "npc_enabled_short", self.settings.enabled,
-        function(val) self.settings.enabled = val; self.settings:save(); print("[NPC] Mod " .. (val and "enabled" or "disabled")) end,
+        function(val) self.settings.enabled = val; self.settings:save() end,
         getTextSafe("npc_enabled_long")
     )
 
     self.showNamesOption = UIHelper.createBinaryOption(
         layout, "npc_show_names", "npc_show_names_short", self.settings.showNames,
-        function(val) self.settings.showNames = val; self.settings:save(); print("[NPC] Show names: " .. tostring(val)) end,
+        function(val) self.settings.showNames = val; self.settings:save() end,
         getTextSafe("npc_show_names_long")
     )
 
     self.notificationsOption = UIHelper.createBinaryOption(
         layout, "npc_show_notifications", "npc_show_notifications_short", self.settings.showNotifications,
-        function(val) self.settings.showNotifications = val; self.settings:save(); print("[NPC] Notifications: " .. tostring(val)) end,
+        function(val) self.settings.showNotifications = val; self.settings:save() end,
         getTextSafe("npc_show_notifications_long")
     )
 
     self.debugOption = UIHelper.createBinaryOption(
         layout, "npc_debug", "npc_debug_short", self.settings.debugMode,
-        function(val) self.settings.debugMode = val; self.settings:save(); print("[NPC] Debug mode: " .. tostring(val)) end,
+        function(val) self.settings.debugMode = val; self.settings:save() end,
         getTextSafe("npc_debug_long")
     )
 
     self.favorsOption = UIHelper.createBinaryOption(
         layout, "npc_enable_favors", "npc_enable_favors_short", self.settings.enableFavors,
-        function(val) self.settings.enableFavors = val; self.settings:save(); print("[NPC] Favors: " .. tostring(val)) end,
+        function(val) self.settings.enableFavors = val; self.settings:save() end,
         getTextSafe("npc_enable_favors_long")
     )
 
     self.maxNPCsOption = UIHelper.createNumberOption(
         layout, "npc_max_count", "npc_max_count_short", self.settings.maxNPCs, 1, 50,
-        function(val) self.settings.maxNPCs = val; self.settings:save(); print("[NPC] Max NPCs: " .. val) end,
+        function(val) self.settings.maxNPCs = val; self.settings:save() end,
         getTextSafe("npc_max_count_long")
     )
 
     self.injected = true
     layout:invalidateLayout()
-    print("[NPC] Settings UI injected successfully")
+    print("[NPC Favor] Settings UI injected")
 end
 
 function NPCSettingsUI:refreshUI()
@@ -79,12 +79,10 @@ function NPCSettingsUI:refreshUI()
     if self.debugOption then self.debugOption:setIsChecked(self.settings.debugMode) end
     if self.favorsOption then self.favorsOption:setIsChecked(self.settings.enableFavors) end
     if self.maxNPCsOption then self.maxNPCsOption:setValue(self.settings.maxNPCs) end
-    print("[NPC] UI refreshed")
 end
 
 function NPCSettingsUI:ensureResetButton(settingsFrame)
     if not settingsFrame or not settingsFrame.menuButtonInfo then
-        print("[NPC] ensureResetButton - settingsFrame invalid")
         return
     end
     if not self._resetButton then
@@ -92,7 +90,6 @@ function NPCSettingsUI:ensureResetButton(settingsFrame)
             inputAction = InputAction.MENU_EXTRA_1,
             text = getTextSafe("npc_reset"),
             callback = function()
-                print("[NPC] Reset button clicked!")
                 if self.settings then
                     self.settings:resetToDefaults()
                     self:refreshUI()
@@ -106,7 +103,6 @@ function NPCSettingsUI:ensureResetButton(settingsFrame)
     end
     table.insert(settingsFrame.menuButtonInfo, self._resetButton)
     settingsFrame:setMenuButtonInfoDirty()
-    print("[NPC] Reset button added to footer!")
 end
 
 function getTextSafe(key)

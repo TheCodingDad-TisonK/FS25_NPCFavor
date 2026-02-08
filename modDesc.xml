@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
-    <author>TisonK</author>
+    <author>TisonK (NPC models: RoaderSIMModding)</author>
     <version>1.0.0.0</version>
     <modName>FS25_NPCFavor</modName>
     <title>
@@ -540,14 +540,10 @@
 
     <actions>
         <action name="NPC_INTERACT" />
-        <action name="NPC_DIALOG_CLOSE" />
     </actions>
     <inputBinding>
         <actionBinding action="NPC_INTERACT">
             <binding device="KB_MOUSE_DEFAULT" input="KEY_e" />
-        </actionBinding>
-        <actionBinding action="NPC_DIALOG_CLOSE">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_q" />
         </actionBinding>
     </inputBinding>
 </modDesc>

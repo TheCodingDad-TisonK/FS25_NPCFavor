@@ -15,10 +15,6 @@ function NPCFavorGUI.new(npcSystem)
 end
 
 function NPCFavorGUI:registerConsoleCommands()
-    print("[NPC Favor] Registering console commands...")
-    
-    -- Register global functions for console commands
-    -- These will be called directly from the console
     addConsoleCommand("npcStatus", "Show NPC system status", "npcStatus", self)
     addConsoleCommand("npcSpawn", "Spawn an NPC with optional name", "npcSpawn", self)
     addConsoleCommand("npcList", "List all active NPCs", "npcList", self)
@@ -27,14 +23,12 @@ function NPCFavorGUI:registerConsoleCommands()
     addConsoleCommand("npcDebug", "Toggle debug mode", "npcDebug", self)
     addConsoleCommand("npcReload", "Reload NPC settings", "npcReload", self)
     addConsoleCommand("npcTest", "Test function", "npcTest", self)
-    
-    print("[NPC Favor] Console commands registered successfully")
+
+    print("[NPC Favor] Console commands registered")
 end
 
 -- Console command handler functions that route to NPCSystem
 function NPCFavorGUI:npcStatus()
-    print("[NPC Favor] npcStatus command called")
-    
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandStatus()
     else
@@ -43,8 +37,6 @@ function NPCFavorGUI:npcStatus()
 end
 
 function NPCFavorGUI:npcSpawn(name)
-    print("[NPC Favor] npcSpawn command called with name: " .. (name or "nil"))
-    
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandSpawn(name or "")
     else
@@ -61,8 +53,6 @@ function NPCFavorGUI:npcList()
 end
 
 function NPCFavorGUI:npcReset()
-    print("[NPC Favor] npcReset command called")
-    
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandReset()
     else

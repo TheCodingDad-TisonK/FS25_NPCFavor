@@ -81,7 +81,6 @@ function NPCFavorSettingsManager:loadSettings(settingsObject)
     local xmlPath = self:getSavegameXmlFilePath()
     
     if xmlPath and fileExists(xmlPath) then
-        print("[NPC Settings] Loading settings from: " .. xmlPath)
         local xml = XMLFile.load("npc_config", xmlPath)
         if xml then
             -- Core settings
@@ -90,22 +89,21 @@ function NPCFavorSettingsManager:loadSettings(settingsObject)
             settingsObject.npcWorkStart = xml:getInt(self.XMLTAG .. ".npcWorkStart", self.defaultConfig.npcWorkStart)
             settingsObject.npcWorkEnd = xml:getInt(self.XMLTAG .. ".npcWorkEnd", self.defaultConfig.npcWorkEnd)
             settingsObject.favorFrequency = xml:getInt(self.XMLTAG .. ".favorFrequency", self.defaultConfig.favorFrequency)
-            
+
             -- Display settings
             settingsObject.showNames = xml:getBool(self.XMLTAG .. ".showNames", self.defaultConfig.showNames)
             settingsObject.showNotifications = xml:getBool(self.XMLTAG .. ".showNotifications", self.defaultConfig.showNotifications)
             settingsObject.showFavorList = xml:getBool(self.XMLTAG .. ".showFavorList", self.defaultConfig.showFavorList)
             settingsObject.debugMode = xml:getBool(self.XMLTAG .. ".debugMode", self.defaultConfig.debugMode)
             settingsObject.enableFavors = xml:getBool(self.XMLTAG .. ".enableFavors", self.defaultConfig.enableFavors)
-            
+
             xml:delete()
-            print("[NPC Settings] Settings loaded successfully")
             return
         end
     end
-    
+
     -- Use defaults if no settings file exists
-    print("[NPC Settings] Using default settings")
+    print("[NPC Settings] Using default settings (no savegame config found)")
     for key, value in pairs(self.defaultConfig) do
         settingsObject[key] = value
     end
@@ -113,13 +111,10 @@ end
 
 function NPCFavorSettingsManager:saveSettings(settingsObject)
     local xmlPath = self:getSavegameXmlFilePath()
-    if not xmlPath then 
-        print("[NPC Settings] Could not get savegame path")
-        return 
+    if not xmlPath then
+        return
     end
-    
-    print("[NPC Settings] Saving settings to: " .. xmlPath)
-    
+
     local xml = XMLFile.create("npc_config", xmlPath, self.XMLTAG)
     if xml then
         -- Core settings
@@ -128,18 +123,17 @@ function NPCFavorSettingsManager:saveSettings(settingsObject)
         xml:setInt(self.XMLTAG .. ".npcWorkStart", settingsObject.npcWorkStart)
         xml:setInt(self.XMLTAG .. ".npcWorkEnd", settingsObject.npcWorkEnd)
         xml:setInt(self.XMLTAG .. ".favorFrequency", settingsObject.favorFrequency)
-        
+
         -- Display settings
         xml:setBool(self.XMLTAG .. ".showNames", settingsObject.showNames)
         xml:setBool(self.XMLTAG .. ".showNotifications", settingsObject.showNotifications)
         xml:setBool(self.XMLTAG .. ".showFavorList", settingsObject.showFavorList)
         xml:setBool(self.XMLTAG .. ".debugMode", settingsObject.debugMode)
         xml:setBool(self.XMLTAG .. ".enableFavors", settingsObject.enableFavors)
-        
+
         xml:save()
         xml:delete()
-        print("[NPC Settings] Settings saved successfully")
     else
-        print("[NPC Settings] Failed to create XML file")
+        print("[NPC Settings] ERROR: Failed to create XML file at " .. tostring(xmlPath))
     end
 end

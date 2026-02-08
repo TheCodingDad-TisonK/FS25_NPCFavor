@@ -19,28 +19,23 @@ local MOD_NAME = "FS25_NPCFavor"
 local modDirectory = g_currentModDirectory
 local modName = g_currentModName
 
-print("[NPC Favor] Starting mod initialization...")
-
 --  Define base classes and utilities
 if modDirectory then
-    print("[NPC Favor] Loading utility files...")
     source(modDirectory .. "src/utils/VectorHelper.lua")
     source(modDirectory .. "src/utils/TimeHelper.lua")
 
-    -- Define configuration
+    -- Configuration & settings
     source(modDirectory .. "src/settings/NPCConfig.lua")
     source(modDirectory .. "src/settings/NPCSettings.lua")
     source(modDirectory .. "src/settings/NPCFavorSettingsManager.lua")
     source(modDirectory .. "src/settings/NPCSettingsIntegration.lua")
 
     -- Multiplayer events (must load before NPCSystem which references them)
-    print("[NPC Favor] Loading multiplayer events...")
     source(modDirectory .. "src/events/NPCStateSyncEvent.lua")
     source(modDirectory .. "src/events/NPCInteractionEvent.lua")
     source(modDirectory .. "src/events/NPCSettingsSyncEvent.lua")
 
-    -- Now define core systems in order
-    print("[NPC Favor] Loading core systems...")
+    -- Core systems in dependency order
     source(modDirectory .. "src/scripts/NPCRelationshipManager.lua")
     source(modDirectory .. "src/scripts/NPCFavorSystem.lua")
     source(modDirectory .. "src/scripts/NPCEntity.lua")
@@ -48,13 +43,12 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCScheduler.lua")
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
 
-    -- gui
+    -- GUI
+    source(modDirectory .. "src/gui/NPCDialog.lua")
     source(modDirectory .. "src/settings/NPCFavorGUI.lua")
 
-    -- Main system that uses all others
+    -- Main coordinator
     source(modDirectory .. "src/NPCSystem.lua")
-
-    print("[NPC Favor] All files loaded successfully")
 else
     print("[NPC Favor] ERROR - Could not find mod directory!")
     return
@@ -72,21 +66,33 @@ local function isEnabled()
 end
 
 local function loadedMission(mission, node)
-    print("[NPC Favor] Mission load finished callback")
-    
     if not isMissionValid(mission) then
-        print("[NPC Favor] Mission not valid, skipping initialization")
         return
     end
     
     if npcSystem then
-        print("[NPC Favor] Calling onMissionLoaded...")
+        -- Register NPC dialog with g_gui
+        if g_gui and NPCDialog then
+            local npcDialog = NPCDialog.new()
+            g_gui:loadGui(modDirectory .. "gui/NPCDialog.xml", "NPCDialog", npcDialog)
+            npcSystem.npcDialogInstance = npcDialog
+
+            -- Verify registration
+            if g_gui.guis and g_gui.guis["NPCDialog"] then
+                print("[NPC Favor] NPCDialog registered with g_gui")
+            else
+                print("[NPC Favor] WARNING: NPCDialog registration failed after loadGui")
+            end
+        end
+
+        -- Initialize NPC entity model loading
+        if npcSystem.entityManager and npcSystem.entityManager.initialize then
+            npcSystem.entityManager:initialize(modDirectory)
+        end
+
         npcSystem:onMissionLoaded()
     else
-        print("[NPC Favor] ERROR - npcSystem is nil in loadedMission!")
-        
-        -- Try to initialize now
-        print("[NPC Favor] Attempting late initialization...")
+        -- Late initialization fallback
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
@@ -95,104 +101,68 @@ local function loadedMission(mission, node)
                 name = MOD_NAME,
                 system = npcSystem
             }
-            print("[NPC Favor] Late initialization successful")
             npcSystem:onMissionLoaded()
+        else
+            print("[NPC Favor] ERROR - Failed to create NPCSystem")
         end
     end
 end
 
 local function load(mission)
-    print("[NPC Favor] Load function called")
-    
     if not isMissionValid(mission) then
-        print("[NPC Favor] Mission not valid, skipping load")
         return
     end
-    
+
     if npcSystem == nil then
-        print("[NPC Favor] Initializing version " .. MOD_VERSION .. "...")
-        
-        -- Don't check for placeables here - they might not be loaded yet
-        -- Wait for loadedMission callback instead
-        
-        print("[NPC Favor] Creating NPCSystem instance...")
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
-        
+
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
-            
-            -- Add mod info for other mods to detect
             g_NPCFavorMod = {
                 version = MOD_VERSION,
                 name = MOD_NAME,
                 system = npcSystem
             }
-            
-            print("[NPC Favor] NPCSystem instance created successfully")
-            
-            -- Initialize GUI and console commands
+
+            -- Initialize console commands
             if npcSystem.gui then
                 npcSystem.gui:registerConsoleCommands()
             end
         else
-            print("[NPC Favor] ERROR - Failed to create NPCSystem instance")
+            print("[NPC Favor] ERROR - Failed to create NPCSystem")
         end
-    else
-        print("[NPC Favor] Already initialized")
     end
 end
 
 local function unload()
-    print("[NPC Favor] Unload function called")
-    
     if npcSystem ~= nil then
         npcSystem:delete()
         npcSystem = nil
         getfenv(0)["g_NPCSystem"] = nil
         g_NPCFavorMod = nil
-        print("[NPC Favor] Unloaded successfully")
     end
 end
 
--- FS25 Hooks with error handling
-print("[NPC Favor] Setting up game hooks...")
-
--- Hook the load function
+-- FS25 Game Hooks
 if Mission00 and Mission00.load then
-    print("[NPC Favor] Hooking Mission00.load")
     Mission00.load = Utils.prependedFunction(Mission00.load, load)
 elseif g_currentMission and g_currentMission.load then
-    print("[NPC Favor] Hooking g_currentMission.load")
     g_currentMission.load = Utils.prependedFunction(g_currentMission.load, load)
-else
-    print("[NPC Favor] WARNING - No load function found to hook!")
 end
 
--- Hook the mission finished loading
 if Mission00 and Mission00.loadMission00Finished then
-    print("[NPC Favor] Hooking Mission00.loadMission00Finished")
     Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, loadedMission)
-else
-    print("[NPC Favor] WARNING - Mission00.loadMission00Finished not found")
-    
-    -- Try alternative hook
-    if g_currentMission and g_currentMission.onMissionLoaded then
-        print("[NPC Favor] Hooking g_currentMission.onMissionLoaded")
-        g_currentMission.onMissionLoaded = Utils.appendedFunction(g_currentMission.onMissionLoaded, function(mission)
-            loadedMission(mission, nil)
-        end)
-    end
+elseif g_currentMission and g_currentMission.onMissionLoaded then
+    g_currentMission.onMissionLoaded = Utils.appendedFunction(g_currentMission.onMissionLoaded, function(mission)
+        loadedMission(mission, nil)
+    end)
 end
 
--- Hook delete for cleanup
 if FSBaseMission and FSBaseMission.delete then
-    print("[NPC Favor] Hooking FSBaseMission.delete")
     FSBaseMission.delete = Utils.appendedFunction(FSBaseMission.delete, unload)
 end
 
--- Hook update for game loop
 if FSBaseMission and FSBaseMission.update then
-    print("[NPC Favor] Hooking FSBaseMission.update")
     FSBaseMission.update = Utils.appendedFunction(FSBaseMission.update, function(mission, dt)
         if npcSystem then
             npcSystem:update(dt)
@@ -207,7 +177,6 @@ end
 -- Game renders [E] automatically, we provide dynamic text
 
 local npcInteractActionEventId = nil
-local npcDialogCloseActionEventId = nil
 local npcInteractOriginalFunc = nil
 
 local function npcInteractActionCallback(self, actionName, inputValue, callbackState, isAnalog)
@@ -215,17 +184,16 @@ local function npcInteractActionCallback(self, actionName, inputValue, callbackS
         return
     end
 
-    if not npcSystem or not npcSystem.interactionUI then
+    if not npcSystem then
         return
     end
 
-    -- If dialog is already open, E cycles through options
-    if npcSystem.interactionUI.isDialogOpen then
-        npcSystem.interactionUI:selectAndExecuteNextOption()
+    -- Don't open while another dialog is showing
+    if g_gui:getIsDialogVisible() then
         return
     end
 
-    -- Dialog not open: find nearest interactable NPC and open dialog
+    -- Find nearest interactable NPC and open the dialog
     if npcSystem.nearbyNPCs then
         local nearest = nil
         local nearestDist = 999
@@ -238,19 +206,24 @@ local function npcInteractActionCallback(self, actionName, inputValue, callbackS
         end
 
         if nearest then
-            print(string.format("[NPC Favor] Interacting with %s", nearest.name))
-            npcSystem.interactionUI:openDialog(nearest)
+            -- Verify dialog exists before attempting to show
+            if not (g_gui.guis and g_gui.guis["NPCDialog"]) then
+                print("[NPC Favor] ERROR: NPCDialog not registered with g_gui")
+                return
+            end
+
+            -- Set data on dialog instance, then show via g_gui
+            if npcSystem.npcDialogInstance then
+                npcSystem.npcDialogInstance:setNPCData(nearest, npcSystem)
+            end
+
+            local ok, err = pcall(function()
+                g_gui:showDialog("NPCDialog")
+            end)
+            if not ok then
+                print("[NPC Favor] showDialog FAILED: " .. tostring(err))
+            end
         end
-    end
-end
-
-local function npcDialogCloseCallback(self, actionName, inputValue, callbackState, isAnalog)
-    if inputValue <= 0 then
-        return
-    end
-
-    if npcSystem and npcSystem.interactionUI and npcSystem.interactionUI.isDialogOpen then
-        npcSystem.interactionUI:closeDialog()
     end
 end
 
@@ -294,58 +267,28 @@ local function hookNPCInteractInput()
 
             if success and eventId ~= nil then
                 npcInteractActionEventId = eventId
-                print("[NPC Favor] E key action event registered, eventId=" .. tostring(eventId))
-            else
-                print("[NPC Favor] Failed to register E key action event")
-            end
-
-            -- Register Q key for dialog close
-            local closeActionId = InputAction.NPC_DIALOG_CLOSE
-            if closeActionId ~= nil then
-                local closeSuccess, closeEventId = g_inputBinding:registerActionEvent(
-                    closeActionId,
-                    NPCSystem,
-                    npcDialogCloseCallback,
-                    false,                        -- triggerUp
-                    true,                         -- triggerDown
-                    false,                        -- triggerAlways
-                    false,                        -- startActive
-                    nil,                          -- callbackState
-                    true                          -- disableConflictingBindings
-                )
-
-                if closeSuccess and closeEventId ~= nil then
-                    npcDialogCloseActionEventId = closeEventId
-                    print("[NPC Favor] Q key close action registered, eventId=" .. tostring(closeEventId))
-                end
             end
         end
     end
 
-    print("[NPC Favor] PlayerInputComponent hooked for E key interaction")
 end
 
 hookNPCInteractInput()
 
--- Update hook: control E/Q key prompt visibility based on NPC proximity and dialog state
+-- Update hook: control E key prompt visibility based on NPC proximity
 if FSBaseMission and FSBaseMission.update then
     FSBaseMission.update = Utils.appendedFunction(FSBaseMission.update, function(mission, dt)
         if g_inputBinding == nil or not npcSystem then
             return
         end
 
-        local dialogOpen = npcSystem.interactionUI and npcSystem.interactionUI.isDialogOpen
-
-        -- E key: show "Talk to NPC" when near, or "Next option" when dialog open
+        -- E key: show "Talk to NPC" when near (hide when dialog is open)
         if npcInteractActionEventId ~= nil then
             local shouldShow = false
             local promptText = "Talk to NPC"
+            local isDialogOpen = g_gui:getIsDialogVisible()
 
-            if dialogOpen then
-                shouldShow = true
-                local optionName = npcSystem.interactionUI:getCurrentOptionName()
-                promptText = optionName or "Next option"
-            elseif npcSystem.nearbyNPCs then
+            if not isDialogOpen and npcSystem.nearbyNPCs then
                 local nearest = nil
                 local nearestDist = 999
 
@@ -369,30 +312,15 @@ if FSBaseMission and FSBaseMission.update then
                 g_inputBinding:setActionEventText(npcInteractActionEventId, promptText)
             end
         end
-
-        -- Q key: only show/active when dialog is open
-        if npcDialogCloseActionEventId ~= nil then
-            g_inputBinding:setActionEventTextPriority(npcDialogCloseActionEventId, GS_PRIO_VERY_HIGH)
-            g_inputBinding:setActionEventTextVisibility(npcDialogCloseActionEventId, dialogOpen)
-            g_inputBinding:setActionEventActive(npcDialogCloseActionEventId, dialogOpen)
-            if dialogOpen then
-                g_inputBinding:setActionEventText(npcDialogCloseActionEventId, "Close dialog")
-            end
-        end
     end)
 end
 
--- =========================================================
--- Multiplayer: Player Join Sync Hook
--- =========================================================
--- When a new player joins, send them full NPC state + settings
-
+-- Multiplayer: send full NPC state + settings to newly joining players
 if FSBaseMission and FSBaseMission.sendInitialClientState then
     FSBaseMission.sendInitialClientState = Utils.appendedFunction(
         FSBaseMission.sendInitialClientState,
         function(mission, connection, isReconnect)
             if npcSystem and npcSystem.isInitialized then
-                print("[NPC Favor] Sending initial state to new client")
                 if NPCStateSyncEvent then
                     NPCStateSyncEvent.sendToConnection(connection)
                 end
@@ -402,58 +330,82 @@ if FSBaseMission and FSBaseMission.sendInitialClientState then
             end
         end
     )
-    print("[NPC Favor] Player join sync hook installed")
 end
 
--- Console commands are registered via addConsoleCommand() in NPCFavorGUI:registerConsoleCommands()
+-- =========================================================
+-- Save/Load Persistence (following UsedPlus pattern)
+-- =========================================================
+-- Save: hook FSCareerMissionInfo.saveToXMLFile
+-- Load: called from NPCSystem:onMissionLoaded() after NPC init
 
--- Add multiplayer compatibility check
-if g_currentMission and g_currentMission.missionInfo then
-    if g_currentMission.missionInfo.isMultiplayer then
-        print("[NPC Favor] Multiplayer mode detected")
+-- Discover missionInfo for savegame directory access
+local function discoverMissionInfo()
+    -- Method 1: g_currentMission.missionInfo
+    if g_currentMission and g_currentMission.missionInfo then
+        return g_currentMission.missionInfo
     end
+
+    -- Method 2: g_careerScreen.currentSavegame
+    if g_careerScreen and g_careerScreen.currentSavegame then
+        local savegame = g_careerScreen.currentSavegame
+        if savegame and savegame.savegameDirectory then
+            return { savegameDirectory = savegame.savegameDirectory }
+        end
+    end
+
+    -- Method 3: g_currentMission.savegameDirectory
+    if g_currentMission and g_currentMission.savegameDirectory then
+        return { savegameDirectory = g_currentMission.savegameDirectory }
+    end
+
+    return nil
 end
 
-print("========================================")
-print("     FS25 NPC Favor v" .. MOD_VERSION .. " LOADED     ")
-print("     Living Neighborhood System         ")
-print("     Type 'npcHelp' in console          ")
-print("     for available commands             ")
-print("========================================")
+-- Hook save — FS25 calls this when the player saves their game
+if FSCareerMissionInfo and FSCareerMissionInfo.saveToXMLFile then
+    FSCareerMissionInfo.saveToXMLFile = Utils.appendedFunction(
+        FSCareerMissionInfo.saveToXMLFile,
+        function(missionInfo)
+            if npcSystem and npcSystem.isInitialized then
+                npcSystem:saveToXMLFile(missionInfo)
+            end
+        end
+    )
+end
 
--- Also try to initialize if we're already in a mission
+-- Hook mission start — load saved NPC data after initialization
+if Mission00 and Mission00.onStartMission then
+    Mission00.onStartMission = Utils.appendedFunction(
+        Mission00.onStartMission,
+        function(mission)
+            if npcSystem and npcSystem.isInitialized then
+                local missionInfo = discoverMissionInfo()
+                if missionInfo then
+                    npcSystem:loadFromXMLFile(missionInfo)
+                end
+            end
+        end
+    )
+end
+
+print("[NPC Favor] v" .. MOD_VERSION .. " loaded - type 'npcHelp' for commands")
+
+-- Late-join: initialize if already in a mission
 if g_currentMission and not npcSystem then
-    print("[NPC Favor] Already in mission, attempting immediate initialization...")
     load(g_currentMission)
-    
-    -- If mission is already loaded, try to initialize NPCs
     if g_currentMission.placeables and npcSystem then
-        print("[NPC Favor] Mission already loaded, calling onMissionLoaded...")
         npcSystem:onMissionLoaded()
     end
 end
 
--- Add global event listener for mod compatibility
 addModEventListener({
-    -- Called when mod is loaded
-    onLoad = function()
-        print("[NPC Favor] Mod event listener registered")
-    end,
-    
-    -- Called when mod is unloaded
+    onLoad = function() end,
     onUnload = function()
         unload()
     end,
-    
-    -- Called when savegame is loaded
     onSavegameLoaded = function()
-        print("[NPC Favor] Savegame loaded event received")
         if npcSystem then
             npcSystem:onMissionLoaded()
-        else
-            print("[NPC Favor] npcSystem is nil in onSavegameLoaded")
         end
     end
 })
-
-print("[NPC Favor] Mod initialization complete")

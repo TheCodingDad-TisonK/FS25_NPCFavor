@@ -1,107 +1,345 @@
+-- =========================================================
+-- FS25 NPC Favor Mod - Settings Integration
+-- =========================================================
+-- Adds NPC settings to ESC > Settings > Game Settings page
+-- Pattern from: FS25_UsedPlus UsedPlusSettingsMenuExtension
+--
+-- Hooks InGameMenuSettingsFrame.onFrameOpen to add elements
+-- dynamically using standard FS25 profiles.
+-- =========================================================
+
 NPCSettingsIntegration = {}
 NPCSettingsIntegration_mt = Class(NPCSettingsIntegration)
 
+-- Max NPC dropdown values
+NPCSettingsIntegration.maxNPCOptions = {"4", "8", "12", "16", "20", "30", "50"}
+NPCSettingsIntegration.maxNPCValues = {4, 8, 12, 16, 20, 30, 50}
+
+-- Constructor (called from NPCSystem.new)
 function NPCSettingsIntegration.new(npcSystem)
     local self = setmetatable({}, NPCSettingsIntegration_mt)
     self.npcSystem = npcSystem
-    self.settingsMenu = nil
     return self
 end
 
 function NPCSettingsIntegration:initialize()
-    self:hookSettingsMenu()
-end
-
-function NPCSettingsIntegration:hookSettingsMenu()
-    if not g_currentMission or not g_currentMission.inGameMenu then return end
-    local inGameMenu = g_currentMission.inGameMenu
-    if inGameMenu.settingsMenu then
-        self:addSettingsToMenu(inGameMenu.settingsMenu)
-    end
-    if inGameMenu.onSettingsMenuOpen then
-        local original = inGameMenu.onSettingsMenuOpen
-        inGameMenu.onSettingsMenuOpen = function(...)
-            original(...)
-            self:addSettingsToMenu(inGameMenu.settingsMenu)
-        end
-    end
-end
-
-function NPCSettingsIntegration:addSettingsToMenu(settingsMenu)
-    if not settingsMenu or not settingsMenu.pageFrames then return end
-    for _, page in ipairs(settingsMenu.pageFrames) do
-        if page.name == "pageGeneral" then
-            self:addNPCControlsToPage(page)
-            break
-        end
-    end
-end
-
-function NPCSettingsIntegration:addNPCControlsToPage(pageFrame)
-    if not pageFrame.elements then return end
-    for _, element in ipairs(pageFrame.elements) do
-        if element.name and element.name:find("npc_") then return end
-    end
-
-    local insertIndex = 1
-    for i, element in ipairs(pageFrame.elements) do
-        if element.name and (element.name == "game" or element.name == "gameSettings") then
-            insertIndex = i + 1
-            break
-        end
-    end
-
-    local npcSection = {
-        type = "sectionTitle",
-        name = "npcSectionTitle",
-        text = g_i18n:getText("npc_section") or "NPC Favor System",
-        position = {0.02, 0.9},
-        size = {0.96, 0.04}
-    }
-
-    local enabledControl = {
-        type = "checkbox",
-        name = "npcEnabled",
-        text = g_i18n:getText("npc_enabled_short") or "Enable NPC System",
-        tooltip = g_i18n:getText("npc_enabled_long") or "Enable or disable the living NPC neighborhood system",
-        position = {0.04, 0.85},
-        size = {0.92, 0.04},
-        isChecked = self.npcSystem.settings.enabled,
-        onChange = function(checked)
-            self.npcSystem.settings.enabled = checked
-            self.npcSystem.settings:save()
-        end
-    }
-
-    table.insert(pageFrame.elements, insertIndex, npcSection)
-    table.insert(pageFrame.elements, insertIndex + 1, enabledControl)
-
-    for i = insertIndex + 2, #pageFrame.elements do
-        if pageFrame.elements[i].position then
-            pageFrame.elements[i].position[2] = pageFrame.elements[i].position[2] - 0.10
-        end
-    end
-    print("[NPC Settings] Added NPC controls to settings menu")
-end
-
-function NPCSettingsIntegration:createFullSettingsMenu()
-    if not self.settingsMenu then
-        self.settingsMenu = NPCSettingsMenu.new(self.npcSystem)
-    end
-end
-
-function NPCSettingsIntegration:showFullSettingsMenu()
-    if not self.settingsMenu then self:createFullSettingsMenu() end
-    if self.settingsMenu then self.settingsMenu:open() end
+    -- Hooks are installed at file load time (see bottom of file)
 end
 
 function NPCSettingsIntegration:update(dt)
-    if self.settingsMenu then self.settingsMenu:update(dt) end
 end
 
 function NPCSettingsIntegration:delete()
-    if self.settingsMenu then
-        self.settingsMenu:delete()
-        self.settingsMenu = nil
+end
+
+-- =========================================================
+-- Settings Frame Hook (called when ESC > Settings opens)
+-- =========================================================
+
+function NPCSettingsIntegration:onFrameOpen()
+    -- 'self' here is the InGameMenuSettingsFrame instance
+    if self.npcfavor_initDone then
+        return
+    end
+
+    NPCSettingsIntegration:addSettingsElements(self)
+
+    -- Refresh layout
+    self.gameSettingsLayout:invalidateLayout()
+
+    if self.updateAlternatingElements then
+        self:updateAlternatingElements(self.gameSettingsLayout)
+    end
+    if self.updateGeneralSettings then
+        self:updateGeneralSettings(self.gameSettingsLayout)
+    end
+
+    self.npcfavor_initDone = true
+
+    -- Update UI to reflect current settings
+    NPCSettingsIntegration:updateSettingsUI(self)
+end
+
+-- =========================================================
+-- Add all settings elements
+-- =========================================================
+
+function NPCSettingsIntegration:addSettingsElements(frame)
+    -- Section header
+    NPCSettingsIntegration:addSectionHeader(frame,
+        g_i18n:getText("npc_section") or "NPC Favor System"
+    )
+
+    -- Enable NPC System toggle
+    frame.npcfavor_enabledToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onEnabledToggleChanged",
+        g_i18n:getText("npc_enabled_short") or "Enable NPC System",
+        g_i18n:getText("npc_enabled_long") or "Enable or disable the living NPC neighborhood system"
+    )
+
+    -- Show NPC Names toggle
+    frame.npcfavor_showNamesToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onShowNamesToggleChanged",
+        g_i18n:getText("npc_show_names_short") or "Show NPC Names",
+        g_i18n:getText("npc_show_names_long") or "Display NPC names above their heads"
+    )
+
+    -- Show Notifications toggle
+    frame.npcfavor_notificationsToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onNotificationsToggleChanged",
+        g_i18n:getText("npc_show_notifications_short") or "Show Notifications",
+        g_i18n:getText("npc_show_notifications_long") or "Show NPC notification messages"
+    )
+
+    -- Enable Favors toggle
+    frame.npcfavor_favorsToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onFavorsToggleChanged",
+        g_i18n:getText("npc_enable_favors_short") or "Enable Favors",
+        g_i18n:getText("npc_enable_favors_long") or "Allow NPCs to ask for favors"
+    )
+
+    -- Debug Mode toggle
+    frame.npcfavor_debugToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onDebugToggleChanged",
+        g_i18n:getText("npc_debug_short") or "Debug Mode",
+        g_i18n:getText("npc_debug_long") or "Show debug information and NPC paths"
+    )
+
+    -- Max NPC Count dropdown
+    frame.npcfavor_maxNPCs = NPCSettingsIntegration:addMultiTextOption(
+        frame, "onMaxNPCsChanged",
+        NPCSettingsIntegration.maxNPCOptions,
+        g_i18n:getText("npc_max_count_short") or "Max NPC Count",
+        g_i18n:getText("npc_max_count_long") or "Maximum number of active NPCs in the world"
+    )
+end
+
+-- =========================================================
+-- GUI Element Builders (FS25 profile-based)
+-- =========================================================
+
+function NPCSettingsIntegration:addSectionHeader(frame, text)
+    local textElement = TextElement.new()
+    local textElementProfile = g_gui:getProfile("fs25_settingsSectionHeader")
+    textElement.name = "sectionHeader"
+    textElement:loadProfile(textElementProfile, true)
+    textElement:setText(text)
+    frame.gameSettingsLayout:addElement(textElement)
+    textElement:onGuiSetupFinished()
+end
+
+function NPCSettingsIntegration:addBinaryOption(frame, callbackName, title, tooltip)
+    local bitMap = BitmapElement.new()
+    local bitMapProfile = g_gui:getProfile("fs25_multiTextOptionContainer")
+    bitMap:loadProfile(bitMapProfile, true)
+
+    local binaryOption = BinaryOptionElement.new()
+    binaryOption.useYesNoTexts = true
+    local binaryOptionProfile = g_gui:getProfile("fs25_settingsBinaryOption")
+    binaryOption:loadProfile(binaryOptionProfile, true)
+    binaryOption.target = NPCSettingsIntegration
+    binaryOption:setCallback("onClickCallback", callbackName)
+
+    local titleElement = TextElement.new()
+    local titleProfile = g_gui:getProfile("fs25_settingsMultiTextOptionTitle")
+    titleElement:loadProfile(titleProfile, true)
+    titleElement:setText(title)
+
+    local tooltipElement = TextElement.new()
+    local tooltipProfile = g_gui:getProfile("fs25_multiTextOptionTooltip")
+    tooltipElement.name = "ignore"
+    tooltipElement:loadProfile(tooltipProfile, true)
+    tooltipElement:setText(tooltip)
+
+    binaryOption:addElement(tooltipElement)
+    bitMap:addElement(binaryOption)
+    bitMap:addElement(titleElement)
+
+    binaryOption:onGuiSetupFinished()
+    titleElement:onGuiSetupFinished()
+    tooltipElement:onGuiSetupFinished()
+
+    frame.gameSettingsLayout:addElement(bitMap)
+    bitMap:onGuiSetupFinished()
+
+    return binaryOption
+end
+
+function NPCSettingsIntegration:addMultiTextOption(frame, callbackName, texts, title, tooltip)
+    local bitMap = BitmapElement.new()
+    local bitMapProfile = g_gui:getProfile("fs25_multiTextOptionContainer")
+    bitMap:loadProfile(bitMapProfile, true)
+
+    local multiTextOption = MultiTextOptionElement.new()
+    local multiTextOptionProfile = g_gui:getProfile("fs25_settingsMultiTextOption")
+    multiTextOption:loadProfile(multiTextOptionProfile, true)
+    multiTextOption.target = NPCSettingsIntegration
+    multiTextOption:setCallback("onClickCallback", callbackName)
+    multiTextOption:setTexts(texts)
+
+    local titleElement = TextElement.new()
+    local titleProfile = g_gui:getProfile("fs25_settingsMultiTextOptionTitle")
+    titleElement:loadProfile(titleProfile, true)
+    titleElement:setText(title)
+
+    local tooltipElement = TextElement.new()
+    local tooltipProfile = g_gui:getProfile("fs25_multiTextOptionTooltip")
+    tooltipElement.name = "ignore"
+    tooltipElement:loadProfile(tooltipProfile, true)
+    tooltipElement:setText(tooltip)
+
+    multiTextOption:addElement(tooltipElement)
+    bitMap:addElement(multiTextOption)
+    bitMap:addElement(titleElement)
+
+    multiTextOption:onGuiSetupFinished()
+    titleElement:onGuiSetupFinished()
+    tooltipElement:onGuiSetupFinished()
+
+    frame.gameSettingsLayout:addElement(bitMap)
+    bitMap:onGuiSetupFinished()
+
+    return multiTextOption
+end
+
+-- =========================================================
+-- Update UI from current settings
+-- =========================================================
+
+function NPCSettingsIntegration:findValueIndex(values, target)
+    for i, v in ipairs(values) do
+        if v == target then
+            return i
+        end
+    end
+    return 1
+end
+
+function NPCSettingsIntegration:updateSettingsUI(frame)
+    if not frame.npcfavor_initDone then
+        return
+    end
+
+    local settings = g_NPCSystem and g_NPCSystem.settings
+    if not settings then
+        return
+    end
+
+    -- Update toggles
+    if frame.npcfavor_enabledToggle then
+        frame.npcfavor_enabledToggle:setIsChecked(settings.enabled == true, false, false)
+    end
+    if frame.npcfavor_showNamesToggle then
+        frame.npcfavor_showNamesToggle:setIsChecked(settings.showNames == true, false, false)
+    end
+    if frame.npcfavor_notificationsToggle then
+        frame.npcfavor_notificationsToggle:setIsChecked(settings.showNotifications == true, false, false)
+    end
+    if frame.npcfavor_favorsToggle then
+        frame.npcfavor_favorsToggle:setIsChecked(settings.enableFavors == true, false, false)
+    end
+    if frame.npcfavor_debugToggle then
+        frame.npcfavor_debugToggle:setIsChecked(settings.debugMode == true, false, false)
+    end
+
+    -- Update dropdown
+    if frame.npcfavor_maxNPCs then
+        local index = NPCSettingsIntegration:findValueIndex(
+            NPCSettingsIntegration.maxNPCValues, settings.maxNPCs
+        )
+        frame.npcfavor_maxNPCs:setState(index)
     end
 end
+
+function NPCSettingsIntegration:updateGameSettings()
+    NPCSettingsIntegration:updateSettingsUI(self)
+end
+
+-- =========================================================
+-- Callback Handlers
+-- =========================================================
+
+local function getSettings()
+    return g_NPCSystem and g_NPCSystem.settings
+end
+
+-- Helper: Apply setting locally and route through multiplayer event
+local function applySetting(key, value, logMsg)
+    local settings = getSettings()
+    if not settings then return end
+
+    if g_server ~= nil then
+        -- Server/single-player: apply locally, save, then broadcast
+        settings[key] = value
+        pcall(function() settings:save() end)
+        -- Broadcast to all clients
+        if NPCSettingsSyncEvent and g_server then
+            g_server:broadcastEvent(NPCSettingsSyncEvent.newSingle(key, value), false)
+        end
+    else
+        -- Client: send to server for validation and broadcast
+        if NPCSettingsSyncEvent then
+            NPCSettingsSyncEvent.sendSingleToServer(key, value)
+        end
+    end
+
+    if logMsg then
+        print("[NPC Favor] " .. logMsg)
+    end
+end
+
+function NPCSettingsIntegration:onEnabledToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("enabled", value, "NPC system " .. (value and "enabled" or "disabled"))
+end
+
+function NPCSettingsIntegration:onShowNamesToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("showNames", value)
+end
+
+function NPCSettingsIntegration:onNotificationsToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("showNotifications", value)
+end
+
+function NPCSettingsIntegration:onFavorsToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("enableFavors", value)
+end
+
+function NPCSettingsIntegration:onDebugToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("debugMode", value, "Debug mode " .. (value and "enabled" or "disabled"))
+end
+
+function NPCSettingsIntegration:onMaxNPCsChanged(state)
+    local value = NPCSettingsIntegration.maxNPCValues[state] or 8
+    applySetting("maxNPCs", value, "Max NPCs set to " .. value)
+end
+
+-- =========================================================
+-- Initialize Hooks (runs at file load time)
+-- =========================================================
+
+local function initHooks()
+    if not InGameMenuSettingsFrame then
+        return
+    end
+
+    -- Hook into settings frame open to add our elements
+    InGameMenuSettingsFrame.onFrameOpen = Utils.appendedFunction(
+        InGameMenuSettingsFrame.onFrameOpen,
+        NPCSettingsIntegration.onFrameOpen
+    )
+
+    -- Hook into updateGameSettings to refresh our values
+    if InGameMenuSettingsFrame.updateGameSettings then
+        InGameMenuSettingsFrame.updateGameSettings = Utils.appendedFunction(
+            InGameMenuSettingsFrame.updateGameSettings,
+            NPCSettingsIntegration.updateGameSettings
+        )
+    end
+end
+
+initHooks()

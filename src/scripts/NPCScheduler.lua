@@ -1,34 +1,105 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- IMPLEMENTED FEATURES:
+-- [x] Seasonal schedule variants for farmers (spring/summer/autumn/winter)
+-- [x] Personality-based schedule selection (farmer/worker/casual)
+-- [x] Weather factor affecting favor generation likelihood
+-- [x] Daily event system (favor opportunities, schedule checks, social chances)
+-- [x] NPC-NPC scheduled interactions (socializing pairs based on proximity)
+-- [x] Time-based activity transitions (morning routine → work → breaks → sleep)
+-- [x] Activity duration limits with personality modifiers
+-- [x] Overnight time range handling (22:00 → 06:00 sleeping)
+-- [x] Event scheduling system with priority and time sorting
+-- [x] Social opportunity system with personality-based sociability
+-- [x] Time-of-day modifiers for social interactions (lunch/evening peaks)
+--
+-- NOT YET IMPLEMENTED:
+-- [ ] Weather actually changing NPC behavior (rain → seek shelter, storm → cancel outdoor work)
+-- [ ] Custom per-NPC schedules (currently all NPCs use personality templates)
+-- [ ] Weekend/holiday schedules (NPCs have days off, market days, festivals)
+-- [ ] Player-visible schedule board (UI showing when/where NPCs will be)
+-- [ ] Dynamic schedule adjustments (field harvested → switch to maintenance)
+-- [ ] Night shift workers (some NPCs work overnight at production points)
+-- [ ] Location-based schedule enforcement (NPC won't "work" if not near field)
+-- [ ] Schedule exceptions (doctor appointments, special events override routine)
+-- [ ] Seasonal event integration (harvest festival, planting celebrations)
+-- [ ] Weather-based rest periods (heat breaks on hot days, early stops in storms)
+-- [ ] NPC preferences for specific activities (some hate certain tasks)
+-- [ ] Energy/fatigue system affecting work duration and break needs
+-- [ ] Social relationship affecting scheduled interactions (friends meet more)
+-- [ ] Work assignment based on NPC skills/preferences (not just nearest field)
+-- [ ] Multi-NPC coordinated work (harvesting crews, barn raising events)
+-- [ ] Commute time calculations (NPCs leave early if field is far away)
+-- [ ] Activity interruptions (emergency tasks override schedule)
+-- [ ] Player-scheduled interactions (request NPC to be somewhere at a time)
+-- [ ] NPC memory of schedule changes (if interrupted, remember to resume)
+-- [ ] Seasonal work intensity (autumn harvest is longer hours than winter planning)
+--
+-- CODE QUALITY / REFACTORING:
+-- [ ] Consolidate getCurrentSeason() and getSeasonForMonth() (duplicate logic)
+-- [ ] Extract weather effects into separate WeatherBehaviorManager
+-- [ ] Create ScheduleTemplateBuilder for easier custom schedule creation
+-- [ ] Add validation for schedule time gaps (ensure 24-hour coverage)
+-- [ ] Improve activity → AI state mapping (currently a large hardcoded table)
+-- [ ] Add schedule conflict detection (overlapping time slots)
+-- [ ] Make weather factors configurable (currently hardcoded in getWeatherFactor)
+-- [ ] Add schedule debugging tools (visualize NPC's full day timeline)
+-- [ ] Extract social interaction logic into separate SocialScheduler module
+-- [ ] Add unit tests for time range calculations (overnight ranges are tricky)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - NPC Scheduler
 -- =========================================================
--- Handles NPC daily schedules, work hours, and task timing
+-- Drives NPC daily routines via schedule templates and timed events.
+--
+-- Three schedule types (farmer, worker, casual) with seasonal
+-- variations for farmers. Each NPC gets a template based on
+-- personality, and the scheduler maps activities → AI states.
+--
+-- Also manages:
+--   - Daily events (favor opportunities, schedule checks, social chances)
+--   - NPC-NPC scheduled interactions (socializing pairs)
+--   - Weather-based activity modifiers
+--   - Favor request triggering via relationship system
+--
+-- Schedule template format:
+--   { start = 6, ["end"] = 12, activity = "field_preparation", priority = 2 }
+--   Note: ["end"] bracket notation required because 'end' is a Lua reserved word.
+--   Overnight ranges (start > end, e.g., 22→6) are handled correctly.
 -- =========================================================
 
 NPCScheduler = {}
 NPCScheduler_mt = Class(NPCScheduler)
 
+--- Create a new NPCScheduler.
+-- @param npcSystem  NPCSystem reference (provides settings, activeNPCs, aiSystem)
+-- @return NPCScheduler instance
 function NPCScheduler.new(npcSystem)
     local self = setmetatable({}, NPCScheduler_mt)
-    
-    self.npcSystem = npcSystem
-    
-    -- Current time tracking
-    self.currentTime = 0
-    self.currentHour = 8
-    self.currentMinute = 0
-    self.currentDay = 1
-    self.currentMonth = 1
-    self.currentYear = 1
+
+    self.npcSystem = npcSystem       -- Back-reference to parent system
+
+    -- Game time tracking (synced from g_currentMission.environment each frame)
+    self.currentTime = 0             -- Accumulated dt (seconds)
+    self.currentHour = 8             -- Current game hour (0-23)
+    self.currentMinute = 0           -- Current game minute (0-59)
+    self.currentDay = 1              -- Current game day
+    self.currentMonth = 1            -- Current game month (1-12)
+    self.currentYear = 1             -- Current game year
     self.lastUpdateTime = 0
+
+    -- Event system
+    self.dailyEvents = {}            -- Array of timed events for today
+    self.scheduledNPCInteractions = {} -- Pending NPC-NPC interaction pairs
+    self.lastScheduleUpdate = 0      -- Accumulator for schedule update throttling
+    self.scheduleUpdateInterval = 1.0 -- Seconds between schedule updates (dt from NPCSystem is in seconds)
+    self.eventIdCounter = 1          -- Auto-incrementing event ID
     
-    -- Add missing initialization variables
-    self.dailyEvents = {}
-    self.scheduledNPCInteractions = {}
-    self.lastScheduleUpdate = 0
-    self.scheduleUpdateInterval = 1000 -- 1 second
-    self.eventIdCounter = 1
-    
-    -- Enhanced schedule templates with seasonal variations
+    -- Schedule templates: personality → season/default → array of time slots.
+    -- Each slot: { start=hour, ["end"]=hour, activity=string, priority=1-3 }.
+    -- Farmer has 4 seasonal variants; worker and casual use a single "default".
     self.scheduleTemplates = {
         farmer = {
             spring = {
@@ -103,8 +174,10 @@ function NPCScheduler:start()
     
     -- Initialize NPC schedules
     self:initializeNPCSchedules()
-    
-    print("[NPC Scheduler] Started")
+
+    if self.npcSystem and self.npcSystem.settings and self.npcSystem.settings.debugMode then
+        print("[NPC Scheduler] Started")
+    end
 end
 
 function NPCScheduler:update(dt)
@@ -508,6 +581,10 @@ function NPCScheduler:updateNPCSchedule(npc, dt)
     end
 end
 
+--- Get the maximum duration (in seconds) for an activity, modified by personality.
+-- @param npc       NPC data table
+-- @param activity  Activity name string
+-- @return number   Duration in seconds
 function NPCScheduler:getMaxActivityDuration(npc, activity)
     if not npc or not activity then
         return 7200 -- Default 2 hours
@@ -535,6 +612,10 @@ function NPCScheduler:getMaxActivityDuration(npc, activity)
     return baseDuration
 end
 
+--- Look up which activity the NPC should be doing right now based on their schedule.
+-- Handles overnight time ranges (e.g., sleeping from 22:00 to 06:00).
+-- @param npc  NPC data table
+-- @return string  Activity name from schedule template, or "idle" if none matches
 function NPCScheduler:getActivityForCurrentTime(npc)
     if not npc then
         return "idle"
@@ -588,6 +669,11 @@ function NPCScheduler:getScheduleForNPC(npc)
     end
 end
 
+--- Get the current season based on self.currentMonth.
+-- NOTE: Identical to getSeasonForMonth() below. Both are kept because
+-- getCurrentSeason() reads from instance state (convenient for internal use)
+-- while getSeasonForMonth() accepts an explicit month parameter.
+-- @return string "spring", "summer", "autumn", or "winter"
 function NPCScheduler:getCurrentSeason()
     local month = self.currentMonth
     
@@ -602,6 +688,11 @@ function NPCScheduler:getCurrentSeason()
     end
 end
 
+--- Map a schedule activity name to an AI state and trigger the transition.
+-- Work activities are routed through aiSystem:startWorking() so NPCs
+-- actually walk/drive to fields. Guards against re-triggering if already en-route.
+-- @param npc       NPC data table
+-- @param activity  Activity string from schedule template (e.g., "harvesting", "commute")
 function NPCScheduler:updateAIStateForActivity(npc, activity)
     if not npc or not activity or not self.npcSystem or not self.npcSystem.aiSystem then
         return
@@ -645,14 +736,26 @@ function NPCScheduler:updateAIStateForActivity(npc, activity)
     }
     
     local targetState = activityToState[activity] or "idle"
-    
+
     -- Only change state if different
     if npc.aiState ~= targetState then
-        aiSystem:setState(npc, targetState)
-        
+        -- Route work activities through startWorking() so NPCs actually walk/drive to fields
+        if targetState == "working" then
+            -- Don't re-trigger if NPC is already en-route to work (walking/driving)
+            if npc.aiState == "walking" or npc.aiState == "driving" or npc.aiState == "traveling" then
+                return
+            end
+            -- Ensure NPC has a field assignment
+            if not npc.assignedField and self.npcSystem and self.npcSystem.findNearestField then
+                npc.assignedField = self.npcSystem:findNearestField(npc.position.x, npc.position.z, npc.id)
+            end
+            aiSystem:startWorking(npc)
+        else
+            aiSystem:setState(npc, targetState)
+        end
+
         -- Additional setup for specific activities
         if activity == "commute" or activity == "commute_home" then
-            -- Set destination for commute
             if activity == "commute" then
                 -- Go to work location
                 if npc.assignedField then
@@ -679,14 +782,14 @@ function NPCScheduler:updateNPCBasedOnTime(npc, forceUpdate)
     
     if hour >= workStart and hour < workEnd then
         -- NPC should be working if they have a field and aren't already working
-        if npc.assignedField and npc.aiState ~= "working" and npc.aiState ~= "walking" then
+        if npc.assignedField and npc.aiState ~= "working" and npc.aiState ~= "walking" and npc.aiState ~= "driving" and npc.aiState ~= "traveling" then
             if self.npcSystem and self.npcSystem.aiSystem then
                 self.npcSystem.aiSystem:startWorking(npc)
             end
         end
     else
         -- Non-work hours, NPC should go home if not already there
-        if not self.npcSystem.aiSystem:isAtHome(npc) and npc.aiState ~= "walking" then
+        if self.npcSystem.aiSystem and not self.npcSystem.aiSystem:isAtHome(npc) and npc.aiState ~= "walking" and npc.aiState ~= "driving" then
             if self.npcSystem and self.npcSystem.aiSystem then
                 self.npcSystem.aiSystem:goHome(npc)
             end
@@ -848,6 +951,9 @@ function NPCScheduler:updateSeasonalSchedule(npc, month)
     end
 end
 
+--- Get the season for a given month number.
+-- @param month  Month number (1-12)
+-- @return string "spring", "summer", "autumn", or "winter"
 function NPCScheduler:getSeasonForMonth(month)
     if month >= 3 and month <= 5 then
         return "spring"
@@ -919,6 +1025,12 @@ function NPCScheduler:getCurrentYear()
     return self.currentYear
 end
 
+--- Schedule a one-time event to fire after a delay.
+-- @param eventType     String event type (e.g., "favor_opportunity", "npc_interaction")
+-- @param delayMinutes  Minutes from now until the event fires
+-- @param data          Arbitrary data table passed to the event handler
+-- @param priority      Priority level (1=highest, default=2)
+-- @return number       Event ID
 function NPCScheduler:scheduleEvent(eventType, delayMinutes, data, priority)
     -- Schedule a one-time event
     local eventTime = g_currentMission.time + (delayMinutes * 60 * 1000)

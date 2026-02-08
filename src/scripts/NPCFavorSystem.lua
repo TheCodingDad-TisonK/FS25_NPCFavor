@@ -1131,6 +1131,64 @@ function NPCFavorSystem:getActiveFavors()
     return self.activeFavors
 end
 
+--- Restore an active favor from saved data (called during loadFromXMLFile).
+-- Reconstructs the favor structure from minimal saved fields and re-inserts it
+-- into the active favors list with recalculated expiration time.
+-- @param savedFavor  Table with npcId, npcName, type, description, timeRemaining, progress, reward
+function NPCFavorSystem:restoreFavor(savedFavor)
+    if not savedFavor or not savedFavor.type or savedFavor.type == "" then
+        return
+    end
+
+    -- Look up the favor type definition
+    local favorType = nil
+    for _, ft in ipairs(self.favorTypes) do
+        if ft.id == savedFavor.type then
+            favorType = ft
+            break
+        end
+    end
+
+    local currentTime = g_currentMission and g_currentMission.time or 0
+
+    local favor = {
+        id = #self.activeFavors + #self.completedFavors + #self.failedFavors + 1,
+        npcId = savedFavor.npcId or 0,
+        npcName = savedFavor.npcName or "",
+        type = savedFavor.type,
+        name = favorType and favorType.name or savedFavor.type,
+        description = savedFavor.description or (favorType and favorType.description or ""),
+        difficulty = favorType and favorType.difficulty or 1,
+        category = favorType and favorType.category or "misc",
+
+        status = "active",
+        progress = savedFavor.progress or 0,
+        progressDetails = {},
+
+        createdTime = currentTime,
+        expirationTime = currentTime + (savedFavor.timeRemaining or 0),
+        timeRemaining = savedFavor.timeRemaining or 0,
+        estimatedCompletionTime = nil,
+
+        requirements = favorType and favorType.requirements or {},
+        reward = favorType and favorType.reward or { relationship = 10, money = savedFavor.reward or 0, xp = 0 },
+        penalty = favorType and favorType.penalty or { relationship = -5, reputation = -10 },
+
+        location = nil,
+        taskData = {},
+        startTime = currentTime,
+        completionTime = nil,
+        completionDuration = nil,
+        playerNotes = "",
+        priority = 1,
+        currentStep = 1,
+        totalSteps = 1,
+        steps = {}
+    }
+
+    table.insert(self.activeFavors, favor)
+end
+
 function NPCFavorSystem:getCompletedFavors()
     return self.completedFavors
 end

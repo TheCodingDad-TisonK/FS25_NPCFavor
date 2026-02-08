@@ -304,7 +304,8 @@ end
 
 function NPCRelationshipManager:updateNPCMood(npcId, change, reason)
     local moodChange = 0
-    
+    change = change or 0
+
     -- Determine mood change based on relationship change
     if change > 0 then
         moodChange = 0.1 * (change / 10) -- Positive mood for positive changes
