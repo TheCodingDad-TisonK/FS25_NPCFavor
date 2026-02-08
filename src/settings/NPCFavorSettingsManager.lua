@@ -1,4 +1,24 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- PERSISTENCE:
+-- [x] Default config table with all settings and their defaults
+-- [x] Savegame-aware XML file path resolution
+-- [x] Load settings from npc_favor_settings.xml with fallback to defaults
+-- [x] Save settings to XML with core and display fields
+-- [x] Graceful handling of missing savegame directory
+-- FUTURE ENHANCEMENTS:
+-- [ ] Save ALL setting categories (AI, sound, performance, multiplayer)
+-- [ ] Settings versioning with schema version tag in XML
+-- [ ] Automatic migration when loading older config versions
+-- [ ] Backup previous settings file before overwriting
+-- [ ] Validate loaded values against min/max ranges before returning
+-- [ ] Support global settings file (outside savegame) for cross-save defaults
+-- [ ] Dirty flag tracking to avoid unnecessary writes on every change
+-- [ ] Merge partial XML (only overwrite changed keys, preserve unknown tags)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Settings Manager
 -- =========================================================
 -- Manages loading and saving of NPC Favor settings
@@ -81,6 +101,7 @@ function NPCFavorSettingsManager:loadSettings(settingsObject)
     local xmlPath = self:getSavegameXmlFilePath()
     
     if xmlPath and fileExists(xmlPath) then
+        print("[NPC Settings] Loading settings from: " .. xmlPath)
         local xml = XMLFile.load("npc_config", xmlPath)
         if xml then
             -- Core settings
@@ -98,6 +119,7 @@ function NPCFavorSettingsManager:loadSettings(settingsObject)
             settingsObject.enableFavors = xml:getBool(self.XMLTAG .. ".enableFavors", self.defaultConfig.enableFavors)
 
             xml:delete()
+            print("[NPC Settings] Settings loaded successfully")
             return
         end
     end
@@ -112,8 +134,11 @@ end
 function NPCFavorSettingsManager:saveSettings(settingsObject)
     local xmlPath = self:getSavegameXmlFilePath()
     if not xmlPath then
+        print("[NPC Settings] Could not get savegame path")
         return
     end
+
+    print("[NPC Settings] Saving settings to: " .. xmlPath)
 
     local xml = XMLFile.create("npc_config", xmlPath, self.XMLTAG)
     if xml then
@@ -133,6 +158,7 @@ function NPCFavorSettingsManager:saveSettings(settingsObject)
 
         xml:save()
         xml:delete()
+        print("[NPC Settings] Settings saved successfully")
     else
         print("[NPC Settings] ERROR: Failed to create XML file at " .. tostring(xmlPath))
     end

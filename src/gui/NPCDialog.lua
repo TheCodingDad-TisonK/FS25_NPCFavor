@@ -25,7 +25,7 @@
 -- [ ] NPC schedule display ("Ask about plans" → shows their next 3 activities with timestamps)
 -- [ ] Context-aware action buttons (if player owns borrowed equipment, show "Return equipment")
 -- [ ] Multi-page response area (for long relationship info, add pagination or scrolling)
--- [ ] Localization support (all hardcoded strings moved to translation files)
+-- [x] Localization support (all hardcoded strings moved to translation files)
 -- [ ] Favor quest details panel (expanded view with objectives, map markers, progress bars)
 -- [ ] NPC backstory/bio section ("Learn more about [NPC]" → shows personality traits, likes/dislikes)
 -- [ ] Comparison view (show multiple NPCs' relationships side-by-side for prioritizing gifts/favors)
@@ -137,7 +137,7 @@ function NPCDialog:updateDisplay()
     if not npc then return end
 
     if self.npcNameText then
-        self.npcNameText:setText(npc.name or "Unknown NPC")
+        self.npcNameText:setText(npc.name or g_i18n:getText("npc_dialog_unknown_npc") or "Unknown NPC")
     end
 
     if self.npcPersonalityText then
@@ -155,7 +155,7 @@ function NPCDialog:updateDisplay()
     if self.relationshipText then
         local relValue = npc.relationship or 50
         local levelName = self:getRelationshipLevelName(relValue)
-        self.relationshipText:setText(string.format("Relationship: %d/100 (%s)", relValue, levelName))
+        self.relationshipText:setText(string.format(g_i18n:getText("npc_dialog_relationship_fmt") or "Relationship: %d/100 (%s)", relValue, levelName))
         local r, g, b = self:getRelationshipColor(relValue)
         self.relationshipText:setTextColor(r, g, b, 1)
     end
@@ -172,37 +172,37 @@ function NPCDialog:updateButtonStates()
     local relationship = npc.relationship or 0
 
     -- Talk - always enabled
-    self:setButtonEnabled("Talk", true, "Talk")
+    self:setButtonEnabled("Talk", true, g_i18n:getText("npc_dialog_btn_talk") or "Talk")
 
     -- Ask about work - always enabled
-    self:setButtonEnabled("Work", true, "Ask about work")
+    self:setButtonEnabled("Work", true, g_i18n:getText("npc_dialog_btn_work") or "Ask about work")
 
     -- Ask for favor - needs relationship >= 20
     local favorEnabled = relationship >= 20
-    local favorText = "Ask for favor"
+    local favorText = g_i18n:getText("npc_dialog_btn_favor") or "Ask for favor"
 
     if favorEnabled and self.npcSystem and self.npcSystem.favorSystem then
         local activeFavors = self.npcSystem.favorSystem:getActiveFavors()
         for _, favor in ipairs(activeFavors) do
             if favor.npcId == npc.id then
-                favorText = "Check favor progress"
+                favorText = g_i18n:getText("npc_dialog_btn_favor_progress") or "Check favor progress"
                 break
             end
         end
     end
 
     if not favorEnabled then
-        favorText = "Ask for favor (need rel 20+)"
+        favorText = g_i18n:getText("npc_dialog_btn_favor_locked") or "Ask for favor (need rel 20+)"
     end
     self:setButtonEnabled("Favor", favorEnabled, favorText)
 
     -- Give gift - needs relationship >= 30
     local giftEnabled = relationship >= 30
-    local giftText = giftEnabled and "Give gift ($500)" or "Give gift (need rel 30+)"
+    local giftText = giftEnabled and (g_i18n:getText("npc_dialog_btn_gift") or "Give gift ($500)") or (g_i18n:getText("npc_dialog_btn_gift_locked") or "Give gift (need rel 30+)")
     self:setButtonEnabled("Gift", giftEnabled, giftText)
 
     -- Relationship info - always enabled
-    self:setButtonEnabled("Rel", true, "Relationship info")
+    self:setButtonEnabled("Rel", true, g_i18n:getText("npc_dialog_btn_relationship") or "Relationship info")
 end
 
 --- Set a 3-layer button's enabled/disabled state
@@ -327,13 +327,13 @@ function NPCDialog:onClickFavor()
         local hours = timeRemaining / (60 * 60 * 1000)
         local timeText
         if hours < 1 then
-            timeText = string.format("%.0f minutes", hours * 60)
+            timeText = string.format(g_i18n:getText("npc_dialog_time_minutes") or "%.0f minutes", hours * 60)
         else
-            timeText = string.format("%.1f hours", hours)
+            timeText = string.format(g_i18n:getText("npc_dialog_time_hours") or "%.1f hours", hours)
         end
 
         self:setResponse(string.format(
-            "Active: %s | Progress: %d%% | Time: %s | Reward: +%d rel, $%d",
+            g_i18n:getText("npc_dialog_favor_active_fmt") or "Active: %s | Progress: %d%% | Time: %s | Reward: +%d rel, $%d",
             activeFavor.description or "favor",
             activeFavor.progress or 0,
             timeText,
@@ -342,9 +342,9 @@ function NPCDialog:onClickFavor()
         ))
     else
         if self.npcSystem.favorSystem:tryGenerateFavorRequest() then
-            self:setResponse(self.npc.name .. ": \"Could you help me with something? Check the favor list!\"")
+            self:setResponse(self.npc.name .. ": \"" .. (g_i18n:getText("npc_dialog_favor_help_request") or "Could you help me with something? Check the favor list!") .. "\"")
         else
-            self:setResponse(self.npc.name .. ": \"I don't need anything right now, but thanks for asking!\"")
+            self:setResponse(self.npc.name .. ": \"" .. (g_i18n:getText("npc_dialog_favor_nothing") or "I don't need anything right now, but thanks for asking!") .. "\"")
         end
     end
 
@@ -366,9 +366,9 @@ function NPCDialog:onClickGift()
             if info then
                 self.npc.relationship = info.value
             end
-            self:setResponse(self.npc.name .. ": \"Thank you for the gift! That's very generous of you!\"")
+            self:setResponse(self.npc.name .. ": \"" .. (g_i18n:getText("npc_dialog_gift_thanks") or "Thank you for the gift! That's very generous of you!") .. "\"")
         else
-            self:setResponse("Could not give a gift right now.")
+            self:setResponse(g_i18n:getText("npc_dialog_gift_failed") or "Could not give a gift right now.")
         end
     end
 
@@ -387,7 +387,7 @@ function NPCDialog:onClickRelationship()
     end
 
     if not info then
-        self:setResponse("No relationship information available.")
+        self:setResponse(g_i18n:getText("npc_rel_no_info") or "No relationship information available.")
         return
     end
 
@@ -421,48 +421,48 @@ function NPCDialog:onClickRelationship()
     local benefits = (info.level and info.level.benefits) or (info.benefits) or {}
     local benefitList = {}
     if benefits.discount and benefits.discount > 0 then
-        table.insert(benefitList, string.format("%d%% discount", benefits.discount))
+        table.insert(benefitList, string.format(g_i18n:getText("npc_rel_benefit_discount") or "%d%% discount", benefits.discount))
     end
     if benefits.canAskFavor then
-        table.insert(benefitList, "can ask favors")
+        table.insert(benefitList, g_i18n:getText("npc_rel_benefit_favors") or "can ask favors")
     end
     if benefits.canBorrowEquipment then
-        table.insert(benefitList, "borrow equipment")
+        table.insert(benefitList, g_i18n:getText("npc_rel_benefit_borrow") or "borrow equipment")
     end
     if benefits.mayOfferHelp then
-        table.insert(benefitList, "may offer help")
+        table.insert(benefitList, g_i18n:getText("npc_rel_benefit_help") or "may offer help")
     end
     if benefits.mayGiveGifts then
-        table.insert(benefitList, "gives gifts")
+        table.insert(benefitList, g_i18n:getText("npc_rel_benefit_gifts") or "gives gifts")
     end
     if benefits.sharedResources then
-        table.insert(benefitList, "shared resources")
+        table.insert(benefitList, g_i18n:getText("npc_rel_benefit_shared") or "shared resources")
     end
-    local benefitStr = #benefitList > 0 and table.concat(benefitList, ", ") or "none"
+    local benefitStr = #benefitList > 0 and table.concat(benefitList, ", ") or (g_i18n:getText("npc_rel_benefit_none") or "none")
 
     -- Next level info
     local currentValue = info.value or 0
     local nextLevelStr = ""
     -- Thresholds aligned with getRelationshipLevelName()
     local levelThresholds = {
-        { min = 0,  name = "Hostile" },
-        { min = 10, name = "Unfriendly", unlock = "basic interaction" },
-        { min = 25, name = "Neutral", unlock = "ask favors, 5% discount" },
-        { min = 40, name = "Acquaintance", unlock = "borrow equipment, 10% discount" },
-        { min = 60, name = "Friend", unlock = "NPC offers help, 15% discount" },
-        { min = 75, name = "Close Friend", unlock = "gifts, shared resources, 18% discount" },
-        { min = 90, name = "Best Friend", unlock = "full benefits, 20% discount" }
+        { min = 0,  name = g_i18n:getText("npc_rel_hostile") or "Hostile" },
+        { min = 10, name = g_i18n:getText("npc_rel_unfriendly") or "Unfriendly", unlock = g_i18n:getText("npc_rel_unlock_basic") or "basic interaction" },
+        { min = 25, name = g_i18n:getText("npc_rel_neutral") or "Neutral", unlock = g_i18n:getText("npc_rel_unlock_favors") or "ask favors, 5% discount" },
+        { min = 40, name = g_i18n:getText("npc_rel_acquaintance") or "Acquaintance", unlock = g_i18n:getText("npc_rel_unlock_borrow") or "borrow equipment, 10% discount" },
+        { min = 60, name = g_i18n:getText("npc_rel_friend") or "Friend", unlock = g_i18n:getText("npc_rel_unlock_help") or "NPC offers help, 15% discount" },
+        { min = 75, name = g_i18n:getText("npc_rel_close_friend") or "Close Friend", unlock = g_i18n:getText("npc_rel_unlock_gifts") or "gifts, shared resources, 18% discount" },
+        { min = 90, name = g_i18n:getText("npc_rel_best_friend") or "Best Friend", unlock = g_i18n:getText("npc_rel_unlock_full") or "full benefits, 20% discount" }
     }
     for _, lvl in ipairs(levelThresholds) do
         if currentValue < lvl.min then
             local needed = lvl.min - currentValue
-            nextLevelStr = string.format("Next: %s at %d (+%d) - unlocks: %s",
+            nextLevelStr = string.format(g_i18n:getText("npc_rel_next_fmt") or "Next: %s at %d (+%d) - unlocks: %s",
                 lvl.name, lvl.min, needed, lvl.unlock or "")
             break
         end
     end
     if nextLevelStr == "" then
-        nextLevelStr = "MAX level reached!"
+        nextLevelStr = g_i18n:getText("npc_rel_max_reached") or "MAX level reached!"
     end
 
     -- Trend info
@@ -470,9 +470,9 @@ function NPCDialog:onClickRelationship()
     if info.statistics and info.statistics.trend then
         local trend = info.statistics.trend
         if trend > 0 then
-            trendStr = " (trending up)"
+            trendStr = " " .. (g_i18n:getText("npc_rel_trend_up") or "(trending up)")
         elseif trend < 0 then
-            trendStr = " (trending down)"
+            trendStr = " " .. (g_i18n:getText("npc_rel_trend_down") or "(trending down)")
         end
     end
 
@@ -508,12 +508,12 @@ end
 
 function NPCDialog:getGreeting()
     if not self.npc or not self.npcSystem then
-        return "Hello there!"
+        return g_i18n:getText("npc_dialog_hello_generic") or "Hello there!"
     end
     if self.npcSystem.interactionUI then
         return self.npcSystem.interactionUI:getGreetingForNPC(self.npc)
     end
-    return "Hello there, neighbor!"
+    return g_i18n:getText("npc_dialog_hello") or "Hello there, neighbor!"
 end
 
 --- Get RGB color for a personality trait (for display text coloring).
@@ -542,13 +542,13 @@ end
 -- @param value  Relationship value (0-100)
 -- @return string  Level name
 function NPCDialog:getRelationshipLevelName(value)
-    if value < 10 then return "Hostile"
-    elseif value < 25 then return "Unfriendly"
-    elseif value < 40 then return "Neutral"
-    elseif value < 60 then return "Acquaintance"
-    elseif value < 75 then return "Friend"
-    elseif value < 90 then return "Close Friend"
-    else return "Best Friend"
+    if value < 10 then return g_i18n:getText("npc_rel_hostile") or "Hostile"
+    elseif value < 25 then return g_i18n:getText("npc_rel_unfriendly") or "Unfriendly"
+    elseif value < 40 then return g_i18n:getText("npc_rel_neutral") or "Neutral"
+    elseif value < 60 then return g_i18n:getText("npc_rel_acquaintance") or "Acquaintance"
+    elseif value < 75 then return g_i18n:getText("npc_rel_friend") or "Friend"
+    elseif value < 90 then return g_i18n:getText("npc_rel_close_friend") or "Close Friend"
+    else return g_i18n:getText("npc_rel_best_friend") or "Best Friend"
     end
 end
 

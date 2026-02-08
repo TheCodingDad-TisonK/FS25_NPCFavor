@@ -1,3 +1,30 @@
+-- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- SYNC MODES:
+-- [x] TYPE_SINGLE for individual setting changes (key/value pair)
+-- [x] TYPE_BULK for full settings snapshot on player join
+-- [x] Typed value serialization (boolean, number, string)
+-- [ ] TYPE_DIFF mode - send only settings that differ from defaults
+-- [ ] Versioned settings schema with migration on mod update
+-- [ ] Settings change history log for admin audit trail
+--
+-- VALIDATION & SECURITY:
+-- [x] Master rights verification before applying changes
+-- [x] maxNPCs range clamped to 1-50 on both read and apply
+-- [x] String truncation on all serialized fields
+-- [x] Fail-secure rejection of invalid sync types
+-- [ ] Rate limiting on settings changes per connection per minute
+-- [ ] Settings change confirmation callback to originating client
+-- [ ] Per-setting permission levels (some settings admin-only)
+--
+-- PERSISTENCE:
+-- [x] Server-side save after single setting changes
+-- [x] Client bulk sync without disk write (server-authoritative)
+-- [ ] Settings export/import for server administrators
+-- [ ] Settings presets (easy, normal, hard difficulty profiles)
+-- =========================================================
+
 --[[
     FS25_NPCFavor - Settings Sync Event
 

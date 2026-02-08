@@ -1,4 +1,29 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- ESC MENU INTEGRATION:
+-- [x] Hook InGameMenuSettingsFrame.onFrameOpen to inject elements
+-- [x] Section header for NPC Favor System
+-- [x] BinaryOption toggle: Enable NPC System
+-- [x] BinaryOption toggle: Show NPC Names
+-- [x] BinaryOption toggle: Show Notifications
+-- [x] BinaryOption toggle: Enable Favors
+-- [x] BinaryOption toggle: Debug Mode
+-- [x] MultiTextOption dropdown: Max NPC Count (4-50)
+-- [x] Update UI from current settings on frame open
+-- [x] Callback handlers with multiplayer event routing
+-- [x] Hook updateGameSettings for live refresh
+-- FUTURE ENHANCEMENTS:
+-- [ ] Slider or MultiTextOption for favor difficulty (easy/normal/hard)
+-- [ ] Slider for relationship gain/loss multiplier
+-- [ ] Toggle for relationship decay with decay rate adjustment
+-- [ ] Sound volume controls (effects, voice lines, UI sounds)
+-- [ ] Performance preset dropdown (low/normal/high)
+-- [ ] "Reset to Defaults" button in the settings section
+-- [ ] Collapsible sub-sections (Display, Gameplay, AI, Debug)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Settings Integration
 -- =========================================================
 -- Adds NPC settings to ESC > Settings > Game Settings page
@@ -55,6 +80,7 @@ function NPCSettingsIntegration:onFrameOpen()
     end
 
     self.npcfavor_initDone = true
+    print("[NPC Settings] Added NPC controls to settings menu")
 
     -- Update UI to reflect current settings
     NPCSettingsIntegration:updateSettingsUI(self)

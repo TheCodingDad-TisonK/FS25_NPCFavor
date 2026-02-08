@@ -7,7 +7,7 @@
 -- [x] Time-remaining color coding (green/yellow/red)
 -- [x] Time-of-day aware greetings
 -- [x] Personality-aware conversation topics
--- [ ] Localized conversation topics (currently English-only hardcoded strings)
+-- [x] Localized conversation topics (all strings use g_i18n:getText with fallbacks)
 -- [ ] Thought bubbles above NPCs showing their current activity
 -- [ ] Exclamation mark icon when NPC has a new favor to offer
 -- [ ] Question mark icon when NPC has pending favor objective nearby
@@ -211,7 +211,7 @@ function NPCInteractionUI:drawFavorList()
     setTextAlignment(RenderText.ALIGN_LEFT)
     setTextColor(1, 1, 1, 1)
     setTextBold(true)
-    renderText(startX, startY, self.UI_SIZES.TEXT_MEDIUM, "Active Favors:")
+    renderText(startX, startY, self.UI_SIZES.TEXT_MEDIUM, g_i18n:getText("npc_hud_active_favors") or "Active Favors:")
     setTextBold(false)
 
     for i = 1, math.min(#favors, maxFavors) do
@@ -275,7 +275,7 @@ function NPCInteractionUI:drawFavorList()
         local yPos = startY - ((maxFavors + 1) * lineHeight)
         setTextColor(0.7, 0.7, 0.7, 1)
         renderText(startX, yPos, self.UI_SIZES.TEXT_SMALL * 0.9,
-                   string.format("...and %d more", #favors - maxFavors))
+                   string.format(g_i18n:getText("npc_hud_and_more") or "...and %d more", #favors - maxFavors))
     end
 
     setTextAlignment(RenderText.ALIGN_LEFT)
@@ -313,23 +313,23 @@ function NPCInteractionUI:getGreetingForNPC(npc)
 
     local timeGreeting = ""
     if hour < 12 then
-        timeGreeting = "Good morning"
+        timeGreeting = g_i18n:getText("npc_greeting_morning") or "Good morning"
     elseif hour < 18 then
-        timeGreeting = "Good afternoon"
+        timeGreeting = g_i18n:getText("npc_greeting_afternoon") or "Good afternoon"
     else
-        timeGreeting = "Good evening"
+        timeGreeting = g_i18n:getText("npc_greeting_evening") or "Good evening"
     end
 
     if relationship < 20 then
-        return string.format("%s. What do you want?", timeGreeting)
+        return string.format(g_i18n:getText("npc_greeting_hostile") or "%s. What do you want?", timeGreeting)
     elseif relationship < 40 then
-        return string.format("%s. Need something?", timeGreeting)
+        return string.format(g_i18n:getText("npc_greeting_unfriendly") or "%s. Need something?", timeGreeting)
     elseif relationship < 60 then
         return g_i18n:getText("npc_dialog_hello") or "Hello there, neighbor!"
     elseif relationship < 80 then
-        return string.format("%s, friend! How are you?", timeGreeting)
+        return string.format(g_i18n:getText("npc_greeting_friendly") or "%s, friend! How are you?", timeGreeting)
     else
-        return string.format("%s, my good friend! Great to see you!", timeGreeting)
+        return string.format(g_i18n:getText("npc_greeting_best_friend") or "%s, my good friend! Great to see you!", timeGreeting)
     end
 end
 
@@ -341,32 +341,32 @@ function NPCInteractionUI:getRandomConversationTopic(npc)
 
     if npc.relationship < 30 then
         topics = {
-            "The weather has been nice lately, hasn't it?",
-            "How's your farm doing?",
-            "Seen any good crops this season?"
+            g_i18n:getText("npc_topic_weather") or "The weather has been nice lately, hasn't it?",
+            g_i18n:getText("npc_topic_farm") or "How's your farm doing?",
+            g_i18n:getText("npc_topic_crops") or "Seen any good crops this season?"
         }
     elseif npc.relationship < 60 then
         topics = {
-            "How's the family doing?",
-            "Got any plans for the weekend?",
-            "The market prices have been good this season."
+            g_i18n:getText("npc_topic_family") or "How's the family doing?",
+            g_i18n:getText("npc_topic_weekend") or "Got any plans for the weekend?",
+            g_i18n:getText("npc_topic_market") or "The market prices have been good this season."
         }
     else
         topics = {
-            "Good to see you, friend! How have you been?",
-            "Remember that time we helped each other with harvest?",
-            "You're one of the best neighbors I've had!"
+            g_i18n:getText("npc_topic_friend") or "Good to see you, friend! How have you been?",
+            g_i18n:getText("npc_topic_harvest_memory") or "Remember that time we helped each other with harvest?",
+            g_i18n:getText("npc_topic_best_neighbor") or "You're one of the best neighbors I've had!"
         }
     end
 
     if npc.personality == "farmer" or npc.personality == "hardworking" then
-        table.insert(topics, "The fields are looking good this year.")
-        table.insert(topics, "Harvest season is always busy but rewarding.")
+        table.insert(topics, g_i18n:getText("npc_topic_fields_good") or "The fields are looking good this year.")
+        table.insert(topics, g_i18n:getText("npc_topic_harvest_busy") or "Harvest season is always busy but rewarding.")
     elseif npc.personality == "social" then
-        table.insert(topics, "Have you talked to the other neighbors lately?")
-        table.insert(topics, "We should have a neighborhood gathering sometime!")
+        table.insert(topics, g_i18n:getText("npc_topic_other_neighbors") or "Have you talked to the other neighbors lately?")
+        table.insert(topics, g_i18n:getText("npc_topic_gathering") or "We should have a neighborhood gathering sometime!")
     elseif npc.personality == "loner" then
-        table.insert(topics, "Quiet day today. I like it that way.")
+        table.insert(topics, g_i18n:getText("npc_topic_quiet_day") or "Quiet day today. I like it that way.")
     end
 
     return topics[math.random(1, #topics)]
@@ -377,20 +377,20 @@ end
 -- @return string  Work status message in NPC's voice
 function NPCInteractionUI:getWorkStatusMessage(npc)
     if not npc.currentAction then
-        return "I'm not doing much right now."
+        return g_i18n:getText("npc_work_nothing") or "I'm not doing much right now."
     end
 
     local messages = {
-        idle = "I'm taking a break at the moment.",
-        walking = "Just getting some exercise.",
-        working = "Working on the field. It's hard work but someone's got to do it!",
-        driving = "Making some deliveries with my vehicle.",
-        resting = "Taking it easy for a while.",
-        socializing = "Chatting with a neighbor.",
-        traveling = "Heading somewhere important."
+        idle = g_i18n:getText("npc_work_idle") or "I'm taking a break at the moment.",
+        walking = g_i18n:getText("npc_work_walking") or "Just getting some exercise.",
+        working = g_i18n:getText("npc_work_working") or "Working on the field. It's hard work but someone's got to do it!",
+        driving = g_i18n:getText("npc_work_driving") or "Making some deliveries with my vehicle.",
+        resting = g_i18n:getText("npc_work_resting") or "Taking it easy for a while.",
+        socializing = g_i18n:getText("npc_work_socializing") or "Chatting with a neighbor.",
+        traveling = g_i18n:getText("npc_work_traveling") or "Heading somewhere important."
     }
 
-    return messages[npc.currentAction] or "I'm keeping busy."
+    return messages[npc.currentAction] or g_i18n:getText("npc_work_busy") or "I'm keeping busy."
 end
 
 -- =========================================================

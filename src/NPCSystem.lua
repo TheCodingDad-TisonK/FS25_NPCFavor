@@ -153,13 +153,15 @@ NPCSystem_mt = Class(NPCSystem)
 -- @param modName       Mod name string
 -- @return NPCSystem instance
 function NPCSystem.new(mission, modDirectory, modName)
+    print("[NPCSystem] Creating new NPCSystem instance")
     local self = setmetatable({}, NPCSystem_mt)
 
     self.mission = mission
     self.modDirectory = modDirectory
     self.modName = modName
-    
+
     -- Initialize subsystems FIRST with safe defaults
+    print("[NPCSystem] Initializing subsystems...")
     self.settings = NPCSettings.new()
     
     -- NPC name/personality lists with index counter for unique assignment
@@ -237,7 +239,8 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.lastSaveTime = 0
     self.saveInterval = 30000
     self.savedNPCData = nil
-    
+
+    print("[NPCSystem] NPCSystem instance created successfully")
     return self
 end
 
@@ -337,6 +340,7 @@ end
 function NPCSystem:initializeGUI()
     if NPCFavorGUI then
         self.gui = NPCFavorGUI.new(self)
+        print("[NPCSystem] GUI system initialized")
     else
         print("[NPC Favor] ERROR: NPCFavorGUI class not found")
     end
@@ -361,15 +365,16 @@ function NPCSystem:initializeNPCs()
             table.insert(self.activeNPCs, npc)
             self.npcCount = self.npcCount + 1
             
-            if self.settings.debugMode and i <= 3 then
-                print(string.format("[NPC Favor] NPC %d: %s", i, npc.name))
+            if i <= 3 then
+                print(string.format("NPC %d created: %s", i, npc.name))
             end
         end
     end
-    
-    if self.settings.debugMode then
-        print(string.format("[NPC Favor] Generated %d NPCs", self.npcCount))
+
+    if self.npcCount > 3 then
+        print(string.format("... and %d more NPCs created", self.npcCount - 3))
     end
+    print(string.format("NPC Favor: Generated %d total NPCs", self.npcCount))
 end
 
 function NPCSystem:generateNewNPCs()
@@ -733,7 +738,7 @@ function NPCSystem:update(dt)
         end
 
         -- Debug info occasionally
-        if self.settings.debugMode and self.updateCounter % 300 == 0 then
+        if self.updateCounter % 300 == 0 then
             print(string.format("[NPC Favor] Update #%d - Active NPCs: %d (server)",
                 self.updateCounter, self.npcCount))
         end
@@ -1137,7 +1142,8 @@ function NPCSystem:consoleCommandList()
 end
 
 function NPCSystem:consoleCommandReset()
-    
+    print("NPC Favor: Resetting NPC system...")
+
     -- Remove all NPCs
     self:clearAllNPCs()
     
@@ -1584,6 +1590,7 @@ end
 -- =========================================================
 
 function NPCSystem:delete()
+    print("[NPC Favor] Shutting down")
 
     -- Clean up NPCs
     self:clearAllNPCs()

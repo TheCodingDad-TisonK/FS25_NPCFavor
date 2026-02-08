@@ -1,4 +1,33 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- FAVOR TYPES:
+-- [x] Seven favor types across vehicle, fieldwork, transport, repair, delivery, financial, security
+-- [x] Difficulty-scaled rewards and penalties per favor type
+-- [x] Equipment and relationship requirements for favor eligibility
+-- [ ] Seasonal favors (snow clearing in winter, irrigation in summer)
+-- [ ] Chain favors that unlock follow-up quests from the same NPC
+-- [ ] Community favors involving multiple NPCs cooperating
+--
+-- GENERATION & TRACKING:
+-- [x] Weighted random NPC selection based on relationship and personality
+-- [x] Time-of-day probability scaling for favor generation
+-- [x] Multi-step favor progression with location-based checkpoints
+-- [x] Notification queue system with cooldown between messages
+-- [ ] Favor journal UI showing active, completed, and failed history
+-- [ ] Map markers for favor objectives and delivery destinations
+--
+-- COMPLETION & REWARDS:
+-- [x] Favor completion with relationship and money rewards
+-- [x] Failure and abandonment penalty system with reputation impact
+-- [x] Statistics tracking (fastest completion, total earnings, etc.)
+-- [x] Save/restore of active favors across game sessions
+-- [ ] Bonus rewards for completing favors ahead of deadline
+-- [ ] Reputation system affecting all NPC interactions globally
+-- [ ] Tiered reward multipliers for consecutive favor streaks
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Favor System
 -- =========================================================
 -- Manages favor requests, tracking, and completion

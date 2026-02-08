@@ -335,7 +335,7 @@ function NPCEntity:updateNPCEntity(npc, dt)
 
     -- Update debug node (fallback representation)
     if entity.debugNode then
-        pcall(function()
+        local debugOk = pcall(function()
             setTranslation(entity.debugNode, entity.position.x, entity.position.y, entity.position.z)
             setRotation(entity.debugNode, 0, entity.rotation.y, 0)
 
@@ -350,6 +350,9 @@ function NPCEntity:updateNPCEntity(npc, dt)
                 setTextColor(entity.debugText, color.r, color.g, color.b, 1)
             end
         end)
+        if not debugOk then
+            print("NPCEntity: Failed to update debug node")
+        end
     end
 
     entity.lastUpdateTime = (g_currentMission and g_currentMission.time) or 0

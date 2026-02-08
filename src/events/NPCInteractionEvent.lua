@@ -1,3 +1,32 @@
+-- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- ACTION TYPES:
+-- [x] Favor accept, complete, and abandon actions
+-- [x] Gift giving action with value and data payload
+-- [x] Relationship change action with reason tracking
+-- [ ] Trade/barter action for NPC-to-player item exchange
+-- [ ] Conversation action with dialogue tree state tracking
+-- [ ] Hire/dismiss action for temporary NPC worker contracts
+--
+-- SECURITY & VALIDATION:
+-- [x] Action type whitelist with MIN/MAX range check
+-- [x] Farm ownership verification via userManager
+-- [x] NaN and infinity checks on numeric value field
+-- [x] NPC existence validation before dispatch
+-- [ ] Per-action rate limiting (max N interactions per minute per player)
+-- [ ] Interaction distance check (reject if player too far from NPC)
+-- [ ] Action-specific value range validation (gift value caps, etc.)
+--
+-- MULTIPLAYER:
+-- [x] Client-to-server routing with sendToServer pattern
+-- [x] Direct execution in single-player / on server
+-- [x] Data string truncation to 256 characters
+-- [ ] Interaction result callback to originating client
+-- [ ] Spectator mode support (observe but cannot interact)
+-- [ ] Interaction queue for conflicting simultaneous requests
+-- =========================================================
+
 --[[
     FS25_NPCFavor - NPC Interaction Event
 

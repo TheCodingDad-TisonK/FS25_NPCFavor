@@ -1,5 +1,38 @@
 -- =========================================================
--- FS25 NPC Favor Mod (version 1.0.0.0)
+-- TODO / FUTURE VISION
+-- =========================================================
+-- LIFECYCLE:
+-- [x] Mission load/unload hooks (Mission00.load, FSBaseMission.delete)
+-- [x] Late-join initialization for mid-session mod loading
+-- [x] Mission validity checks with performance caching
+-- [x] Global system reference (g_NPCSystem) for cross-module access
+-- [ ] Graceful degradation when dependencies fail to load
+-- [ ] Hot-reload support for development without restarting mission
+--
+-- INPUT SYSTEM:
+-- [x] E key interaction via RVB pattern (PlayerInputComponent hook)
+-- [x] Dynamic prompt text showing nearest NPC name
+-- [x] Dialog visibility suppression when another dialog is open
+-- [ ] Configurable keybind (allow rebinding from E to another key)
+-- [ ] Gamepad/controller support for NPC interaction
+-- [ ] Multi-NPC selection wheel when several NPCs are nearby
+--
+-- SAVE/LOAD:
+-- [x] XML persistence via FSCareerMissionInfo.saveToXMLFile hook
+-- [x] Load from savegame on mission start
+-- [x] Multiple missionInfo discovery fallbacks
+-- [ ] Save file versioning and migration for future data format changes
+-- [ ] Backup/restore of NPC save data on corruption
+--
+-- MULTIPLAYER:
+-- [x] NPCStateSyncEvent for full state sync to joining players
+-- [x] NPCSettingsSyncEvent for settings broadcast on join
+-- [ ] Per-player interaction cooldowns to prevent spam
+-- [ ] Conflict resolution when two players interact with same NPC
+-- =========================================================
+
+-- =========================================================
+-- FS25 NPC Favor Mod (version 1.1.0.0)
 -- =========================================================
 -- Living NPC Neighborhood System
 -- =========================================================
@@ -13,14 +46,17 @@
 -- =========================================================
 
 -- Add version tracking
-local MOD_VERSION = "1.0.0.0"
+local MOD_VERSION = "1.1.0.0"
 local MOD_NAME = "FS25_NPCFavor"
 
 local modDirectory = g_currentModDirectory
 local modName = g_currentModName
 
+print("[NPC Favor] Starting mod initialization...")
+
 --  Define base classes and utilities
 if modDirectory then
+    print("[NPC Favor] Loading utility files...")
     source(modDirectory .. "src/utils/VectorHelper.lua")
     source(modDirectory .. "src/utils/TimeHelper.lua")
 
@@ -36,6 +72,7 @@ if modDirectory then
     source(modDirectory .. "src/events/NPCSettingsSyncEvent.lua")
 
     -- Core systems in dependency order
+    print("[NPC Favor] Loading core systems...")
     source(modDirectory .. "src/scripts/NPCRelationshipManager.lua")
     source(modDirectory .. "src/scripts/NPCFavorSystem.lua")
     source(modDirectory .. "src/scripts/NPCEntity.lua")
@@ -49,6 +86,8 @@ if modDirectory then
 
     -- Main coordinator
     source(modDirectory .. "src/NPCSystem.lua")
+
+    print("[NPC Favor] All files loaded successfully")
 else
     print("[NPC Favor] ERROR - Could not find mod directory!")
     return
@@ -66,10 +105,13 @@ local function isEnabled()
 end
 
 local function loadedMission(mission, node)
+    print("[NPC Favor] Mission load finished callback")
+
     if not isMissionValid(mission) then
+        print("[NPC Favor] Mission not valid, skipping initialization")
         return
     end
-    
+
     if npcSystem then
         -- Register NPC dialog with g_gui
         if g_gui and NPCDialog then
@@ -90,9 +132,13 @@ local function loadedMission(mission, node)
             npcSystem.entityManager:initialize(modDirectory)
         end
 
+        print("[NPC Favor] Calling onMissionLoaded...")
         npcSystem:onMissionLoaded()
     else
+        print("[NPC Favor] ERROR - npcSystem is nil in loadedMission!")
+
         -- Late initialization fallback
+        print("[NPC Favor] Attempting late initialization...")
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
@@ -101,6 +147,7 @@ local function loadedMission(mission, node)
                 name = MOD_NAME,
                 system = npcSystem
             }
+            print("[NPC Favor] Late initialization successful")
             npcSystem:onMissionLoaded()
         else
             print("[NPC Favor] ERROR - Failed to create NPCSystem")
@@ -109,11 +156,16 @@ local function loadedMission(mission, node)
 end
 
 local function load(mission)
+    print("[NPC Favor] Load function called")
+
     if not isMissionValid(mission) then
+        print("[NPC Favor] Mission not valid, skipping load")
         return
     end
 
     if npcSystem == nil then
+        print("[NPC Favor] Initializing version " .. MOD_VERSION .. "...")
+        print("[NPC Favor] Creating NPCSystem instance...")
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
 
         if npcSystem then
@@ -124,45 +176,66 @@ local function load(mission)
                 system = npcSystem
             }
 
+            print("[NPC Favor] NPCSystem instance created successfully")
+
             -- Initialize console commands
             if npcSystem.gui then
                 npcSystem.gui:registerConsoleCommands()
             end
         else
-            print("[NPC Favor] ERROR - Failed to create NPCSystem")
+            print("[NPC Favor] ERROR - Failed to create NPCSystem instance")
         end
+    else
+        print("[NPC Favor] Already initialized")
     end
 end
 
 local function unload()
+    print("[NPC Favor] Unload function called")
+
     if npcSystem ~= nil then
         npcSystem:delete()
         npcSystem = nil
         getfenv(0)["g_NPCSystem"] = nil
         g_NPCFavorMod = nil
+        print("[NPC Favor] Unloaded successfully")
     end
 end
 
 -- FS25 Game Hooks
+print("[NPC Favor] Setting up game hooks...")
+
 if Mission00 and Mission00.load then
+    print("[NPC Favor] Hooking Mission00.load")
     Mission00.load = Utils.prependedFunction(Mission00.load, load)
 elseif g_currentMission and g_currentMission.load then
+    print("[NPC Favor] Hooking g_currentMission.load")
     g_currentMission.load = Utils.prependedFunction(g_currentMission.load, load)
+else
+    print("[NPC Favor] WARNING - No load function found to hook!")
 end
 
 if Mission00 and Mission00.loadMission00Finished then
+    print("[NPC Favor] Hooking Mission00.loadMission00Finished")
     Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, loadedMission)
-elseif g_currentMission and g_currentMission.onMissionLoaded then
-    g_currentMission.onMissionLoaded = Utils.appendedFunction(g_currentMission.onMissionLoaded, function(mission)
-        loadedMission(mission, nil)
-    end)
+else
+    print("[NPC Favor] WARNING - Mission00.loadMission00Finished not found")
+
+    if g_currentMission and g_currentMission.onMissionLoaded then
+        print("[NPC Favor] Hooking g_currentMission.onMissionLoaded")
+        g_currentMission.onMissionLoaded = Utils.appendedFunction(g_currentMission.onMissionLoaded, function(mission)
+            loadedMission(mission, nil)
+        end)
+    end
 end
 
 if FSBaseMission and FSBaseMission.delete then
+    print("[NPC Favor] Hooking FSBaseMission.delete")
     FSBaseMission.delete = Utils.appendedFunction(FSBaseMission.delete, unload)
 end
 
 if FSBaseMission and FSBaseMission.update then
+    print("[NPC Favor] Hooking FSBaseMission.update")
     FSBaseMission.update = Utils.appendedFunction(FSBaseMission.update, function(mission, dt)
         if npcSystem then
             npcSystem:update(dt)
@@ -285,7 +358,7 @@ if FSBaseMission and FSBaseMission.update then
         -- E key: show "Talk to NPC" when near (hide when dialog is open)
         if npcInteractActionEventId ~= nil then
             local shouldShow = false
-            local promptText = "Talk to NPC"
+            local promptText = g_i18n:getText("input_NPC_INTERACT") or "Talk to NPC"
             local isDialogOpen = g_gui:getIsDialogVisible()
 
             if not isDialogOpen and npcSystem.nearbyNPCs then
@@ -301,7 +374,7 @@ if FSBaseMission and FSBaseMission.update then
 
                 if nearest then
                     shouldShow = true
-                    promptText = string.format("Talk to %s", nearest.name or "NPC")
+                    promptText = string.format(g_i18n:getText("npc_interact_talk_to") or "Talk to %s", nearest.name or "NPC")
                 end
             end
 
@@ -388,24 +461,45 @@ if Mission00 and Mission00.onStartMission then
     )
 end
 
-print("[NPC Favor] v" .. MOD_VERSION .. " loaded - type 'npcHelp' for commands")
+-- Multiplayer compatibility check
+if g_currentMission and g_currentMission.missionInfo then
+    if g_currentMission.missionInfo.isMultiplayer then
+        print("[NPC Favor] Multiplayer mode detected")
+    end
+end
+
+print("========================================")
+print("     FS25 NPC Favor v" .. MOD_VERSION .. " LOADED     ")
+print("     Living Neighborhood System         ")
+print("     Type 'npcHelp' in console          ")
+print("     for available commands             ")
+print("========================================")
 
 -- Late-join: initialize if already in a mission
 if g_currentMission and not npcSystem then
+    print("[NPC Favor] Already in mission, attempting immediate initialization...")
     load(g_currentMission)
     if g_currentMission.placeables and npcSystem then
+        print("[NPC Favor] Mission already loaded, calling onMissionLoaded...")
         npcSystem:onMissionLoaded()
     end
 end
 
 addModEventListener({
-    onLoad = function() end,
+    onLoad = function()
+        print("[NPC Favor] Mod event listener registered")
+    end,
     onUnload = function()
         unload()
     end,
     onSavegameLoaded = function()
+        print("[NPC Favor] Savegame loaded event received")
         if npcSystem then
             npcSystem:onMissionLoaded()
+        else
+            print("[NPC Favor] npcSystem is nil in onSavegameLoaded")
         end
     end
 })
+
+print("[NPC Favor] Mod initialization complete")

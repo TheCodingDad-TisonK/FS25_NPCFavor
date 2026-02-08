@@ -1,4 +1,26 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- CONFIGURATION DATA:
+-- [x] NPC name pool with localization key support
+-- [x] Personality type definitions (12 types)
+-- [x] Vehicle type and color configuration
+-- [x] Clothing set definitions (farmer, worker, casual, formal)
+-- [x] Age range mappings by personality category
+-- [x] Work hour schedules per personality type
+-- [x] Favor frequency tuning per personality
+-- [x] Gift preference lists per personality
+-- [x] Default vehicle loadouts per personality
+-- FUTURE ENHANCEMENTS:
+-- [ ] Seasonal personality modifiers (grumpy in winter, social in summer)
+-- [ ] NPC backstory/biography generation from personality traits
+-- [ ] Expandable name pools loaded from external XML data files
+-- [ ] NPC portrait/avatar selection tied to age and clothing set
+-- [ ] Relationship compatibility matrix between personality types
+-- [ ] Regional name pools (German, French, American, etc.)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Configuration Data
 -- =========================================================
 -- Contains NPC definitions, names, and configuration data

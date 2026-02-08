@@ -1,3 +1,28 @@
+-- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- NETWORK SYNC:
+-- [x] Server-to-client bulk sync of NPC positions and states
+-- [x] Periodic broadcast every 5 seconds from server update loop
+-- [x] On-join sync to newly connected players via sendToConnection
+-- [ ] Delta compression - only send NPCs whose state changed since last sync
+-- [ ] Adaptive sync frequency based on player proximity to NPCs
+-- [ ] Level-of-detail sync (full data for nearby, minimal for distant)
+--
+-- BANDWIDTH & PERFORMANCE:
+-- [x] DoS prevention with MAX_NPC_COUNT cap (50 NPCs per packet)
+-- [x] Stream drain for oversized packets to prevent desync
+-- [x] String truncation on all read/write operations
+-- [ ] Binary packing for position data (quantized int16 instead of float32)
+-- [ ] Batch coalescing - merge rapid state changes into single packet
+-- [ ] Bandwidth monitoring with automatic throttle under high load
+--
+-- SECURITY:
+-- [x] Client-only execution gate (server ignores incoming state events)
+-- [ ] Packet sequence numbering to detect replay attacks
+-- [ ] Checksum validation on received NPC data arrays
+-- =========================================================
+
 --[[
     FS25_NPCFavor - NPC State Sync Event
 

@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <!--
+    =========================================================
+    TODO / FUTURE VISION
+    =========================================================
+    DIALOG LAYOUT:
+    [x] NPC name (bold, centered) with personality subtitle
+    [x] Greeting message area
+    [x] Relationship status display
+    [x] Response area (hidden until action clicked)
+    [x] 5 action buttons with 3-layer pattern (Bitmap bg + Button hit + Text)
+    [x] Close button via standard dialogButtonBox
+    FUTURE ENHANCEMENTS:
+    [ ] NPC portrait/avatar image beside name
+    [ ] Animated response text (typewriter effect)
+    [ ] Favor progress bar in response area
+    [ ] Gift item selector with inventory icons
+    [ ] Scrollable conversation history log
+    [ ] Relationship meter visual bar (not just text)
+    [ ] Button disabled state visual (grayed out bg color)
+    [ ] Sound effects on button hover/click
+    =========================================================
+
     FS25_NPCFavor - NPC Interaction Dialog
     Standard FS25 MessageDialog with NPC info + clickable action buttons
     3-layer button pattern (Bitmap bg + Button hit + Text) with Lua hover effects

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
     <author>TisonK (NPC models: RoaderSIMModding)</author>
-    <version>1.0.0.0</version>
+    <version>1.1.0.0</version>
     <modName>FS25_NPCFavor</modName>
     <title>
         <en>NPC Favor - Living Neighborhood</en>
@@ -535,6 +535,1049 @@
             <br>%s agora está trabalhando em seu campo</br>
             <uk>%s зараз працює на своєму полі</uk>
             <ru>%s теперь работает на своем поле</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Dialog Button Labels                         -->
+        <!-- ============================================ -->
+        <text name="npc_dialog_btn_talk">
+            <en>Talk</en>
+            <de>Reden</de>
+            <fr>Parler</fr>
+            <pl>Rozmawiaj</pl>
+            <es>Hablar</es>
+            <it>Parla</it>
+            <cz>Mluvit</cz>
+            <br>Conversar</br>
+            <uk>Говорити</uk>
+            <ru>Поговорить</ru>
+        </text>
+
+        <text name="npc_dialog_btn_work">
+            <en>Ask about work</en>
+            <de>Nach Arbeit fragen</de>
+            <fr>Demander du travail</fr>
+            <pl>Zapytaj o pracę</pl>
+            <es>Preguntar por trabajo</es>
+            <it>Chiedi del lavoro</it>
+            <cz>Zeptat se na práci</cz>
+            <br>Perguntar sobre trabalho</br>
+            <uk>Запитати про роботу</uk>
+            <ru>Спросить о работе</ru>
+        </text>
+
+        <text name="npc_dialog_btn_favor">
+            <en>Ask for favor</en>
+            <de>Um Gefallen bitten</de>
+            <fr>Demander une faveur</fr>
+            <pl>Poproś o przysługę</pl>
+            <es>Pedir un favor</es>
+            <it>Chiedi un favore</it>
+            <cz>Požádat o laskavost</cz>
+            <br>Pedir um favor</br>
+            <uk>Попросити послугу</uk>
+            <ru>Попросить услугу</ru>
+        </text>
+
+        <text name="npc_dialog_btn_favor_progress">
+            <en>Check favor progress</en>
+            <de>Gefallen-Fortschritt prüfen</de>
+            <fr>Vérifier l'avancement</fr>
+            <pl>Sprawdź postęp przysługi</pl>
+            <es>Revisar progreso del favor</es>
+            <it>Controlla progresso favore</it>
+            <cz>Zkontrolovat postup laskavosti</cz>
+            <br>Verificar progresso do favor</br>
+            <uk>Перевірити прогрес послуги</uk>
+            <ru>Проверить прогресс услуги</ru>
+        </text>
+
+        <text name="npc_dialog_btn_favor_locked">
+            <en>Ask for favor (need rel 20+)</en>
+            <de>Um Gefallen bitten (Bez. 20+ nötig)</de>
+            <fr>Demander faveur (rel 20+ requise)</fr>
+            <pl>Poproś o przysługę (relacja 20+)</pl>
+            <es>Pedir favor (rel 20+ necesaria)</es>
+            <it>Chiedi favore (rel 20+ necessaria)</it>
+            <cz>Požádat o laskavost (vztah 20+)</cz>
+            <br>Pedir favor (rel 20+ necessária)</br>
+            <uk>Попросити послугу (відн. 20+)</uk>
+            <ru>Попросить услугу (отн. 20+)</ru>
+        </text>
+
+        <text name="npc_dialog_btn_gift">
+            <en>Give gift ($500)</en>
+            <de>Geschenk geben (500$)</de>
+            <fr>Offrir un cadeau (500$)</fr>
+            <pl>Daj prezent (500$)</pl>
+            <es>Dar regalo ($500)</es>
+            <it>Fai un regalo (500$)</it>
+            <cz>Dát dárek (500$)</cz>
+            <br>Dar presente ($500)</br>
+            <uk>Подарувати подарунок (500$)</uk>
+            <ru>Подарить подарок (500$)</ru>
+        </text>
+
+        <text name="npc_dialog_btn_gift_locked">
+            <en>Give gift (need rel 30+)</en>
+            <de>Geschenk geben (Bez. 30+ nötig)</de>
+            <fr>Offrir cadeau (rel 30+ requise)</fr>
+            <pl>Daj prezent (relacja 30+)</pl>
+            <es>Dar regalo (rel 30+ necesaria)</es>
+            <it>Fai regalo (rel 30+ necessaria)</it>
+            <cz>Dát dárek (vztah 30+)</cz>
+            <br>Dar presente (rel 30+ necessária)</br>
+            <uk>Подарувати подарунок (відн. 30+)</uk>
+            <ru>Подарить подарок (отн. 30+)</ru>
+        </text>
+
+        <text name="npc_dialog_btn_relationship">
+            <en>Relationship info</en>
+            <de>Beziehungsinfo</de>
+            <fr>Info relation</fr>
+            <pl>Info o relacji</pl>
+            <es>Info de relación</es>
+            <it>Info relazione</it>
+            <cz>Info o vztahu</cz>
+            <br>Info de relacionamento</br>
+            <uk>Інфо про відносини</uk>
+            <ru>Инфо об отношениях</ru>
+        </text>
+
+        <text name="npc_dialog_btn_close">
+            <en>Close</en>
+            <de>Schließen</de>
+            <fr>Fermer</fr>
+            <pl>Zamknij</pl>
+            <es>Cerrar</es>
+            <it>Chiudi</it>
+            <cz>Zavřít</cz>
+            <br>Fechar</br>
+            <uk>Закрити</uk>
+            <ru>Закрыть</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Dialog Display                               -->
+        <!-- ============================================ -->
+        <text name="npc_dialog_unknown_npc">
+            <en>Unknown NPC</en>
+            <de>Unbekannter NPC</de>
+            <fr>PNJ inconnu</fr>
+            <pl>Nieznany NPC</pl>
+            <es>NPC desconocido</es>
+            <it>NPC sconosciuto</it>
+            <cz>Neznámý NPC</cz>
+            <br>NPC desconhecido</br>
+            <uk>Невідомий NPC</uk>
+            <ru>Неизвестный NPC</ru>
+        </text>
+
+        <text name="npc_dialog_relationship_fmt">
+            <en>Relationship: %d/100 (%s)</en>
+            <de>Beziehung: %d/100 (%s)</de>
+            <fr>Relation : %d/100 (%s)</fr>
+            <pl>Relacja: %d/100 (%s)</pl>
+            <es>Relación: %d/100 (%s)</es>
+            <it>Relazione: %d/100 (%s)</it>
+            <cz>Vztah: %d/100 (%s)</cz>
+            <br>Relacionamento: %d/100 (%s)</br>
+            <uk>Відносини: %d/100 (%s)</uk>
+            <ru>Отношения: %d/100 (%s)</ru>
+        </text>
+
+        <text name="npc_dialog_hello_generic">
+            <en>Hello there!</en>
+            <de>Hallo!</de>
+            <fr>Bonjour !</fr>
+            <pl>Witaj!</pl>
+            <es>¡Hola!</es>
+            <it>Ciao!</it>
+            <cz>Ahoj!</cz>
+            <br>Olá!</br>
+            <uk>Привіт!</uk>
+            <ru>Привет!</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Relationship Level Names                     -->
+        <!-- ============================================ -->
+        <text name="npc_rel_hostile">
+            <en>Hostile</en>
+            <de>Feindlich</de>
+            <fr>Hostile</fr>
+            <pl>Wrogi</pl>
+            <es>Hostil</es>
+            <it>Ostile</it>
+            <cz>Nepřátelský</cz>
+            <br>Hostil</br>
+            <uk>Ворожий</uk>
+            <ru>Враждебный</ru>
+        </text>
+
+        <text name="npc_rel_unfriendly">
+            <en>Unfriendly</en>
+            <de>Unfreundlich</de>
+            <fr>Inamical</fr>
+            <pl>Nieprzyjazny</pl>
+            <es>Antipático</es>
+            <it>Scortese</it>
+            <cz>Nepříjemný</cz>
+            <br>Hostil</br>
+            <uk>Недружній</uk>
+            <ru>Недружелюбный</ru>
+        </text>
+
+        <text name="npc_rel_neutral">
+            <en>Neutral</en>
+            <de>Neutral</de>
+            <fr>Neutre</fr>
+            <pl>Neutralny</pl>
+            <es>Neutral</es>
+            <it>Neutrale</it>
+            <cz>Neutrální</cz>
+            <br>Neutro</br>
+            <uk>Нейтральний</uk>
+            <ru>Нейтральный</ru>
+        </text>
+
+        <text name="npc_rel_acquaintance">
+            <en>Acquaintance</en>
+            <de>Bekannter</de>
+            <fr>Connaissance</fr>
+            <pl>Znajomy</pl>
+            <es>Conocido</es>
+            <it>Conoscente</it>
+            <cz>Známý</cz>
+            <br>Conhecido</br>
+            <uk>Знайомий</uk>
+            <ru>Знакомый</ru>
+        </text>
+
+        <text name="npc_rel_friend">
+            <en>Friend</en>
+            <de>Freund</de>
+            <fr>Ami</fr>
+            <pl>Przyjaciel</pl>
+            <es>Amigo</es>
+            <it>Amico</it>
+            <cz>Přítel</cz>
+            <br>Amigo</br>
+            <uk>Друг</uk>
+            <ru>Друг</ru>
+        </text>
+
+        <text name="npc_rel_close_friend">
+            <en>Close Friend</en>
+            <de>Enger Freund</de>
+            <fr>Ami proche</fr>
+            <pl>Bliski przyjaciel</pl>
+            <es>Amigo cercano</es>
+            <it>Amico intimo</it>
+            <cz>Blízký přítel</cz>
+            <br>Amigo próximo</br>
+            <uk>Близький друг</uk>
+            <ru>Близкий друг</ru>
+        </text>
+
+        <text name="npc_rel_best_friend">
+            <en>Best Friend</en>
+            <de>Bester Freund</de>
+            <fr>Meilleur ami</fr>
+            <pl>Najlepszy przyjaciel</pl>
+            <es>Mejor amigo</es>
+            <it>Migliore amico</it>
+            <cz>Nejlepší přítel</cz>
+            <br>Melhor amigo</br>
+            <uk>Найкращий друг</uk>
+            <ru>Лучший друг</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Relationship Benefits                        -->
+        <!-- ============================================ -->
+        <text name="npc_rel_benefit_discount">
+            <en>%d%% discount</en>
+            <de>%d%% Rabatt</de>
+            <fr>%d%% de réduction</fr>
+            <pl>%d%% zniżki</pl>
+            <es>%d%% de descuento</es>
+            <it>%d%% di sconto</it>
+            <cz>%d%% sleva</cz>
+            <br>%d%% de desconto</br>
+            <uk>%d%% знижки</uk>
+            <ru>%d%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_benefit_favors">
+            <en>can ask favors</en>
+            <de>kann um Gefallen bitten</de>
+            <fr>peut demander des faveurs</fr>
+            <pl>może prosić o przysługi</pl>
+            <es>puede pedir favores</es>
+            <it>può chiedere favori</it>
+            <cz>může žádat o laskavosti</cz>
+            <br>pode pedir favores</br>
+            <uk>може просити послуги</uk>
+            <ru>может просить услуги</ru>
+        </text>
+
+        <text name="npc_rel_benefit_borrow">
+            <en>borrow equipment</en>
+            <de>Ausrüstung ausleihen</de>
+            <fr>emprunter du matériel</fr>
+            <pl>pożyczaj sprzęt</pl>
+            <es>pedir prestado equipo</es>
+            <it>prendere in prestito attrezzature</it>
+            <cz>půjčit si vybavení</cz>
+            <br>pegar equipamento emprestado</br>
+            <uk>позичати обладнання</uk>
+            <ru>брать оборудование</ru>
+        </text>
+
+        <text name="npc_rel_benefit_help">
+            <en>may offer help</en>
+            <de>kann Hilfe anbieten</de>
+            <fr>peut offrir de l'aide</fr>
+            <pl>może zaoferować pomoc</pl>
+            <es>puede ofrecer ayuda</es>
+            <it>può offrire aiuto</it>
+            <cz>může nabídnout pomoc</cz>
+            <br>pode oferecer ajuda</br>
+            <uk>може запропонувати допомогу</uk>
+            <ru>может предложить помощь</ru>
+        </text>
+
+        <text name="npc_rel_benefit_gifts">
+            <en>gives gifts</en>
+            <de>gibt Geschenke</de>
+            <fr>offre des cadeaux</fr>
+            <pl>daje prezenty</pl>
+            <es>da regalos</es>
+            <it>fa regali</it>
+            <cz>dává dárky</cz>
+            <br>dá presentes</br>
+            <uk>дарує подарунки</uk>
+            <ru>дарит подарки</ru>
+        </text>
+
+        <text name="npc_rel_benefit_shared">
+            <en>shared resources</en>
+            <de>geteilte Ressourcen</de>
+            <fr>ressources partagées</fr>
+            <pl>wspólne zasoby</pl>
+            <es>recursos compartidos</es>
+            <it>risorse condivise</it>
+            <cz>sdílené zdroje</cz>
+            <br>recursos compartilhados</br>
+            <uk>спільні ресурси</uk>
+            <ru>общие ресурсы</ru>
+        </text>
+
+        <text name="npc_rel_benefit_none">
+            <en>none</en>
+            <de>keine</de>
+            <fr>aucun</fr>
+            <pl>brak</pl>
+            <es>ninguno</es>
+            <it>nessuno</it>
+            <cz>žádné</cz>
+            <br>nenhum</br>
+            <uk>немає</uk>
+            <ru>нет</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Relationship Unlocks                         -->
+        <!-- ============================================ -->
+        <text name="npc_rel_unlock_basic">
+            <en>basic interaction</en>
+            <de>grundlegende Interaktion</de>
+            <fr>interaction de base</fr>
+            <pl>podstawowa interakcja</pl>
+            <es>interacción básica</es>
+            <it>interazione base</it>
+            <cz>základní interakce</cz>
+            <br>interação básica</br>
+            <uk>базова взаємодія</uk>
+            <ru>базовое взаимодействие</ru>
+        </text>
+
+        <text name="npc_rel_unlock_favors">
+            <en>ask favors, 5%% discount</en>
+            <de>Gefallen bitten, 5%% Rabatt</de>
+            <fr>demander faveurs, 5%% réduction</fr>
+            <pl>proś o przysługi, 5%% zniżki</pl>
+            <es>pedir favores, 5%% descuento</es>
+            <it>chiedi favori, 5%% sconto</it>
+            <cz>žádat laskavosti, 5%% sleva</cz>
+            <br>pedir favores, 5%% desconto</br>
+            <uk>просити послуги, 5%% знижки</uk>
+            <ru>просить услуги, 5%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_unlock_borrow">
+            <en>borrow equipment, 10%% discount</en>
+            <de>Ausrüstung leihen, 10%% Rabatt</de>
+            <fr>emprunter matériel, 10%% réduction</fr>
+            <pl>pożyczaj sprzęt, 10%% zniżki</pl>
+            <es>pedir equipo, 10%% descuento</es>
+            <it>prestito attrezzature, 10%% sconto</it>
+            <cz>půjčit vybavení, 10%% sleva</cz>
+            <br>pegar equipamento, 10%% desconto</br>
+            <uk>позичати обладнання, 10%% знижки</uk>
+            <ru>брать оборудование, 10%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_unlock_help">
+            <en>NPC offers help, 15%% discount</en>
+            <de>NPC bietet Hilfe, 15%% Rabatt</de>
+            <fr>PNJ offre aide, 15%% réduction</fr>
+            <pl>NPC oferuje pomoc, 15%% zniżki</pl>
+            <es>NPC ofrece ayuda, 15%% descuento</es>
+            <it>NPC offre aiuto, 15%% sconto</it>
+            <cz>NPC nabízí pomoc, 15%% sleva</cz>
+            <br>NPC oferece ajuda, 15%% desconto</br>
+            <uk>NPC пропонує допомогу, 15%% знижки</uk>
+            <ru>NPC предлагает помощь, 15%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_unlock_gifts">
+            <en>gifts, shared resources, 18%% discount</en>
+            <de>Geschenke, geteilte Ressourcen, 18%% Rabatt</de>
+            <fr>cadeaux, ressources partagées, 18%% réduction</fr>
+            <pl>prezenty, wspólne zasoby, 18%% zniżki</pl>
+            <es>regalos, recursos compartidos, 18%% descuento</es>
+            <it>regali, risorse condivise, 18%% sconto</it>
+            <cz>dárky, sdílené zdroje, 18%% sleva</cz>
+            <br>presentes, recursos compartilhados, 18%% desconto</br>
+            <uk>подарунки, спільні ресурси, 18%% знижки</uk>
+            <ru>подарки, общие ресурсы, 18%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_unlock_full">
+            <en>full benefits, 20%% discount</en>
+            <de>alle Vorteile, 20%% Rabatt</de>
+            <fr>tous les avantages, 20%% réduction</fr>
+            <pl>pełne korzyści, 20%% zniżki</pl>
+            <es>todos los beneficios, 20%% descuento</es>
+            <it>tutti i benefici, 20%% sconto</it>
+            <cz>všechny výhody, 20%% sleva</cz>
+            <br>todos os benefícios, 20%% desconto</br>
+            <uk>всі переваги, 20%% знижки</uk>
+            <ru>все преимущества, 20%% скидка</ru>
+        </text>
+
+        <text name="npc_rel_next_fmt">
+            <en>Next: %s at %d (+%d) - unlocks: %s</en>
+            <de>Nächstes: %s bei %d (+%d) - schaltet frei: %s</de>
+            <fr>Suivant : %s à %d (+%d) - débloque : %s</fr>
+            <pl>Następny: %s przy %d (+%d) - odblokuje: %s</pl>
+            <es>Siguiente: %s en %d (+%d) - desbloquea: %s</es>
+            <it>Prossimo: %s a %d (+%d) - sblocca: %s</it>
+            <cz>Další: %s na %d (+%d) - odemkne: %s</cz>
+            <br>Próximo: %s em %d (+%d) - desbloqueia: %s</br>
+            <uk>Далі: %s на %d (+%d) - відкриває: %s</uk>
+            <ru>Далее: %s при %d (+%d) - открывает: %s</ru>
+        </text>
+
+        <text name="npc_rel_max_reached">
+            <en>MAX level reached!</en>
+            <de>MAX-Level erreicht!</de>
+            <fr>Niveau MAX atteint !</fr>
+            <pl>Osiągnięto poziom MAX!</pl>
+            <es>¡Nivel MAX alcanzado!</es>
+            <it>Livello MAX raggiunto!</it>
+            <cz>Dosažena úroveň MAX!</cz>
+            <br>Nível MAX alcançado!</br>
+            <uk>Досягнуто рівень MAX!</uk>
+            <ru>Достигнут уровень MAX!</ru>
+        </text>
+
+        <text name="npc_rel_trend_up">
+            <en>(trending up)</en>
+            <de>(steigend)</de>
+            <fr>(en hausse)</fr>
+            <pl>(w górę)</pl>
+            <es>(subiendo)</es>
+            <it>(in aumento)</it>
+            <cz>(stoupající)</cz>
+            <br>(subindo)</br>
+            <uk>(зростає)</uk>
+            <ru>(растет)</ru>
+        </text>
+
+        <text name="npc_rel_trend_down">
+            <en>(trending down)</en>
+            <de>(sinkend)</de>
+            <fr>(en baisse)</fr>
+            <pl>(w dół)</pl>
+            <es>(bajando)</es>
+            <it>(in calo)</it>
+            <cz>(klesající)</cz>
+            <br>(caindo)</br>
+            <uk>(знижується)</uk>
+            <ru>(падает)</ru>
+        </text>
+
+        <text name="npc_rel_no_info">
+            <en>No relationship information available.</en>
+            <de>Keine Beziehungsinformationen verfügbar.</de>
+            <fr>Aucune information de relation disponible.</fr>
+            <pl>Brak informacji o relacji.</pl>
+            <es>No hay información de relación disponible.</es>
+            <it>Nessuna informazione sulla relazione disponibile.</it>
+            <cz>Žádné informace o vztahu nejsou k dispozici.</cz>
+            <br>Nenhuma informação de relacionamento disponível.</br>
+            <uk>Інформація про відносини недоступна.</uk>
+            <ru>Информация об отношениях недоступна.</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Favor Dialog                                 -->
+        <!-- ============================================ -->
+        <text name="npc_dialog_favor_help_request">
+            <en>Could you help me with something? Check the favor list!</en>
+            <de>Könntest du mir mit etwas helfen? Schau die Gefallen-Liste an!</de>
+            <fr>Pourriez-vous m'aider ? Consultez la liste des faveurs !</fr>
+            <pl>Mógłbyś mi z czymś pomóc? Sprawdź listę przysług!</pl>
+            <es>¿Podrías ayudarme? ¡Mira la lista de favores!</es>
+            <it>Potresti aiutarmi? Controlla la lista dei favori!</it>
+            <cz>Mohl byste mi pomoci? Podívejte se na seznam laskavostí!</cz>
+            <br>Poderia me ajudar? Confira a lista de favores!</br>
+            <uk>Чи могли б ви допомогти? Перевірте список послуг!</uk>
+            <ru>Могли бы помочь? Проверьте список услуг!</ru>
+        </text>
+
+        <text name="npc_dialog_favor_nothing">
+            <en>I don't need anything right now, but thanks for asking!</en>
+            <de>Ich brauche gerade nichts, aber danke der Nachfrage!</de>
+            <fr>Je n'ai besoin de rien pour le moment, mais merci de demander !</fr>
+            <pl>Nie potrzebuję teraz niczego, ale dzięki za pytanie!</pl>
+            <es>No necesito nada ahora, ¡pero gracias por preguntar!</es>
+            <it>Non ho bisogno di nulla ora, ma grazie per aver chiesto!</it>
+            <cz>Teď nic nepotřebuji, ale díky za optání!</cz>
+            <br>Não preciso de nada agora, mas obrigado por perguntar!</br>
+            <uk>Мені зараз нічого не потрібно, але дякую за питання!</uk>
+            <ru>Мне сейчас ничего не нужно, но спасибо что спросили!</ru>
+        </text>
+
+        <text name="npc_dialog_favor_active_fmt">
+            <en>Active: %s | Progress: %d%% | Time: %s | Reward: +%d rel, $%d</en>
+            <de>Aktiv: %s | Fortschritt: %d%% | Zeit: %s | Belohnung: +%d Bez., %d$</de>
+            <fr>Actif : %s | Progrès : %d%% | Temps : %s | Récompense : +%d rel, %d$</fr>
+            <pl>Aktywna: %s | Postęp: %d%% | Czas: %s | Nagroda: +%d rel, %d$</pl>
+            <es>Activo: %s | Progreso: %d%% | Tiempo: %s | Recompensa: +%d rel, %d$</es>
+            <it>Attivo: %s | Progresso: %d%% | Tempo: %s | Ricompensa: +%d rel, %d$</it>
+            <cz>Aktivní: %s | Postup: %d%% | Čas: %s | Odměna: +%d vztah, %d$</cz>
+            <br>Ativo: %s | Progresso: %d%% | Tempo: %s | Recompensa: +%d rel, %d$</br>
+            <uk>Активна: %s | Прогрес: %d%% | Час: %s | Нагорода: +%d відн., %d$</uk>
+            <ru>Активно: %s | Прогресс: %d%% | Время: %s | Награда: +%d отн., %d$</ru>
+        </text>
+
+        <text name="npc_dialog_time_minutes">
+            <en>%.0f minutes</en>
+            <de>%.0f Minuten</de>
+            <fr>%.0f minutes</fr>
+            <pl>%.0f minut</pl>
+            <es>%.0f minutos</es>
+            <it>%.0f minuti</it>
+            <cz>%.0f minut</cz>
+            <br>%.0f minutos</br>
+            <uk>%.0f хвилин</uk>
+            <ru>%.0f минут</ru>
+        </text>
+
+        <text name="npc_dialog_time_hours">
+            <en>%.1f hours</en>
+            <de>%.1f Stunden</de>
+            <fr>%.1f heures</fr>
+            <pl>%.1f godzin</pl>
+            <es>%.1f horas</es>
+            <it>%.1f ore</it>
+            <cz>%.1f hodin</cz>
+            <br>%.1f horas</br>
+            <uk>%.1f годин</uk>
+            <ru>%.1f часов</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Gift Dialog                                  -->
+        <!-- ============================================ -->
+        <text name="npc_dialog_gift_thanks">
+            <en>Thank you for the gift! That's very generous of you!</en>
+            <de>Danke für das Geschenk! Das ist sehr großzügig von dir!</de>
+            <fr>Merci pour le cadeau ! C'est très généreux de votre part !</fr>
+            <pl>Dziękuję za prezent! To bardzo hojne z twojej strony!</pl>
+            <es>¡Gracias por el regalo! ¡Eres muy generoso!</es>
+            <it>Grazie per il regalo! Sei molto generoso!</it>
+            <cz>Děkuji za dárek! To je od vás velmi štědré!</cz>
+            <br>Obrigado pelo presente! Isso é muito generoso da sua parte!</br>
+            <uk>Дякую за подарунок! Це дуже щедро з вашого боку!</uk>
+            <ru>Спасибо за подарок! Это очень щедро с вашей стороны!</ru>
+        </text>
+
+        <text name="npc_dialog_gift_failed">
+            <en>Could not give a gift right now.</en>
+            <de>Konnte jetzt kein Geschenk geben.</de>
+            <fr>Impossible d'offrir un cadeau maintenant.</fr>
+            <pl>Nie można teraz dać prezentu.</pl>
+            <es>No se pudo dar un regalo ahora.</es>
+            <it>Impossibile fare un regalo ora.</it>
+            <cz>Teď nelze dát dárek.</cz>
+            <br>Não foi possível dar um presente agora.</br>
+            <uk>Зараз не вдалося подарувати подарунок.</uk>
+            <ru>Сейчас не удалось подарить подарок.</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Greetings (time-of-day)                      -->
+        <!-- ============================================ -->
+        <text name="npc_greeting_morning">
+            <en>Good morning</en>
+            <de>Guten Morgen</de>
+            <fr>Bonjour</fr>
+            <pl>Dzień dobry</pl>
+            <es>Buenos días</es>
+            <it>Buongiorno</it>
+            <cz>Dobré ráno</cz>
+            <br>Bom dia</br>
+            <uk>Доброго ранку</uk>
+            <ru>Доброе утро</ru>
+        </text>
+
+        <text name="npc_greeting_afternoon">
+            <en>Good afternoon</en>
+            <de>Guten Tag</de>
+            <fr>Bon après-midi</fr>
+            <pl>Dzień dobry</pl>
+            <es>Buenas tardes</es>
+            <it>Buon pomeriggio</it>
+            <cz>Dobré odpoledne</cz>
+            <br>Boa tarde</br>
+            <uk>Доброго дня</uk>
+            <ru>Добрый день</ru>
+        </text>
+
+        <text name="npc_greeting_evening">
+            <en>Good evening</en>
+            <de>Guten Abend</de>
+            <fr>Bonsoir</fr>
+            <pl>Dobry wieczór</pl>
+            <es>Buenas noches</es>
+            <it>Buonasera</it>
+            <cz>Dobrý večer</cz>
+            <br>Boa noite</br>
+            <uk>Доброго вечора</uk>
+            <ru>Добрый вечер</ru>
+        </text>
+
+        <text name="npc_greeting_hostile">
+            <en>%s. What do you want?</en>
+            <de>%s. Was willst du?</de>
+            <fr>%s. Qu'est-ce que vous voulez ?</fr>
+            <pl>%s. Czego chcesz?</pl>
+            <es>%s. ¿Qué quieres?</es>
+            <it>%s. Cosa vuoi?</it>
+            <cz>%s. Co chcete?</cz>
+            <br>%s. O que você quer?</br>
+            <uk>%s. Чого ти хочеш?</uk>
+            <ru>%s. Чего тебе надо?</ru>
+        </text>
+
+        <text name="npc_greeting_unfriendly">
+            <en>%s. Need something?</en>
+            <de>%s. Brauchst du etwas?</de>
+            <fr>%s. Besoin de quelque chose ?</fr>
+            <pl>%s. Potrzebujesz czegoś?</pl>
+            <es>%s. ¿Necesitas algo?</es>
+            <it>%s. Hai bisogno di qualcosa?</it>
+            <cz>%s. Potřebujete něco?</cz>
+            <br>%s. Precisa de algo?</br>
+            <uk>%s. Потрібно щось?</uk>
+            <ru>%s. Нужно что-то?</ru>
+        </text>
+
+        <text name="npc_greeting_friendly">
+            <en>%s, friend! How are you?</en>
+            <de>%s, Freund! Wie geht's?</de>
+            <fr>%s, ami ! Comment allez-vous ?</fr>
+            <pl>%s, przyjacielu! Jak się masz?</pl>
+            <es>¡%s, amigo! ¿Cómo estás?</es>
+            <it>%s, amico! Come stai?</it>
+            <cz>%s, příteli! Jak se máte?</cz>
+            <br>%s, amigo! Como vai?</br>
+            <uk>%s, друже! Як справи?</uk>
+            <ru>%s, друг! Как дела?</ru>
+        </text>
+
+        <text name="npc_greeting_best_friend">
+            <en>%s, my good friend! Great to see you!</en>
+            <de>%s, mein guter Freund! Schön dich zu sehen!</de>
+            <fr>%s, mon bon ami ! Ravi de vous voir !</fr>
+            <pl>%s, mój drogi przyjacielu! Miło cię widzieć!</pl>
+            <es>¡%s, mi buen amigo! ¡Qué bueno verte!</es>
+            <it>%s, mio buon amico! Che bello vederti!</it>
+            <cz>%s, můj dobrý příteli! Rád vás vidím!</cz>
+            <br>%s, meu bom amigo! Que bom te ver!</br>
+            <uk>%s, мій добрий друже! Радий тебе бачити!</uk>
+            <ru>%s, мой хороший друг! Рад тебя видеть!</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Conversation Topics (Low relationship)       -->
+        <!-- ============================================ -->
+        <text name="npc_topic_weather">
+            <en>The weather has been nice lately, hasn't it?</en>
+            <de>Das Wetter war in letzter Zeit schön, oder?</de>
+            <fr>Le temps a été agréable ces derniers temps, non ?</fr>
+            <pl>Pogoda była ostatnio ładna, prawda?</pl>
+            <es>El clima ha estado agradable últimamente, ¿no?</es>
+            <it>Il tempo è stato bello ultimamente, vero?</it>
+            <cz>Počasí bylo v poslední době hezké, že?</cz>
+            <br>O tempo tem estado bom ultimamente, não é?</br>
+            <uk>Погода останнім часом гарна, правда?</uk>
+            <ru>Погода в последнее время хорошая, правда?</ru>
+        </text>
+
+        <text name="npc_topic_farm">
+            <en>How's your farm doing?</en>
+            <de>Wie läuft's auf deiner Farm?</de>
+            <fr>Comment va votre ferme ?</fr>
+            <pl>Jak leci na farmie?</pl>
+            <es>¿Cómo va tu granja?</es>
+            <it>Come va la tua fattoria?</it>
+            <cz>Jak se daří vaší farmě?</cz>
+            <br>Como vai sua fazenda?</br>
+            <uk>Як справи на фермі?</uk>
+            <ru>Как дела на ферме?</ru>
+        </text>
+
+        <text name="npc_topic_crops">
+            <en>Seen any good crops this season?</en>
+            <de>Hast du diese Saison gute Ernten gesehen?</de>
+            <fr>Vous avez vu de bonnes récoltes cette saison ?</fr>
+            <pl>Widziałeś dobre plony w tym sezonie?</pl>
+            <es>¿Has visto buenas cosechas esta temporada?</es>
+            <it>Hai visto buoni raccolti questa stagione?</it>
+            <cz>Viděl jste letos nějaké dobré úrody?</cz>
+            <br>Viu boas colheitas nesta temporada?</br>
+            <uk>Бачив гарний врожай цього сезону?</uk>
+            <ru>Видел хороший урожай в этом сезоне?</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Conversation Topics (Medium relationship)    -->
+        <!-- ============================================ -->
+        <text name="npc_topic_family">
+            <en>How's the family doing?</en>
+            <de>Wie geht's der Familie?</de>
+            <fr>Comment va la famille ?</fr>
+            <pl>Jak tam rodzina?</pl>
+            <es>¿Cómo está la familia?</es>
+            <it>Come sta la famiglia?</it>
+            <cz>Jak se daří rodině?</cz>
+            <br>Como está a família?</br>
+            <uk>Як справи в родині?</uk>
+            <ru>Как семья?</ru>
+        </text>
+
+        <text name="npc_topic_weekend">
+            <en>Got any plans for the weekend?</en>
+            <de>Hast du Pläne fürs Wochenende?</de>
+            <fr>Vous avez des projets pour le week-end ?</fr>
+            <pl>Masz jakieś plany na weekend?</pl>
+            <es>¿Tienes planes para el fin de semana?</es>
+            <it>Hai piani per il fine settimana?</it>
+            <cz>Máte nějaké plány na víkend?</cz>
+            <br>Tem planos para o fim de semana?</br>
+            <uk>Є плани на вихідні?</uk>
+            <ru>Есть планы на выходные?</ru>
+        </text>
+
+        <text name="npc_topic_market">
+            <en>The market prices have been good this season.</en>
+            <de>Die Marktpreise waren diese Saison gut.</de>
+            <fr>Les prix du marché ont été bons cette saison.</fr>
+            <pl>Ceny rynkowe były dobre w tym sezonie.</pl>
+            <es>Los precios del mercado han sido buenos esta temporada.</es>
+            <it>I prezzi di mercato sono stati buoni questa stagione.</it>
+            <cz>Tržní ceny byly letos dobré.</cz>
+            <br>Os preços do mercado têm sido bons nesta temporada.</br>
+            <uk>Ціни на ринку цього сезону непогані.</uk>
+            <ru>Рыночные цены в этом сезоне неплохие.</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Conversation Topics (High relationship)      -->
+        <!-- ============================================ -->
+        <text name="npc_topic_friend">
+            <en>Good to see you, friend! How have you been?</en>
+            <de>Schön dich zu sehen, Freund! Wie geht's dir?</de>
+            <fr>Content de vous voir, ami ! Comment allez-vous ?</fr>
+            <pl>Miło cię widzieć, przyjacielu! Jak się masz?</pl>
+            <es>¡Me alegro de verte, amigo! ¿Cómo has estado?</es>
+            <it>Bello vederti, amico! Come stai?</it>
+            <cz>Rád vás vidím, příteli! Jak se máte?</cz>
+            <br>Bom te ver, amigo! Como você tem passado?</br>
+            <uk>Радий бачити тебе, друже! Як справи?</uk>
+            <ru>Рад тебя видеть, друг! Как поживаешь?</ru>
+        </text>
+
+        <text name="npc_topic_harvest_memory">
+            <en>Remember that time we helped each other with harvest?</en>
+            <de>Erinnerst du dich, als wir uns bei der Ernte geholfen haben?</de>
+            <fr>Vous souvenez-vous quand on s'est entraidés pour la récolte ?</fr>
+            <pl>Pamiętasz jak pomagaliśmy sobie przy żniwach?</pl>
+            <es>¿Recuerdas cuando nos ayudamos con la cosecha?</es>
+            <it>Ricordi quella volta che ci siamo aiutati col raccolto?</it>
+            <cz>Pamatujete, jak jsme si pomáhali se sklizní?</cz>
+            <br>Lembra daquela vez que nos ajudamos na colheita?</br>
+            <uk>Пам'ятаєш, як ми допомагали одне одному з жнивами?</uk>
+            <ru>Помнишь, как мы помогали друг другу с уборкой?</ru>
+        </text>
+
+        <text name="npc_topic_best_neighbor">
+            <en>You're one of the best neighbors I've had!</en>
+            <de>Du bist einer der besten Nachbarn, die ich hatte!</de>
+            <fr>Vous êtes l'un des meilleurs voisins que j'ai eus !</fr>
+            <pl>Jesteś jednym z najlepszych sąsiadów jakich miałem!</pl>
+            <es>¡Eres uno de los mejores vecinos que he tenido!</es>
+            <it>Sei uno dei migliori vicini che abbia mai avuto!</it>
+            <cz>Jste jeden z nejlepších sousedů, jaké jsem měl!</cz>
+            <br>Você é um dos melhores vizinhos que já tive!</br>
+            <uk>Ти один з найкращих сусідів, яких я мав!</uk>
+            <ru>Ты один из лучших соседей, которые у меня были!</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Personality Topics                           -->
+        <!-- ============================================ -->
+        <text name="npc_topic_fields_good">
+            <en>The fields are looking good this year.</en>
+            <de>Die Felder sehen dieses Jahr gut aus.</de>
+            <fr>Les champs ont belle allure cette année.</fr>
+            <pl>Pola wyglądają dobrze w tym roku.</pl>
+            <es>Los campos se ven bien este año.</es>
+            <it>I campi stanno bene quest'anno.</it>
+            <cz>Pole letos vypadají dobře.</cz>
+            <br>Os campos estão bonitos este ano.</br>
+            <uk>Поля цього року виглядають добре.</uk>
+            <ru>Поля в этом году выглядят хорошо.</ru>
+        </text>
+
+        <text name="npc_topic_harvest_busy">
+            <en>Harvest season is always busy but rewarding.</en>
+            <de>Die Erntezeit ist immer stressig, aber lohnend.</de>
+            <fr>La saison des récoltes est toujours chargée mais gratifiante.</fr>
+            <pl>Okres żniw jest zawsze pracowity, ale satysfakcjonujący.</pl>
+            <es>La temporada de cosecha siempre es ajetreada pero gratificante.</es>
+            <it>La stagione del raccolto è sempre impegnativa ma gratificante.</it>
+            <cz>Sklizňové období je vždy rušné, ale odměňující.</cz>
+            <br>A temporada de colheita é sempre corrida, mas gratificante.</br>
+            <uk>Сезон жнив завжди напружений, але вдячний.</uk>
+            <ru>Сезон уборки всегда занятой, но благодарный.</ru>
+        </text>
+
+        <text name="npc_topic_other_neighbors">
+            <en>Have you talked to the other neighbors lately?</en>
+            <de>Hast du in letzter Zeit mit den anderen Nachbarn gesprochen?</de>
+            <fr>Avez-vous parlé aux autres voisins dernièrement ?</fr>
+            <pl>Rozmawiałeś ostatnio z innymi sąsiadami?</pl>
+            <es>¿Has hablado con los otros vecinos últimamente?</es>
+            <it>Hai parlato con gli altri vicini ultimamente?</it>
+            <cz>Mluvil jste v poslední době s ostatními sousedy?</cz>
+            <br>Conversou com os outros vizinhos ultimamente?</br>
+            <uk>Розмовляв з іншими сусідами останнім часом?</uk>
+            <ru>Разговаривал с другими соседями в последнее время?</ru>
+        </text>
+
+        <text name="npc_topic_gathering">
+            <en>We should have a neighborhood gathering sometime!</en>
+            <de>Wir sollten mal ein Nachbarschaftstreffen machen!</de>
+            <fr>On devrait organiser une fête de quartier un jour !</fr>
+            <pl>Powinniśmy kiedyś zrobić spotkanie sąsiedzkie!</pl>
+            <es>¡Deberíamos hacer una reunión vecinal algún día!</es>
+            <it>Dovremmo fare un ritrovo di quartiere prima o poi!</it>
+            <cz>Měli bychom někdy uspořádat sousedské setkání!</cz>
+            <br>Deveríamos fazer um encontro da vizinhança algum dia!</br>
+            <uk>Треба якось зібратися сусідами!</uk>
+            <ru>Надо бы как-нибудь собраться соседями!</ru>
+        </text>
+
+        <text name="npc_topic_quiet_day">
+            <en>Quiet day today. I like it that way.</en>
+            <de>Ruhiger Tag heute. So mag ich es.</de>
+            <fr>Journée calme aujourd'hui. J'aime ça.</fr>
+            <pl>Spokojny dzień dzisiaj. Lubię takie dni.</pl>
+            <es>Día tranquilo hoy. Así me gusta.</es>
+            <it>Giornata tranquilla oggi. Mi piace così.</it>
+            <cz>Dnes je klidný den. Tak to mám rád.</cz>
+            <br>Dia calmo hoje. Gosto assim.</br>
+            <uk>Спокійний день сьогодні. Мені так подобається.</uk>
+            <ru>Тихий день сегодня. Мне так нравится.</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- Work Status Messages                         -->
+        <!-- ============================================ -->
+        <text name="npc_work_nothing">
+            <en>I'm not doing much right now.</en>
+            <de>Ich mache gerade nicht viel.</de>
+            <fr>Je ne fais pas grand-chose en ce moment.</fr>
+            <pl>Nie robię teraz wiele.</pl>
+            <es>No estoy haciendo mucho ahora.</es>
+            <it>Non sto facendo molto al momento.</it>
+            <cz>Teď moc nedělám.</cz>
+            <br>Não estou fazendo muita coisa agora.</br>
+            <uk>Зараз не дуже зайнятий.</uk>
+            <ru>Сейчас не особо занят.</ru>
+        </text>
+
+        <text name="npc_work_idle">
+            <en>I'm taking a break at the moment.</en>
+            <de>Ich mache gerade eine Pause.</de>
+            <fr>Je fais une pause en ce moment.</fr>
+            <pl>Robię sobie teraz przerwę.</pl>
+            <es>Estoy tomando un descanso.</es>
+            <it>Sto facendo una pausa al momento.</it>
+            <cz>Právě si dávám pauzu.</cz>
+            <br>Estou fazendo uma pausa no momento.</br>
+            <uk>Зараз роблю перерву.</uk>
+            <ru>Сейчас делаю перерыв.</ru>
+        </text>
+
+        <text name="npc_work_walking">
+            <en>Just getting some exercise.</en>
+            <de>Ich bewege mich nur ein bisschen.</de>
+            <fr>Je fais un peu d'exercice.</fr>
+            <pl>Po prostu się rozruszam.</pl>
+            <es>Solo haciendo un poco de ejercicio.</es>
+            <it>Sto facendo un po' di esercizio.</it>
+            <cz>Jen se trochu protahuji.</cz>
+            <br>Só fazendo um pouco de exercício.</br>
+            <uk>Просто розминаюся трохи.</uk>
+            <ru>Просто разминаюсь немного.</ru>
+        </text>
+
+        <text name="npc_work_working">
+            <en>Working on the field. It's hard work but someone's got to do it!</en>
+            <de>Arbeite auf dem Feld. Ist harte Arbeit, aber jemand muss es machen!</de>
+            <fr>Je travaille au champ. C'est dur mais il faut bien le faire !</fr>
+            <pl>Pracuję na polu. Ciężka robota, ale ktoś musi to robić!</pl>
+            <es>Trabajando en el campo. ¡Es trabajo duro pero alguien tiene que hacerlo!</es>
+            <it>Lavoro nel campo. È duro ma qualcuno deve farlo!</it>
+            <cz>Pracuji na poli. Je to těžká práce, ale někdo to dělat musí!</cz>
+            <br>Trabalhando no campo. É trabalho duro, mas alguém tem que fazer!</br>
+            <uk>Працюю на полі. Тяжка робота, але хтось же мусить!</uk>
+            <ru>Работаю в поле. Тяжелая работа, но кто-то же должен!</ru>
+        </text>
+
+        <text name="npc_work_driving">
+            <en>Making some deliveries with my vehicle.</en>
+            <de>Mache ein paar Lieferungen mit meinem Fahrzeug.</de>
+            <fr>Je fais quelques livraisons avec mon véhicule.</fr>
+            <pl>Robię dostawy moim pojazdem.</pl>
+            <es>Haciendo entregas con mi vehículo.</es>
+            <it>Faccio delle consegne con il mio veicolo.</it>
+            <cz>Dělám nějaké dodávky se svým vozidlem.</cz>
+            <br>Fazendo entregas com meu veículo.</br>
+            <uk>Роблю доставки своїм транспортом.</uk>
+            <ru>Делаю доставки на своем транспорте.</ru>
+        </text>
+
+        <text name="npc_work_resting">
+            <en>Taking it easy for a while.</en>
+            <de>Nehme es für eine Weile ruhig.</de>
+            <fr>Je me repose un moment.</fr>
+            <pl>Odpoczywam chwilę.</pl>
+            <es>Descansando un rato.</es>
+            <it>Mi riposo un po'.</it>
+            <cz>Chvíli si odpočívám.</cz>
+            <br>Descansando um pouco.</br>
+            <uk>Відпочиваю трохи.</uk>
+            <ru>Отдыхаю немного.</ru>
+        </text>
+
+        <text name="npc_work_socializing">
+            <en>Chatting with a neighbor.</en>
+            <de>Plaudere mit einem Nachbarn.</de>
+            <fr>Je discute avec un voisin.</fr>
+            <pl>Gadam z sąsiadem.</pl>
+            <es>Charlando con un vecino.</es>
+            <it>Chiacchiero con un vicino.</it>
+            <cz>Povídám si se sousedem.</cz>
+            <br>Conversando com um vizinho.</br>
+            <uk>Балакаю з сусідом.</uk>
+            <ru>Болтаю с соседом.</ru>
+        </text>
+
+        <text name="npc_work_traveling">
+            <en>Heading somewhere important.</en>
+            <de>Bin unterwegs zu einem wichtigen Ort.</de>
+            <fr>Je me rends quelque part d'important.</fr>
+            <pl>Jadę w ważne miejsce.</pl>
+            <es>Yendo a un lugar importante.</es>
+            <it>Sto andando in un posto importante.</it>
+            <cz>Jedu někam důležitého.</cz>
+            <br>Indo para algum lugar importante.</br>
+            <uk>Їду кудись важливе.</uk>
+            <ru>Еду куда-то важное.</ru>
+        </text>
+
+        <text name="npc_work_busy">
+            <en>I'm keeping busy.</en>
+            <de>Ich bin beschäftigt.</de>
+            <fr>Je suis bien occupé.</fr>
+            <pl>Jestem zajęty.</pl>
+            <es>Estoy ocupado.</es>
+            <it>Sono impegnato.</it>
+            <cz>Mám plno práce.</cz>
+            <br>Estou bem ocupado.</br>
+            <uk>Я зайнятий.</uk>
+            <ru>Я занят.</ru>
+        </text>
+
+        <!-- ============================================ -->
+        <!-- HUD Elements                                 -->
+        <!-- ============================================ -->
+        <text name="npc_hud_active_favors">
+            <en>Active Favors:</en>
+            <de>Aktive Gefallen:</de>
+            <fr>Faveurs actives :</fr>
+            <pl>Aktywne przysługi:</pl>
+            <es>Favores activos:</es>
+            <it>Favori attivi:</it>
+            <cz>Aktivní laskavosti:</cz>
+            <br>Favores ativos:</br>
+            <uk>Активні послуги:</uk>
+            <ru>Активные услуги:</ru>
+        </text>
+
+        <text name="npc_hud_and_more">
+            <en>...and %d more</en>
+            <de>...und %d weitere</de>
+            <fr>...et %d de plus</fr>
+            <pl>...i %d więcej</pl>
+            <es>...y %d más</es>
+            <it>...e %d altri</it>
+            <cz>...a %d dalších</cz>
+            <br>...e %d mais</br>
+            <uk>...і ще %d</uk>
+            <ru>...и еще %d</ru>
+        </text>
+
+        <text name="npc_interact_talk_to">
+            <en>Talk to %s</en>
+            <de>Mit %s sprechen</de>
+            <fr>Parler à %s</fr>
+            <pl>Porozmawiaj z %s</pl>
+            <es>Hablar con %s</es>
+            <it>Parla con %s</it>
+            <cz>Promluvit s %s</cz>
+            <br>Falar com %s</br>
+            <uk>Поговорити з %s</uk>
+            <ru>Поговорить с %s</ru>
         </text>
     </l10n>
 

@@ -1,4 +1,28 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- CONSOLE COMMANDS:
+-- [x] npcStatus - Show NPC system status
+-- [x] npcSpawn - Spawn NPC with optional name argument
+-- [x] npcList - List all active NPCs
+-- [x] npcReset - Reset/initialize NPC system
+-- [x] npcHelp - Display help text with all commands
+-- [x] npcDebug - Toggle debug mode on/off with save
+-- [x] npcReload - Reload settings from XML
+-- [x] npcTest - Basic connectivity test
+-- GUI ROUTING:
+-- [x] Routes console commands to g_NPCSystem methods
+-- [x] Graceful fallback when NPC system not initialized
+-- FUTURE ENHANCEMENTS:
+-- [ ] npcTeleport [name] - Teleport player to named NPC
+-- [ ] npcRelationship [name] - Show relationship status with specific NPC
+-- [ ] npcFavor [accept|reject] - Accept or reject pending favor from console
+-- [ ] npcGift [name] [item] - Give item to named NPC via console
+-- [ ] Tab-completion for NPC names in console commands
+-- [ ] GUI dialog for NPC interaction (favor list, relationship overview)
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - GUI and Console Commands
 -- =========================================================
 -- Handles console commands and GUI integration
@@ -15,6 +39,7 @@ function NPCFavorGUI.new(npcSystem)
 end
 
 function NPCFavorGUI:registerConsoleCommands()
+    print("[NPC Favor] Registering console commands...")
     addConsoleCommand("npcStatus", "Show NPC system status", "npcStatus", self)
     addConsoleCommand("npcSpawn", "Spawn an NPC with optional name", "npcSpawn", self)
     addConsoleCommand("npcList", "List all active NPCs", "npcList", self)
@@ -24,11 +49,12 @@ function NPCFavorGUI:registerConsoleCommands()
     addConsoleCommand("npcReload", "Reload NPC settings", "npcReload", self)
     addConsoleCommand("npcTest", "Test function", "npcTest", self)
 
-    print("[NPC Favor] Console commands registered")
+    print("[NPC Favor] Console commands registered successfully")
 end
 
 -- Console command handler functions that route to NPCSystem
 function NPCFavorGUI:npcStatus()
+    print("[NPC Favor] npcStatus command called")
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandStatus()
     else
@@ -37,6 +63,7 @@ function NPCFavorGUI:npcStatus()
 end
 
 function NPCFavorGUI:npcSpawn(name)
+    print("[NPC Favor] npcSpawn command called with name: " .. (name or "nil"))
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandSpawn(name or "")
     else
@@ -53,6 +80,7 @@ function NPCFavorGUI:npcList()
 end
 
 function NPCFavorGUI:npcReset()
+    print("[NPC Favor] npcReset command called")
     if g_NPCSystem then
         return g_NPCSystem:consoleCommandReset()
     else

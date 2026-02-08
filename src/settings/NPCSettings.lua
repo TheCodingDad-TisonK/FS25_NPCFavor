@@ -1,4 +1,29 @@
 -- =========================================================
+-- TODO / FUTURE VISION
+-- =========================================================
+-- SETTINGS VALUES & DEFAULTS:
+-- [x] Core settings (enabled, maxNPCs, work hours, spawn distance)
+-- [x] Display settings (names, notifications, relationship bars, paths)
+-- [x] Gameplay settings (favors, gifts, relationships, decay)
+-- [x] Difficulty multipliers (gain, loss, reward, penalty)
+-- [x] AI behavior tuning (activity level, movement, breaks, social)
+-- [x] Debug toggles (paths, spawn points, AI decisions, log to file)
+-- [x] Sound settings (effects, voice lines, UI sounds, notifications)
+-- [x] Performance settings (update frequency, render/update distance, batching)
+-- [x] Multiplayer sync flags (NPCs, relationships, favors)
+-- [x] Full XML save/load with per-field read/write
+-- [x] Validation with clamping for all numeric ranges
+-- [x] Reset to defaults with optional immediate save
+-- [x] Helper methods (difficulty multiplier, work time check, NPC culling)
+-- FUTURE ENHANCEMENTS:
+-- [ ] Per-NPC setting overrides (custom work hours for specific NPCs)
+-- [ ] Settings profiles (presets: "Casual", "Realistic", "Performance")
+-- [ ] Settings change event system to notify listeners on value change
+-- [ ] Import/export settings to share between savegames
+-- [ ] Settings versioning with automatic migration on mod update
+-- =========================================================
+
+-- =========================================================
 -- FS25 NPC Favor Mod - Settings Data (NPCSettings)
 -- =========================================================
 
