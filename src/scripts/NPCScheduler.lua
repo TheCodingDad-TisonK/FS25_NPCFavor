@@ -132,13 +132,14 @@ function NPCScheduler:updateGameTime()
         return
     end
     
-    -- Get time from game environment
-    local gameTime = g_currentMission.environment.dayTime or 0
-    local hour = g_currentMission.environment.currentHour or 0
-    local minute = g_currentMission.environment.currentMinute or 0
-    local day = g_currentMission.environment.currentDay or 1
-    local month = g_currentMission.environment.currentMonth or 1
-    local year = g_currentMission.environment.currentYear or 1
+    -- Derive hour/minute from dayTime (ms since midnight) for reliability
+    local env = g_currentMission.environment
+    local dayTime = env.dayTime or 0
+    local hour = math.floor(dayTime / 3600000)
+    local minute = math.floor((dayTime % 3600000) / 60000)
+    local day = env.currentDay or 1
+    local month = env.currentMonth or 1
+    local year = env.currentYear or 1
     
     -- Check if day changed
     if day ~= self.currentDay then

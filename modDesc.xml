@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="92">
+<modDesc descVersion="105">
     <author>TisonK</author>
     <version>1.0.0.0</version>
     <modName>FS25_NPCFavor</modName>
@@ -32,21 +32,8 @@
     <multiplayer supported="true"/>
     
     <extraSourceFiles>
+        <!-- main.lua uses source() to load all other files in the correct order -->
         <sourceFile filename="main.lua" />
-        <sourceFile filename="src/NPCSystem.lua" />
-        <sourceFile filename="src/scripts/NPCAI.lua" />
-        <sourceFile filename="src/scripts/NPCFavorSystem.lua" />
-        <sourceFile filename="src/scripts/NPCEntity.lua" />
-        <sourceFile filename="src/scripts/NPCScheduler.lua" />
-        <sourceFile filename="src/scripts/NPCRelationshipManager.lua" />
-        <sourceFile filename="src/scripts/NPCInteractionUI.lua" />
-        <sourceFile filename="src/settings/NPCSettings.lua" />
-        <sourceFile filename="src/settings/NPCSettingsIntegration.lua" />
-        <sourceFile filename="src/settings/NPCConfig.lua" />
-        <sourceFile filename="src/settings/NPCFavorSettingsManager.lua" />
-        <sourceFile filename="src/settings/NPCFavorGUI.lua" />
-        <sourceFile filename="src/utils/VectorHelper.lua" />
-        <sourceFile filename="src/utils/TimeHelper.lua" />
     </extraSourceFiles>
 
     <l10n>
@@ -195,6 +182,58 @@
             <ru>Отображать имена NPC над их головами</ru>
         </text>
         
+        <text name="npc_show_notifications_short">
+            <en>Show Notifications</en>
+            <de>Benachrichtigungen anzeigen</de>
+            <fr>Afficher notifications</fr>
+            <pl>Pokazuj powiadomienia</pl>
+            <es>Mostrar notificaciones</es>
+            <it>Mostra notifiche</it>
+            <cz>Zobrazit oznámení</cz>
+            <br>Mostrar notificações</br>
+            <uk>Показувати сповіщення</uk>
+            <ru>Показывать уведомления</ru>
+        </text>
+
+        <text name="npc_show_notifications_long">
+            <en>Show NPC notification messages on screen</en>
+            <de>NPC-Benachrichtigungen auf dem Bildschirm anzeigen</de>
+            <fr>Afficher les messages de notification PNJ à l'écran</fr>
+            <pl>Wyświetlaj powiadomienia NPC na ekranie</pl>
+            <es>Mostrar mensajes de notificación NPC en pantalla</es>
+            <it>Mostra messaggi notifica NPC sullo schermo</it>
+            <cz>Zobrazovat oznámení NPC na obrazovce</cz>
+            <br>Mostrar mensagens de notificação NPC na tela</br>
+            <uk>Показувати повідомлення NPC на екрані</uk>
+            <ru>Показывать уведомления NPC на экране</ru>
+        </text>
+
+        <text name="npc_enable_favors_short">
+            <en>Enable Favors</en>
+            <de>Gefallen aktivieren</de>
+            <fr>Activer faveurs</fr>
+            <pl>Włącz przysługi</pl>
+            <es>Activar favores</es>
+            <it>Attiva favori</it>
+            <cz>Povolit laskavosti</cz>
+            <br>Ativar favores</br>
+            <uk>Увімкнути послуги</uk>
+            <ru>Включить услуги</ru>
+        </text>
+
+        <text name="npc_enable_favors_long">
+            <en>Allow NPCs to ask the player for favors</en>
+            <de>NPCs erlauben, den Spieler um Gefallen zu bitten</de>
+            <fr>Permettre aux PNJ de demander des faveurs au joueur</fr>
+            <pl>Pozwól NPC prosić gracza o przysługi</pl>
+            <es>Permitir que los NPC pidan favores al jugador</es>
+            <it>Permettere ai NPC di chiedere favori al giocatore</it>
+            <cz>Povolit NPC žádat hráče o laskavosti</cz>
+            <br>Permitir que NPC peçam favores ao jogador</br>
+            <uk>Дозволити NPC просити гравця про послуги</uk>
+            <ru>Позволить NPC просить игрока об услугах</ru>
+        </text>
+
         <text name="npc_debug_short">
             <en>Debug Mode</en>
             <de>Debug-Modus</de>
@@ -314,6 +353,19 @@
         </text>
 
         <!-- Interaction Texts -->
+        <text name="input_NPC_INTERACT">
+            <en>Talk to Neighbor</en>
+            <de>Mit Nachbar sprechen</de>
+            <fr>Parler au voisin</fr>
+            <pl>Porozmawiaj z sąsiadem</pl>
+            <es>Hablar con el vecino</es>
+            <it>Parla con il vicino</it>
+            <cz>Promluvit se sousedem</cz>
+            <br>Falar com o vizinho</br>
+            <uk>Поговорити з сусідом</uk>
+            <ru>Поговорить с соседом</ru>
+        </text>
+
         <text name="npc_interact_hint">
             <en>Press [E] to talk</en>
             <de>Drücke [E] zum Reden</de>
@@ -485,4 +537,17 @@
             <ru>%s теперь работает на своем поле</ru>
         </text>
     </l10n>
+
+    <actions>
+        <action name="NPC_INTERACT" />
+        <action name="NPC_DIALOG_CLOSE" />
+    </actions>
+    <inputBinding>
+        <actionBinding action="NPC_INTERACT">
+            <binding device="KB_MOUSE_DEFAULT" input="KEY_e" />
+        </actionBinding>
+        <actionBinding action="NPC_DIALOG_CLOSE">
+            <binding device="KB_MOUSE_DEFAULT" input="KEY_q" />
+        </actionBinding>
+    </inputBinding>
 </modDesc>

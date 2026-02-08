@@ -43,11 +43,17 @@ function NPCAI:update(dt)
 end
 
 function NPCAI:updateNPCState(npc, dt)
-    -- Check if NPC is stuck
-    if self:isNPCStuck(npc, dt) then
-        self:handleStuckNPC(npc)
+    -- Only check stuck for movement states (idle/working/resting/socializing are MEANT to be stationary)
+    local state = npc.aiState
+    if state == self.STATES.WALKING or state == self.STATES.TRAVELING or state == self.STATES.DRIVING then
+        if self:isNPCStuck(npc, dt) then
+            self:handleStuckNPC(npc)
+        end
+    else
+        -- Reset stuck timer for stationary states so it doesn't accumulate
+        npc.stuckTimer = 0
     end
-    
+
     -- Check current state and update accordingly
     if npc.aiState == self.STATES.IDLE then
         self:updateIdleState(npc, dt)
@@ -95,16 +101,18 @@ function NPCAI:isNPCStuck(npc, dt)
 end
 
 function NPCAI:handleStuckNPC(npc)
-    print(string.format("NPC %s is stuck at (%.1f, %.1f, %.1f), resetting...",
-        npc.name, npc.position.x, npc.position.y, npc.position.z))
-    
+    if self.npcSystem.settings.debugMode then
+        print(string.format("[NPC Favor] NPC %s stuck at (%.1f, %.1f, %.1f), resetting to idle",
+            npc.name, npc.position.x, npc.position.y, npc.position.z))
+    end
+
     -- Reset to idle
     self:setState(npc, self.STATES.IDLE)
-    
+
     -- Clear path
     npc.path = nil
     npc.targetPosition = nil
-    
+
     -- Reset stuck timer
     npc.stuckTimer = 0
 end
@@ -266,26 +274,30 @@ function NPCAI:updateWalkingState(npc, dt)
         local speed = npc.movementSpeed * dt
         
         -- Adjust speed based on terrain slope
-        local terrainHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, 
-            npc.position.x, 0, npc.position.z)
-        if terrainHeight then
-            local heightDiff = math.abs(terrainHeight - npc.position.y)
-            if heightDiff > 1 then
-                speed = speed * 0.7 -- Slow down on steep terrain
+        if g_currentMission and g_currentMission.terrainRootNode then
+            local okSlope, terrainHeight = pcall(getTerrainHeightAtWorldPos,
+                g_currentMission.terrainRootNode, npc.position.x, 0, npc.position.z)
+            if okSlope and terrainHeight then
+                local heightDiff = math.abs(terrainHeight - npc.position.y)
+                if heightDiff > 1 then
+                    speed = speed * 0.7 -- Slow down on steep terrain
+                end
             end
         end
-        
+
         local moveX = (dx / distance) * speed
         local moveZ = (dz / distance) * speed
-        
+
         npc.position.x = npc.position.x + moveX
         npc.position.z = npc.position.z + moveZ
-        
+
         -- Update Y position to terrain
-        local newTerrainHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, 
-            npc.position.x, 0, npc.position.z)
-        if newTerrainHeight then
-            npc.position.y = newTerrainHeight + 0.5 -- NPC height offset
+        if g_currentMission and g_currentMission.terrainRootNode then
+            local okY, newTerrainHeight = pcall(getTerrainHeightAtWorldPos,
+                g_currentMission.terrainRootNode, npc.position.x, 0, npc.position.z)
+            if okY and newTerrainHeight then
+                npc.position.y = newTerrainHeight + 0.5 -- NPC height offset
+            end
         end
         
         -- Update rotation to face movement direction
@@ -492,6 +504,11 @@ function NPCAI:setState(npc, state)
     
     -- State transition effects
     if oldState ~= state then
+        -- Flag sync dirty for immediate multiplayer broadcast
+        if self.npcSystem.syncDirty ~= nil then
+            self.npcSystem.syncDirty = true
+        end
+
         if self.npcSystem.settings.debugMode then
             print(string.format("NPC %s: %s -> %s", npc.name, oldState, state))
         end
@@ -582,8 +599,11 @@ function NPCAI:startWalkingToRandomLocation(npc, maxDistance)
     local targetZ = npc.position.z + math.sin(angle) * distance
     
     -- Ensure target is on valid terrain
-    local targetY = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, targetX, 0, targetZ)
-    targetY = targetY or 0
+    local targetY = 0
+    if g_currentMission and g_currentMission.terrainRootNode then
+        local okH, h = pcall(getTerrainHeightAtWorldPos, g_currentMission.terrainRootNode, targetX, 0, targetZ)
+        if okH and h then targetY = h end
+    end
     
     self:startWalkingTo(npc, targetX, targetZ)
     
@@ -746,7 +766,11 @@ function NPCPathfinder:findPath(startX, startZ, endX, endZ)
     local path = {}
     
     -- Add start point
-    local startY = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, startX, 0, startZ) or 0
+    local startY = 0
+    if g_currentMission and g_currentMission.terrainRootNode then
+        local okS, hS = pcall(getTerrainHeightAtWorldPos, g_currentMission.terrainRootNode, startX, 0, startZ)
+        if okS and hS then startY = hS end
+    end
     table.insert(path, {x = startX, y = startY, z = startZ})
     
     -- For long distances, add intermediate points
@@ -786,42 +810,52 @@ function NPCPathfinder:findPath(startX, startZ, endX, endZ)
 end
 
 function NPCPathfinder:getSafeTerrainHeight(x, z)
-    local height = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, x, 0, z)
-    
+    if not g_currentMission or not g_currentMission.terrainRootNode then
+        return 0
+    end
+
+    local terrainRoot = g_currentMission.terrainRootNode
+    local okH, height = pcall(getTerrainHeightAtWorldPos, terrainRoot, x, 0, z)
+    if not okH then height = nil end
+
     if not height then
         -- Fallback: use nearby terrain height
         for offset = 1, 10 do
             for angle = 0, math.pi * 2, math.pi / 4 do
                 local checkX = x + math.cos(angle) * offset
                 local checkZ = z + math.sin(angle) * offset
-                local checkHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, checkX, 0, checkZ)
-                if checkHeight then
+                local okC, checkHeight = pcall(getTerrainHeightAtWorldPos, terrainRoot, checkX, 0, checkZ)
+                if okC and checkHeight then
                     return checkHeight
                 end
             end
         end
         return 0
     end
-    
-    -- Check if location is in water
+
+    -- Check if location is in water (getWaterTypeAtWorldPos may not exist)
     if self.avoidWater then
-        local waterType = getWaterTypeAtWorldPos(g_currentMission.terrainRootNode, x, 0, z)
-        if waterType and waterType > 0 then
+        local okW, waterType = pcall(function()
+            return getWaterTypeAtWorldPos(terrainRoot, x, 0, z)
+        end)
+        if okW and waterType and waterType > 0 then
             -- Try to find nearby land
             for offset = 5, 50, 5 do
                 for angle = 0, math.pi * 2, math.pi / 8 do
                     local checkX = x + math.cos(angle) * offset
                     local checkZ = z + math.sin(angle) * offset
-                    local checkHeight = getTerrainHeightAtWorldPos(g_currentMission.terrainRootNode, checkX, 0, checkZ)
-                    local checkWater = getWaterTypeAtWorldPos(g_currentMission.terrainRootNode, checkX, 0, checkZ)
-                    if checkHeight and (not checkWater or checkWater == 0) then
+                    local okCH, checkHeight = pcall(getTerrainHeightAtWorldPos, terrainRoot, checkX, 0, checkZ)
+                    local okCW, checkWater = pcall(function()
+                        return getWaterTypeAtWorldPos(terrainRoot, checkX, 0, checkZ)
+                    end)
+                    if okCH and checkHeight and (not okCW or not checkWater or checkWater == 0) then
                         return checkHeight
                     end
                 end
             end
         end
     end
-    
+
     return height
 end
 
@@ -890,16 +924,17 @@ function NPCPathfinder:update(dt)
     self.cacheCleanupTimer = (self.cacheCleanupTimer or 0) + dt
     if self.cacheCleanupTimer > 60 then -- Clean every minute
         self.cacheCleanupTimer = 0
-        
-        -- Simple cache cleanup (in a real implementation, you'd track usage)
-        if #self.pathCache > self.cacheSize * 2 then
-            local keys = {}
-            for k in pairs(self.pathCache) do
-                table.insert(keys, k)
-            end
-            
-            -- Remove half of the cache
-            for i = 1, math.floor(#keys / 2) do
+
+        -- Count cache entries (# operator doesn't work on hash tables in Lua 5.1)
+        local keys = {}
+        for k in pairs(self.pathCache) do
+            table.insert(keys, k)
+        end
+
+        -- Evict oldest half when cache exceeds 2x limit
+        if #keys > self.cacheSize then
+            local removeCount = #keys - self.cacheSize
+            for i = 1, removeCount do
                 self.pathCache[keys[i]] = nil
             end
         end

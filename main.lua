@@ -26,11 +26,18 @@ if modDirectory then
     print("[NPC Favor] Loading utility files...")
     source(modDirectory .. "src/utils/VectorHelper.lua")
     source(modDirectory .. "src/utils/TimeHelper.lua")
-    
+
     -- Define configuration
     source(modDirectory .. "src/settings/NPCConfig.lua")
     source(modDirectory .. "src/settings/NPCSettings.lua")
     source(modDirectory .. "src/settings/NPCFavorSettingsManager.lua")
+    source(modDirectory .. "src/settings/NPCSettingsIntegration.lua")
+
+    -- Multiplayer events (must load before NPCSystem which references them)
+    print("[NPC Favor] Loading multiplayer events...")
+    source(modDirectory .. "src/events/NPCStateSyncEvent.lua")
+    source(modDirectory .. "src/events/NPCInteractionEvent.lua")
+    source(modDirectory .. "src/events/NPCSettingsSyncEvent.lua")
 
     -- Now define core systems in order
     print("[NPC Favor] Loading core systems...")
@@ -40,13 +47,13 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCAI.lua")
     source(modDirectory .. "src/scripts/NPCScheduler.lua")
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
-    
+
     -- gui
     source(modDirectory .. "src/settings/NPCFavorGUI.lua")
 
     -- Main system that uses all others
     source(modDirectory .. "src/NPCSystem.lua")
-    
+
     print("[NPC Favor] All files loaded successfully")
 else
     print("[NPC Favor] ERROR - Could not find mod directory!")
@@ -187,104 +194,218 @@ end
 if FSBaseMission and FSBaseMission.update then
     print("[NPC Favor] Hooking FSBaseMission.update")
     FSBaseMission.update = Utils.appendedFunction(FSBaseMission.update, function(mission, dt)
-        if npcSystem and mission.isClient and mission.isRunning then
+        if npcSystem then
             npcSystem:update(dt)
         end
     end)
 end
 
-print("[NPC Favor] Setting up console command fallbacks...")
+-- =========================================================
+-- E Key Input Binding (RVB Pattern from UsedPlus)
+-- =========================================================
+-- Hook PlayerInputComponent.registerActionEvents to add NPC_INTERACT
+-- Game renders [E] automatically, we provide dynamic text
 
--- Global console command functions - these are called directly by the game
-getfenv(0)["npcStatus"] = function()
-    if g_NPCSystem then
-        return g_NPCSystem:consoleCommandStatus()
-    else
-        return "NPC System not initialized. Try reloading the save or type 'NPCReset'."
+local npcInteractActionEventId = nil
+local npcDialogCloseActionEventId = nil
+local npcInteractOriginalFunc = nil
+
+local function npcInteractActionCallback(self, actionName, inputValue, callbackState, isAnalog)
+    if inputValue <= 0 then
+        return
+    end
+
+    if not npcSystem or not npcSystem.interactionUI then
+        return
+    end
+
+    -- If dialog is already open, E cycles through options
+    if npcSystem.interactionUI.isDialogOpen then
+        npcSystem.interactionUI:selectAndExecuteNextOption()
+        return
+    end
+
+    -- Dialog not open: find nearest interactable NPC and open dialog
+    if npcSystem.nearbyNPCs then
+        local nearest = nil
+        local nearestDist = 999
+
+        for _, npc in ipairs(npcSystem.nearbyNPCs) do
+            if npc.canInteract and npc.interactionDistance < nearestDist then
+                nearest = npc
+                nearestDist = npc.interactionDistance
+            end
+        end
+
+        if nearest then
+            print(string.format("[NPC Favor] Interacting with %s", nearest.name))
+            npcSystem.interactionUI:openDialog(nearest)
+        end
     end
 end
 
-getfenv(0)["npcSpawn"] = function(name)
-    if g_NPCSystem then
-        return g_NPCSystem:consoleCommandSpawn(name or "")
-    else
-        return "NPC System not initialized"
+local function npcDialogCloseCallback(self, actionName, inputValue, callbackState, isAnalog)
+    if inputValue <= 0 then
+        return
+    end
+
+    if npcSystem and npcSystem.interactionUI and npcSystem.interactionUI.isDialogOpen then
+        npcSystem.interactionUI:closeDialog()
     end
 end
 
-getfenv(0)["npcList"] = function()
-    if g_NPCSystem then
-        return g_NPCSystem:consoleCommandList()
-    else
-        return "NPC System not initialized"
+local function hookNPCInteractInput()
+    if npcInteractOriginalFunc ~= nil then
+        return -- Already hooked
     end
-end
 
-getfenv(0)["npcReset"] = function()
-    if g_NPCSystem then
-        return g_NPCSystem:consoleCommandReset()
-    else
-        return "NPC System not initialized"
+    if PlayerInputComponent == nil or PlayerInputComponent.registerActionEvents == nil then
+        print("[NPC Favor] PlayerInputComponent.registerActionEvents not available")
+        return
     end
-end
 
-getfenv(0)["npcHelp"] = function()
-    return [[
-=== NPC Favor Mod Commands ===
-npcStatus           - Show NPC system status
-npcSpawn [name]     - Spawn an NPC with optional name
-npcList             - List all active NPCs
-npcReset            - Reset/Initialize NPC system
-npcHelp             - Show this help message
-npcDebug [on|off]   - Toggle debug mode
-npcReload           - Reload NPC settings
-npcTest             - Test function
+    npcInteractOriginalFunc = PlayerInputComponent.registerActionEvents
 
-=== Interaction ===
-Press E near an NPC to interact
-Favors will appear in your task list
+    PlayerInputComponent.registerActionEvents = function(inputComponent, ...)
+        npcInteractOriginalFunc(inputComponent, ...)
 
-=== Troubleshooting ===
-If commands don't work, try:
-1. Type 'NPCReset' to force initialization
-2. Save and reload the game
-3. Check game console for NPC Favor messages
-]]
-end
+        if inputComponent.player ~= nil and inputComponent.player.isOwner then
+            local actionId = InputAction.NPC_INTERACT
+            if actionId == nil then
+                print("[NPC Favor] InputAction.NPC_INTERACT not found")
+                return
+            end
 
-getfenv(0)["npcDebug"] = function(state)
-    if not g_NPCSystem then
-        return "NPC System not initialized. Type 'NPCReset' first."
+            g_inputBinding:beginActionEventsModification(PlayerInputComponent.INPUT_CONTEXT_NAME)
+
+            local success, eventId = g_inputBinding:registerActionEvent(
+                actionId,
+                NPCSystem,                   -- Target object (static reference)
+                npcInteractActionCallback,    -- Callback function
+                false,                        -- triggerUp
+                true,                         -- triggerDown
+                false,                        -- triggerAlways
+                false,                        -- startActive (MUST be false)
+                nil,                          -- callbackState
+                true                          -- disableConflictingBindings
+            )
+
+            g_inputBinding:endActionEventsModification()
+
+            if success and eventId ~= nil then
+                npcInteractActionEventId = eventId
+                print("[NPC Favor] E key action event registered, eventId=" .. tostring(eventId))
+            else
+                print("[NPC Favor] Failed to register E key action event")
+            end
+
+            -- Register Q key for dialog close
+            local closeActionId = InputAction.NPC_DIALOG_CLOSE
+            if closeActionId ~= nil then
+                local closeSuccess, closeEventId = g_inputBinding:registerActionEvent(
+                    closeActionId,
+                    NPCSystem,
+                    npcDialogCloseCallback,
+                    false,                        -- triggerUp
+                    true,                         -- triggerDown
+                    false,                        -- triggerAlways
+                    false,                        -- startActive
+                    nil,                          -- callbackState
+                    true                          -- disableConflictingBindings
+                )
+
+                if closeSuccess and closeEventId ~= nil then
+                    npcDialogCloseActionEventId = closeEventId
+                    print("[NPC Favor] Q key close action registered, eventId=" .. tostring(closeEventId))
+                end
+            end
+        end
     end
-    
-    if state == "on" then
-        g_NPCSystem.settings.debugMode = true
-        g_NPCSystem.settings:save()
-        return "Debug mode enabled"
-    elseif state == "off" then
-        g_NPCSystem.settings.debugMode = false
-        g_NPCSystem.settings:save()
-        return "Debug mode disabled"
-    else
-        return "Usage: npcDebug [on|off]"
-    end
+
+    print("[NPC Favor] PlayerInputComponent hooked for E key interaction")
 end
 
-getfenv(0)["npcReload"] = function()
-    if g_NPCSystem then
-        g_NPCSystem.settings:load()
-        return "NPC settings reloaded"
-    else
-        return "NPC System not initialized"
-    end
+hookNPCInteractInput()
+
+-- Update hook: control E/Q key prompt visibility based on NPC proximity and dialog state
+if FSBaseMission and FSBaseMission.update then
+    FSBaseMission.update = Utils.appendedFunction(FSBaseMission.update, function(mission, dt)
+        if g_inputBinding == nil or not npcSystem then
+            return
+        end
+
+        local dialogOpen = npcSystem.interactionUI and npcSystem.interactionUI.isDialogOpen
+
+        -- E key: show "Talk to NPC" when near, or "Next option" when dialog open
+        if npcInteractActionEventId ~= nil then
+            local shouldShow = false
+            local promptText = "Talk to NPC"
+
+            if dialogOpen then
+                shouldShow = true
+                local optionName = npcSystem.interactionUI:getCurrentOptionName()
+                promptText = optionName or "Next option"
+            elseif npcSystem.nearbyNPCs then
+                local nearest = nil
+                local nearestDist = 999
+
+                for _, npc in ipairs(npcSystem.nearbyNPCs) do
+                    if npc.canInteract and npc.interactionDistance < nearestDist then
+                        nearest = npc
+                        nearestDist = npc.interactionDistance
+                    end
+                end
+
+                if nearest then
+                    shouldShow = true
+                    promptText = string.format("Talk to %s", nearest.name or "NPC")
+                end
+            end
+
+            g_inputBinding:setActionEventTextPriority(npcInteractActionEventId, GS_PRIO_VERY_HIGH)
+            g_inputBinding:setActionEventTextVisibility(npcInteractActionEventId, shouldShow)
+            g_inputBinding:setActionEventActive(npcInteractActionEventId, shouldShow)
+            if shouldShow then
+                g_inputBinding:setActionEventText(npcInteractActionEventId, promptText)
+            end
+        end
+
+        -- Q key: only show/active when dialog is open
+        if npcDialogCloseActionEventId ~= nil then
+            g_inputBinding:setActionEventTextPriority(npcDialogCloseActionEventId, GS_PRIO_VERY_HIGH)
+            g_inputBinding:setActionEventTextVisibility(npcDialogCloseActionEventId, dialogOpen)
+            g_inputBinding:setActionEventActive(npcDialogCloseActionEventId, dialogOpen)
+            if dialogOpen then
+                g_inputBinding:setActionEventText(npcDialogCloseActionEventId, "Close dialog")
+            end
+        end
+    end)
 end
 
-getfenv(0)["npcTest"] = function()
-    print("[NPC Favor] Test function called - console commands are working!")
-    return "NPC Favor test successful. Type 'npcHelp' for commands."
+-- =========================================================
+-- Multiplayer: Player Join Sync Hook
+-- =========================================================
+-- When a new player joins, send them full NPC state + settings
+
+if FSBaseMission and FSBaseMission.sendInitialClientState then
+    FSBaseMission.sendInitialClientState = Utils.appendedFunction(
+        FSBaseMission.sendInitialClientState,
+        function(mission, connection, isReconnect)
+            if npcSystem and npcSystem.isInitialized then
+                print("[NPC Favor] Sending initial state to new client")
+                if NPCStateSyncEvent then
+                    NPCStateSyncEvent.sendToConnection(connection)
+                end
+                if NPCSettingsSyncEvent then
+                    NPCSettingsSyncEvent.sendAllToConnection(connection)
+                end
+            end
+        end
+    )
+    print("[NPC Favor] Player join sync hook installed")
 end
 
-print("[NPC Favor] Global console commands registered")
+-- Console commands are registered via addConsoleCommand() in NPCFavorGUI:registerConsoleCommands()
 
 -- Add multiplayer compatibility check
 if g_currentMission and g_currentMission.missionInfo then

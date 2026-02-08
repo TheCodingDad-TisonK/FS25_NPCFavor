@@ -263,8 +263,8 @@ function NPCRelationshipManager:canApplyRelationshipChange(npcId, reason, change
         self.giftTracker[npcId] = {day = day, count = 0}
     end
     
-    -- Check specific limits
-    if reason == "DAILY_INTERACTION" then
+    -- Check specific limits (reason strings are lowercase to match callers)
+    if reason == "daily_interaction" then
         if self.dailyInteractionTracker[npcId].count >= 1 then
             return false
         end
@@ -768,6 +768,23 @@ function NPCRelationshipManager:getNPCBenefits(npcId)
     
     local level = self:getRelationshipLevel(npc.relationship)
     return level.benefits or {}
+end
+
+function NPCRelationshipManager:update(dt)
+    self.updateTimer = (self.updateTimer or 0) + dt
+    -- Run relationship housekeeping every 60 seconds (not every frame)
+    if self.updateTimer >= 60 then
+        self.updateTimer = 0
+        for _, npc in ipairs(self.npcSystem.activeNPCs) do
+            if npc.isActive then
+                self:updateNPCMood(npc.id)
+                local level = self:getRelationshipLevel(npc.relationship)
+                self:updateNPCBehaviorForRelationship(npc, level)
+            end
+        end
+        -- Cleanup expired moods and old history
+        self:cleanupExpiredData()
+    end
 end
 
 function NPCRelationshipManager:cleanupExpiredData()

@@ -74,6 +74,11 @@ end
 
 function TimeHelper.getGameHour()
     if g_currentMission and g_currentMission.environment then
+        -- Derive from dayTime (ms since midnight) for reliability
+        local dayTime = g_currentMission.environment.dayTime
+        if dayTime then
+            return math.floor(dayTime / 3600000)
+        end
         return g_currentMission.environment.currentHour or 12
     end
     return 12
@@ -81,6 +86,11 @@ end
 
 function TimeHelper.getGameMinute()
     if g_currentMission and g_currentMission.environment then
+        -- Derive from dayTime (ms since midnight) for reliability
+        local dayTime = g_currentMission.environment.dayTime
+        if dayTime then
+            return math.floor((dayTime % 3600000) / 60000)
+        end
         return g_currentMission.environment.currentMinute or 0
     end
     return 0

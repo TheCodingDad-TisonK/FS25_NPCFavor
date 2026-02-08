@@ -69,11 +69,15 @@ function NPCInteractionUI.new(npcSystem)
     -- Input handling
     self.inputCooldown = 0
     self.inputCooldownDuration = 0.2 -- 200ms cooldown
-    
+
+    -- Dialog option cycling (E key navigates, Q closes)
+    self.selectedOptionIndex = 0  -- 0 = no selection yet, 1+ = option index
+    self.lastOptionExecuteTime = 0
+
     -- Animation
     self.animationTime = 0
     self.dialogOpenAnimation = false
-    
+
     return self
 end
 
@@ -92,9 +96,17 @@ function NPCInteractionUI:update(dt)
     -- Check for interaction key press
     self:checkInteractionInput()
     
-    -- Update dialog if open
+    -- Update and render dialog if open
     if self.isDialogOpen then
         self:updateDialog(dt)
+        self:drawDialogBackground()
+        self:drawDialogContent()
+        self:drawDialogOptions()
+
+        -- Show current message if any
+        if self.showingMessage and self.dialogMessage then
+            self:drawDialogMessage()
+        end
     end
     
     -- Draw active favors list
@@ -166,21 +178,69 @@ function NPCInteractionUI:hideInteractionHint()
 end
 
 function NPCInteractionUI:checkInteractionInput()
-    if not self.interactionHintVisible or self.isDialogOpen then
+    -- Input is handled via action events in main.lua (NPC_INTERACT + NPC_DIALOG_CLOSE)
+    -- E key: opens dialog or cycles options (npcInteractActionCallback)
+    -- Q key: closes dialog (npcDialogCloseCallback)
+end
+
+-- Called by main.lua E key callback when dialog is open
+function NPCInteractionUI:selectAndExecuteNextOption()
+    if not self.isDialogOpen or not self.currentNPC then
         return
     end
-    
-    if self.inputCooldown > 0 then
+
+    -- Throttle rapid presses
+    local currentTime = g_currentMission and g_currentMission.time or 0
+    if currentTime - self.lastOptionExecuteTime < 500 then
         return
     end
-    
-    -- Check for E key press
-    if Input.isKeyPressed(Input.KEY_e) then
-        -- Start dialog with NPC
-        self:openDialog(self.interactionHintNPC)
-        self:hideInteractionHint()
-        self.inputCooldown = self.inputCooldownDuration
+    self.lastOptionExecuteTime = currentTime
+
+    -- Reset auto-close timer on interaction
+    self.dialogAutoCloseTimer = 0
+
+    local options = self:getDialogOptions()
+    if #options == 0 then
+        return
     end
+
+    -- Advance to next option
+    self.selectedOptionIndex = self.selectedOptionIndex + 1
+    if self.selectedOptionIndex > #options then
+        self.selectedOptionIndex = 1
+    end
+
+    local selected = options[self.selectedOptionIndex]
+    if selected then
+        if self.npcSystem.settings.debugMode then
+            print(string.format("[NPC Favor] Dialog option: %s (%s)", selected.text, selected.action))
+        end
+        self:handleDialogOption(selected.action)
+    end
+end
+
+-- Returns the name of the next option (for E key prompt text)
+function NPCInteractionUI:getCurrentOptionName()
+    if not self.isDialogOpen or not self.currentNPC then
+        return nil
+    end
+
+    local options = self:getDialogOptions()
+    if #options == 0 then
+        return nil
+    end
+
+    local nextIndex = self.selectedOptionIndex + 1
+    if nextIndex > #options then
+        nextIndex = 1
+    end
+
+    local nextOption = options[nextIndex]
+    if nextOption then
+        return nextOption.text
+    end
+
+    return "Next option"
 end
 
 function NPCInteractionUI:openDialog(npc)
@@ -192,6 +252,8 @@ function NPCInteractionUI:openDialog(npc)
     self.isDialogOpen = true
     self.dialogOpenAnimation = true
     self.animationTime = 0
+    self.selectedOptionIndex = 0  -- Reset option cycling
+    self.lastOptionExecuteTime = 0
     
     -- Create dialog UI
     self:createDialogUI()
@@ -217,21 +279,57 @@ function NPCInteractionUI:createDialogUI()
 end
 
 function NPCInteractionUI:updateDialog(dt)
-    -- Check for dialog closing with cooldown
-    if self.inputCooldown <= 0 and (Input.isKeyPressed(Input.KEY_escape) or Input.isKeyPressed(Input.KEY_e)) then
-        self:closeDialog()
-        self.inputCooldown = self.inputCooldownDuration
+    if not self.isDialogOpen then
         return
     end
-    
-    -- Draw dialog background with animation
-    self:drawDialogBackground()
-    
-    -- Draw dialog content
-    self:drawDialogContent()
-    
-    -- Draw options
-    self:drawDialogOptions()
+
+    -- Auto-close after 60 seconds of inactivity
+    self.dialogAutoCloseTimer = (self.dialogAutoCloseTimer or 0) + dt
+    if self.dialogAutoCloseTimer > 60 then
+        self:closeDialog()
+        self.dialogAutoCloseTimer = 0
+        return
+    end
+
+    -- Decay dialog message timer
+    if self.showingMessage and self.messageTimer then
+        self.messageTimer = self.messageTimer - dt
+        if self.messageTimer <= 0 then
+            self.showingMessage = false
+            self.dialogMessage = nil
+        end
+    end
+end
+
+function NPCInteractionUI:drawDialogMessage()
+    if not self.dialogMessage then
+        return
+    end
+
+    local centerX = 0.5
+    local centerY = 0.5
+    local width = self.UI_SIZES.DIALOG_WIDTH - 0.04
+    local msgY = centerY - 0.02
+
+    -- Message background
+    setOverlayColor(0.15, 0.15, 0.2, 0.95)
+    renderOverlay(centerX - width/2, msgY - 0.04, width, 0.08)
+
+    -- Message text (handle newlines by splitting)
+    setTextAlignment(RenderText.ALIGN_CENTER)
+    setTextColor(0.9, 0.95, 1.0, 1)
+
+    local lines = {}
+    for line in self.dialogMessage:gmatch("[^\n]+") do
+        table.insert(lines, line)
+    end
+
+    for i, line in ipairs(lines) do
+        local lineY = msgY + 0.02 - (i - 1) * 0.018
+        renderText(centerX, lineY, self.UI_SIZES.TEXT_SMALL, line)
+    end
+
+    setTextAlignment(RenderText.ALIGN_LEFT)
 end
 
 function NPCInteractionUI:drawDialogBackground()
@@ -426,72 +524,80 @@ function NPCInteractionUI:drawDialogOptions()
     local centerY = 0.5
     local width = self.UI_SIZES.DIALOG_WIDTH
     local height = self.UI_SIZES.DIALOG_HEIGHT
-    
+
     local options = self:getDialogOptions()
     local optionHeight = self.UI_SIZES.OPTION_HEIGHT
     local spacing = 0.005
-    
+
     -- Calculate total options height
     local totalHeight = #options * (optionHeight + spacing) - spacing
     local startY = centerY - totalHeight/2 + 0.02
-    
-    -- Check mouse position for hover
-    local mouseX, mouseY = getNormalizedCursorPosition()
-    
+
+    -- Determine which option will be selected next (for highlighting)
+    local nextIndex = self.selectedOptionIndex + 1
+    if nextIndex > #options then
+        nextIndex = 1
+    end
+
     for i, option in ipairs(options) do
         local optionX = centerX - width/2 + self.UI_SIZES.MARGIN
         local optionY = startY + (i-1) * (optionHeight + spacing)
         local optionWidth = width - 2 * self.UI_SIZES.MARGIN
-        
-        -- Check if mouse is over this option
-        local isHovered = mouseX >= optionX and mouseX <= optionX + optionWidth and
-                         mouseY >= optionY and mouseY <= optionY + optionHeight
-        
-        -- Check if option is disabled
+
+        -- Highlight the next option that E will execute
+        local isNext = (i == nextIndex)
         local isDisabled = option.disabled or false
-        
+        local wasLastSelected = (i == self.selectedOptionIndex)
+
         -- Draw button background
         local color = self.UI_COLORS.BUTTON_NORMAL
         if isDisabled then
             color = {0.1, 0.1, 0.1, 0.5}
-        elseif isHovered then
-            color = self.UI_COLORS.BUTTON_HOVER
-        elseif option.isActive then
-            color = self.UI_COLORS.BUTTON_ACTIVE
+        elseif isNext then
+            color = self.UI_COLORS.BUTTON_HOVER  -- Highlight next option
+        elseif wasLastSelected then
+            color = self.UI_COLORS.BUTTON_ACTIVE  -- Show last executed
         elseif option.isDanger then
             color = self.UI_COLORS.BUTTON_DANGER
         end
-        
+
         setOverlayColor(unpack(color))
         renderOverlay(optionX, optionY, optionWidth, optionHeight)
-        
-        -- Draw button border on hover
-        if isHovered and not isDisabled then
+
+        -- Draw border on highlighted option
+        if isNext and not isDisabled then
             setOverlayColor(unpack(self.UI_COLORS.HIGHLIGHT))
-            renderOverlay(optionX, optionY, optionWidth, 0.001) -- Top
-            renderOverlay(optionX, optionY + optionHeight - 0.001, optionWidth, 0.001) -- Bottom
-            renderOverlay(optionX, optionY, 0.001, optionHeight) -- Left
-            renderOverlay(optionX + optionWidth - 0.001, optionY, 0.001, optionHeight) -- Right
+            renderOverlay(optionX, optionY, optionWidth, 0.001)
+            renderOverlay(optionX, optionY + optionHeight - 0.001, optionWidth, 0.001)
+            renderOverlay(optionX, optionY, 0.001, optionHeight)
+            renderOverlay(optionX + optionWidth - 0.001, optionY, 0.001, optionHeight)
         end
-        
-        -- Draw button text
+
+        -- Draw button text with arrow indicator for next option
         setTextAlignment(RenderText.ALIGN_CENTER)
         if isDisabled then
             setTextColor(0.5, 0.5, 0.5, 1)
+        elseif isNext then
+            setTextColor(1, 1, 0.8, 1)  -- Highlighted text color
         else
             setTextColor(1, 1, 1, 1)
         end
-        renderText(optionX + optionWidth/2, optionY + optionHeight/2 - 0.005, 
-                   self.UI_SIZES.TEXT_SMALL, option.text)
-        
-        -- Check for click
-        if isHovered and not isDisabled and self.inputCooldown <= 0 and 
-           Input.isMouseButtonPressed(Input.MOUSE_BUTTON_LEFT) then
-            self:handleDialogOption(option.action)
-            self.inputCooldown = self.inputCooldownDuration
+
+        local displayText = option.text
+        if isNext then
+            displayText = "> " .. option.text .. " <"
         end
+
+        renderText(optionX + optionWidth/2, optionY + optionHeight/2 - 0.005,
+                   self.UI_SIZES.TEXT_SMALL, displayText)
     end
-    
+
+    -- Draw key hints at bottom of dialog
+    setTextAlignment(RenderText.ALIGN_CENTER)
+    setTextColor(0.6, 0.6, 0.6, 1)
+    local hintY = startY - 0.02
+    renderText(centerX, hintY, self.UI_SIZES.TEXT_SMALL * 0.85, "[E] Select option  [Q] Close")
+
     setTextAlignment(RenderText.ALIGN_LEFT)
 end
 
