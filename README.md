@@ -16,7 +16,7 @@ Thanks for reading; Now about the mod itself...
 
 **Breathe life into your farmland!** This mod adds a living, breathing community of NPC neighbors to Farming Simulator 25. They walk the roads, follow daily routines driven by their own internal needs, build relationships with each other and with you, and ask for help with favors. Each NPC has a personality, a home, and opinions about you that change over time.
 
-The mod supports both singleplayer and multiplayer, saves all NPC data across sessions, and is fully localized in 10 languages.
+The mod supports singleplayer and multiplayer (not yet tested) , saves all NPC data across sessions, and is fully localized in 10 languages.
 
 ---
 
@@ -34,7 +34,6 @@ The mod supports both singleplayer and multiplayer, saves all NPC data across se
 - **Weather Awareness** -- Rain and storms interrupt field work. NPCs comment on weather in conversations. Seasonal schedule shifts adjust wake times and work hours.
 - **Speech Bubbles** -- NPCs display conversation text in world-space speech bubbles when socializing with each other.
 - **Persistent Save/Load** -- NPC positions, relationships, active favors, personality data, and needs save to your savegame and restore on load.
-- **Multiplayer Support** -- Full state sync for joining players, with settings broadcast on connect.
 - **10-Language Localization** -- 1,500+ i18n strings in English, German, French, Polish, Spanish, Italian, Czech, Brazilian Portuguese, Ukrainian, and Russian.
 - **In-Game Settings** -- Toggle the NPC system on/off, set max NPC count, configure work hours, favor frequency, name display, notifications, and debug mode.
 - **Console Commands** -- Type `npcHelp` in the developer console for a list of available commands.
@@ -110,17 +109,6 @@ NPCs can ask for help with 7 different kinds of tasks:
 - **Watch property** -- Keep an eye on things while they're away
 
 Each favor has a time limit, progress tracking, and rewards (cash + relationship boost). Fail to complete one, and your relationship takes a small hit.
-
----
-
-## 🌐 Multiplayer Support
-
-The mod is fully multiplayer-compatible:
-
-- **Server** runs the NPC simulation (AI decisions, movement, favors)
-- **Clients** receive synced NPC positions and states every 5 seconds
-- **Security:** Farm ownership verification, input validation, action whitelisting
-- When a new player joins, they immediately receive the full NPC state
 
 ---
 
