@@ -1,7 +1,7 @@
 # NPC Favor - Living Neighborhood
 
 **Mod Name:** FS25_NPCFavor
-**Version:** 1.2.0.0
+**Version:** 1.2.1.0
 **Game:** Farming Simulator 25
 **Author:** TisonK (original creator), UsedPlus Team (AI overhaul v1.2.0)
 

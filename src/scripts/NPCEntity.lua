@@ -1344,25 +1344,6 @@ function NPCEntity:parkVehicle(npc, x, z)
     end
 end
 
---- Apply a per-NPC color tint to the model for visual variety
--- @param entity The entity data table with node and primaryColor
-function NPCEntity:applyColorTint(entity)
-    if not entity.node then return end
-    -- ClassIds.SHAPE may not exist in all FS25 versions
-    if not ClassIds or not ClassIds.SHAPE then return end
-
-    local c = entity.primaryColor
-    pcall(function()
-        local numChildren = getNumOfChildren(entity.node)
-        for i = 0, numChildren - 1 do
-            local child = getChildAt(entity.node, i)
-            if getHasClassId(child, ClassIds.SHAPE) then
-                setShaderParameter(child, "colorScale", c.r, c.g, c.b, 1, false)
-            end
-        end
-    end)
-end
-
 function NPCEntity:createDebugRepresentation(entity)
     if not createTransformGroup or not getRootNode then return end
     
@@ -1807,42 +1788,10 @@ function NPCEntity:removeNPCEntity(npc)
     self.lastBatchIndex = 0
 end
 
-function NPCEntity:getEntityPosition(npcId)
-    local entity = self.npcEntities[npcId]
-    return entity and entity.position or nil
-end
-
-function NPCEntity:setEntityPosition(npcId, x, y, z)
-    local entity = self.npcEntities[npcId]
-    if entity then
-        entity.position = {x=x, y=y, z=z}
-        entity.needsUpdate = true
-        if entity.node then pcall(function() setTranslation(entity.node, x, y, z) end) end
-        if entity.debugNode then pcall(function() setTranslation(entity.debugNode, x, y, z) end) end
-        if entity.mapHotspot and entity.mapHotspot.setWorldPosition then pcall(function() entity.mapHotspot:setWorldPosition(x, z) end) end
-    end
-end
-
-function NPCEntity:setEntityRotation(npcId, yaw)
-    local entity = self.npcEntities[npcId]
-    if entity then
-        entity.rotation.y = yaw
-        entity.needsUpdate = true
-        if entity.node then pcall(function() setRotation(entity.node, 0, yaw, 0) end) end
-        if entity.debugNode then pcall(function() setRotation(entity.debugNode, 0, yaw, 0) end) end
-    end
-end
-
 function NPCEntity:getAllEntities()
     local entities = {}
     for _, entity in pairs(self.npcEntities) do table.insert(entities, entity) end
     return entities
-end
-
-function NPCEntity:getEntityCount()
-    local count = 0
-    for _ in pairs(self.npcEntities) do count = count + 1 end
-    return count
 end
 
 --- Remove entities that no longer have a corresponding active NPC, or

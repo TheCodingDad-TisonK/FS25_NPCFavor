@@ -55,7 +55,6 @@ Every Lua source file in the mod, grouped by directory, with a one-line descript
 | `src/settings/NPCSettings.lua` | Settings data object holding all mod configuration values organized into categories: core, display, gameplay, difficulty, AI, debug, sound, performance, and multiplayer. Provides `resetToDefaults()`, full XML save/load with per-field read/write, validation with numeric clamping, and helper methods (difficulty multiplier, work-time check, NPC culling distance). |
 | `src/settings/NPCSettingsUI.lua` | Injects NPC settings widgets into the FS25 general settings layout via `UIHelper`. Creates BinaryOption toggles (enabled, show names, notifications, debug, favors) and a NumberOption for max NPCs. Each widget saves on change and supports refresh from the settings object. |
 | `src/settings/NPCSettingsIntegration.lua` | Hooks `InGameMenuSettingsFrame.onFrameOpen` to add NPC settings to the ESC > Settings > Game Settings page. Dynamically creates section headers, binary toggles, and a multi-text dropdown for max NPC count using standard FS25 profiles. Includes multiplayer event routing for setting changes. |
-| `src/settings/NPCFavorSettingsManager.lua` | Persistence layer for settings. Resolves savegame-aware XML file path (`npc_favor_settings.xml`), loads settings with fallback to defaults, and saves core + display fields. Provides the default config table used as the canonical source of default values. |
 | `src/settings/NPCFavorGUI.lua` | Console command registration and routing. Registers commands (`npcStatus`, `npcSpawn`, `npcList`, `npcReset`, `npcHelp`, `npcDebug`, `npcReload`, `npcTest`, `npcGoto`, `npcProbe`, `npcVehicleMode`) and routes them to `g_NPCSystem` methods. `npcList` opens the `NPCListDialog` popup when available, falling back to console text output. |
 
 ### src/utils/
@@ -95,8 +94,7 @@ Phase 1: Utilities (no dependencies)
 Phase 2: Configuration and Settings (depend on utilities)
   3. src/settings/NPCConfig.lua
   4. src/settings/NPCSettings.lua
-  5. src/settings/NPCFavorSettingsManager.lua
-  6. src/settings/NPCSettingsIntegration.lua
+  5. src/settings/NPCSettingsIntegration.lua
 
 Phase 3: Multiplayer Events (must load before NPCSystem references them)
   7. src/events/NPCStateSyncEvent.lua
@@ -456,8 +454,6 @@ Settings flow through four cooperating modules:
 ```
 NPCSettings           -- Data object (holds all values, validates, save/load to XML)
      |
-NPCFavorSettingsManager  -- Persistence layer (resolves file path, reads/writes XML)
-     |
 NPCSettingsIntegration   -- ESC menu hook (injects widgets into game settings page)
      |
 NPCSettingsUI            -- Alternative injection path via UIHelper (general settings layout)
@@ -479,7 +475,7 @@ NPCSettingsUI            -- Alternative injection path via UIHelper (general set
 
 ### Settings Persistence
 
-Settings are saved to `{savegameDirectory}/npc_favor_settings.xml` under the root tag `<NPCFavorSettings>`. The `NPCFavorSettingsManager` resolves the path from `g_currentMission.missionInfo.savegameDirectory` and provides load/save operations. `NPCSettings` handles per-field XML read/write with type-appropriate accessors (`setBool`, `setInt`, `setFloat`, `setString`).
+Settings are saved to `{savegameDirectory}/npc_favor_settings.xml` under the root tag `<NPCSettings>`. `NPCSettings` resolves the path from `g_currentMission.missionInfo.savegameDirectory` and handles per-field XML read/write with type-appropriate accessors (`setBool`, `setInt`, `setFloat`, `setString`).
 
 ### Multiplayer Settings Sync
 
@@ -703,4 +699,4 @@ Player presses E near NPC
 
 ### Settings Persistence (Separate File)
 
-Settings are saved to `{savegameDirectory}/npc_favor_settings.xml` by `NPCFavorSettingsManager`, independently of NPC state data. This allows settings to persist even if NPC data is reset.
+Settings are saved to `{savegameDirectory}/npc_favor_settings.xml` by `NPCSettings`, independently of NPC state data. This allows settings to persist even if NPC data is reset.

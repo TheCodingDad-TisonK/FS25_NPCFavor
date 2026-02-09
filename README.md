@@ -187,7 +187,6 @@ FS25_NPCFavor/
 |   |   +-- NPCSettings.lua          # Settings persistence (XML)
 |   |   +-- NPCSettingsUI.lua        # Settings UI elements
 |   |   +-- NPCSettingsIntegration.lua  # ESC menu injection
-|   |   +-- NPCFavorSettingsManager.lua # Favor-specific settings
 |   |   +-- NPCFavorGUI.lua          # Console command routing
 |   +-- utils/
 |       +-- VectorHelper.lua         # Math utilities (distance, lerp, normalize)

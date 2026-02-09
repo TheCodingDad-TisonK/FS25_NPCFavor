@@ -58,51 +58,6 @@ function TimeHelper.msToDHMS(ms)
     return days, hours, minutes, seconds
 end
 
--- Format time as string
-function TimeHelper.formatTime(ms, includeDays)
-    if includeDays then
-        local days, hours, minutes, seconds = TimeHelper.msToDHMS(ms)
-        if days > 0 then
-            return string.format("%dd %02dh %02dm", days, hours, minutes)
-        else
-            return string.format("%02dh %02dm", hours, minutes)
-        end
-    else
-        local hours, minutes, seconds = TimeHelper.msToHMS(ms)
-        if hours > 0 then
-            return string.format("%02d:%02d:%02d", hours, minutes, seconds)
-        else
-            return string.format("%02d:%02d", minutes, seconds)
-        end
-    end
-end
-
-function TimeHelper.formatShortTime(ms)
-    local totalSeconds = ms / 1000
-    
-    if totalSeconds < 60 then
-        return string.format("%.0fs", totalSeconds)
-    elseif totalSeconds < 3600 then
-        local minutes = totalSeconds / 60
-        return string.format("%.0fm", minutes)
-    else
-        local hours = totalSeconds / 3600
-        if hours < 24 then
-            return string.format("%.1fh", hours)
-        else
-            local days = hours / 24
-            return string.format("%.1fd", days)
-        end
-    end
-end
-
--- Game time utilities
-function TimeHelper.getGameTime()
-    if g_currentMission and g_currentMission.environment then
-        return g_currentMission.environment.currentDayTime or 0
-    end
-    return 0
-end
 
 function TimeHelper.getGameHour()
     if g_currentMission and g_currentMission.environment then
@@ -149,16 +104,6 @@ function TimeHelper.getGameYear()
     return 1
 end
 
-function TimeHelper.formatGameTime()
-    local hour = TimeHelper.getGameHour()
-    local minute = TimeHelper.getGameMinute()
-    local day = TimeHelper.getGameDay()
-    local month = TimeHelper.getGameMonth()
-    local year = TimeHelper.getGameYear()
-    
-    return string.format("Year %d, Month %d, Day %d - %02d:%02d", 
-        year, month, day, math.floor(hour), math.floor(minute))
-end
 
 -- Time comparison
 function TimeHelper.isSameDay(time1, time2)
@@ -208,26 +153,6 @@ function TimeHelper.getTimeUntil(targetTime)
 end
 
 -- Seasonal time checks
-function TimeHelper.isGrowingSeason(month)
-    -- Northern hemisphere growing season approximation
-    local growingMonths = {4, 5, 6, 7, 8, 9, 10} -- April to October
-    for _, m in ipairs(growingMonths) do
-        if month == m then
-            return true
-        end
-    end
-    return false
-end
-
-function TimeHelper.isWinter(month)
-    local winterMonths = {12, 1, 2} -- December, January, February
-    for _, m in ipairs(winterMonths) do
-        if month == m then
-            return true
-        end
-    end
-    return false
-end
 
 -- Time of day checks
 function TimeHelper.isMorning(hour)
@@ -242,9 +167,6 @@ function TimeHelper.isEvening(hour)
     return hour >= 18 and hour < 22
 end
 
-function TimeHelper.isNight(hour)
-    return hour >= 22 or hour < 6
-end
 
 function TimeHelper.getTimeOfDay(hour)
     if TimeHelper.isMorning(hour) then
@@ -272,40 +194,3 @@ function TimeHelper.isDusk(hour)
     return hour >= 19 and hour < 21
 end
 
---- Get detailed time-of-day including transition periods.
--- Returns finer-grained periods: dawn, morning, afternoon, dusk, evening, night.
--- @param hour  Game hour (0-23)
--- @return string  Period name
-function TimeHelper.getDetailedTimeOfDay(hour)
-    if TimeHelper.isDawn(hour) then
-        return "dawn"
-    elseif TimeHelper.isMorning(hour) then
-        return "morning"
-    elseif TimeHelper.isAfternoon(hour) then
-        return "afternoon"
-    elseif TimeHelper.isDusk(hour) then
-        return "dusk"
-    elseif TimeHelper.isEvening(hour) then
-        return "evening"
-    else
-        return "night"
-    end
-end
-
---- Get a light level estimate based on time of day (0.0=dark, 1.0=bright).
--- Used for NPC behavior decisions (e.g., work in daylight, rest at night).
--- @param hour  Game hour (0-23)
--- @return number  Light level 0.0-1.0
-function TimeHelper.getLightLevel(hour)
-    if hour >= 7 and hour < 19 then
-        return 1.0  -- full daylight
-    elseif hour >= 5 and hour < 7 then
-        return 0.3 + 0.35 * (hour - 5)  -- dawn ramp up
-    elseif hour >= 19 and hour < 21 then
-        return 1.0 - 0.35 * (hour - 19)  -- dusk ramp down
-    elseif hour >= 21 and hour < 22 then
-        return 0.15  -- twilight
-    else
-        return 0.05  -- night
-    end
-end

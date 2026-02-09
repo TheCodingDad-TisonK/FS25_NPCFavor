@@ -2,7 +2,7 @@
 
 **Mod version:** 1.2.0.0
 **Settings file:** `<savegame>/npc_favor_settings.xml`
-**XML root tag:** `NPCSettings` (used by `NPCSettings.lua`) / `NPCFavorSettings` (used by `NPCFavorSettingsManager.lua`)
+**XML root tag:** `NPCSettings` (used by `NPCSettings.lua`)
 
 All settings are persisted per-savegame and validated on load. Numeric values are clamped to their listed range. String enums fall back to their default if an invalid value is loaded.
 

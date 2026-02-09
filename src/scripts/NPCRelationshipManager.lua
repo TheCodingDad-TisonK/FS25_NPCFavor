@@ -754,25 +754,6 @@ function NPCRelationshipManager:estimateNextFavorTime(npc)
     end
 end
 
-function NPCRelationshipManager:getAllRelationships()
-    local relationships = {}
-    
-    for _, npc in ipairs(self.npcSystem.activeNPCs) do
-        if npc.isActive then
-            local info = self:getRelationshipInfo(npc.id)
-            if info then
-                table.insert(relationships, info)
-            end
-        end
-    end
-    
-    -- Sort by relationship value (highest first)
-    table.sort(relationships, function(a, b)
-        return a.value > b.value
-    end)
-    
-    return relationships
-end
 
 function NPCRelationshipManager:giveGiftToNPC(npcId, giftType, giftValue)
     local npc = self:getNPCById(npcId)
@@ -918,40 +899,6 @@ function NPCRelationshipManager:getRelationshipColor(value)
     return level.color
 end
 
-function NPCRelationshipManager:getRelationshipTrend(npcId)
-    local history = self.relationshipHistory[npcId] or {}
-    if #history < 2 then
-        return "stable"
-    end
-    
-    -- Analyze last 5 changes
-    local recentCount = math.min(5, #history)
-    local sum = 0
-    
-    for i = #history, #history - recentCount + 1, -1 do
-        if i >= 1 then
-            sum = sum + (history[i].change or 0)
-        end
-    end
-    
-    if sum > 5 then
-        return "improving"
-    elseif sum < -5 then
-        return "declining"
-    else
-        return "stable"
-    end
-end
-
-function NPCRelationshipManager:getNPCBenefits(npcId)
-    local npc = self:getNPCById(npcId)
-    if not npc then
-        return {}
-    end
-    
-    local level = self:getRelationshipLevel(npc.relationship)
-    return level.benefits or {}
-end
 
 function NPCRelationshipManager:update(dt)
     self.updateTimer = (self.updateTimer or 0) + dt

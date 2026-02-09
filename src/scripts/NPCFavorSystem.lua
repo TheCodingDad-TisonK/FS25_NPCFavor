@@ -862,29 +862,6 @@ function NPCFavorSystem:processNotifications(dt)
     end
 end
 
-function NPCFavorSystem:startFavor(favorId)
-    local favor = self:getFavorById(favorId)
-    if not favor then
-        return false
-    end
-    
-    if favor.status == "pending" then
-        favor.status = "active"
-        favor.startTime = g_currentMission.time
-        
-        self:queueNotification(
-            "Favor Started",
-            string.format("You've accepted to help %s with: %s", 
-                favor.npcName, favor.description),
-            "favor_started",
-            5000
-        )
-        
-        return true
-    end
-    
-    return false
-end
 
 function NPCFavorSystem:completeFavor(favorId)
     local favor = self:getFavorById(favorId)
@@ -1288,9 +1265,6 @@ function NPCFavorSystem:getFailedFavors()
     return self.failedFavors
 end
 
-function NPCFavorSystem:getAbandonedFavors()
-    return self.abandonedFavors
-end
 
 function NPCFavorSystem:getFavorById(favorId)
     -- Check active favors
@@ -1339,19 +1313,3 @@ function NPCFavorSystem:getNPCFromFavor(favorId)
     return nil
 end
 
-function NPCFavorSystem:getFavorStats()
-    return self.stats
-end
-
-function NPCFavorSystem:getFavorSummary()
-    local summary = {
-        active = #self.activeFavors,
-        completed = #self.completedFavors,
-        failed = #self.failedFavors,
-        abandoned = #self.abandonedFavors,
-        total = #self.activeFavors + #self.completedFavors + #self.failedFavors + #self.abandonedFavors,
-        stats = self.stats
-    }
-    
-    return summary
-end

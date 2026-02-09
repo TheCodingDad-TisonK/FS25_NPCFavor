@@ -996,14 +996,6 @@ function NPCScheduler:updateNPCDailySchedule(npc, month)
     self:updateAIStateForActivity(npc, initialActivity)
 end
 
-function NPCScheduler:getCurrentTimeString()
-    return string.format("Year %d, Month %d, Day %d - %02d:%02d", 
-        self.currentYear, 
-        self.currentMonth, 
-        self.currentDay,
-        math.floor(self.currentHour), 
-        math.floor(self.currentMinute))
-end
 
 function NPCScheduler:getCurrentHour()
     return self.currentHour
@@ -1017,63 +1009,4 @@ function NPCScheduler:getCurrentDay()
     return self.currentDay
 end
 
-function NPCScheduler:getCurrentMonth()
-    return self.currentMonth
-end
 
-function NPCScheduler:getCurrentYear()
-    return self.currentYear
-end
-
---- Schedule a one-time event to fire after a delay.
--- @param eventType     String event type (e.g., "favor_opportunity", "npc_interaction")
--- @param delayMinutes  Minutes from now until the event fires
--- @param data          Arbitrary data table passed to the event handler
--- @param priority      Priority level (1=highest, default=2)
--- @return number       Event ID
-function NPCScheduler:scheduleEvent(eventType, delayMinutes, data, priority)
-    -- Schedule a one-time event
-    local eventTime = g_currentMission.time + (delayMinutes * 60 * 1000)
-    
-    local event = {
-        id = self.eventIdCounter,
-        type = eventType,
-        time = eventTime,
-        executed = false,
-        priority = priority or 2,
-        data = data or {}
-    }
-    
-    self.eventIdCounter = self.eventIdCounter + 1
-    table.insert(self.dailyEvents, event)
-    
-    -- Keep events sorted by time and priority
-    table.sort(self.dailyEvents, function(a, b)
-        if a.time == b.time then
-            return a.priority > b.priority
-        end
-        return a.time < b.time
-    end)
-    
-    return event.id
-end
-
-function NPCScheduler:cancelEvent(eventId)
-    for i, event in ipairs(self.dailyEvents) do
-        if event.id == eventId then
-            table.remove(self.dailyEvents, i)
-            return true
-        end
-    end
-    return false
-end
-
-function NPCScheduler:cancelNPCInteraction(interactionId)
-    for i, interaction in ipairs(self.scheduledNPCInteractions) do
-        if interaction.id == interactionId then
-            table.remove(self.scheduledNPCInteractions, i)
-            return true
-        end
-    end
-    return false
-end
