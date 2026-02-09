@@ -65,9 +65,11 @@ When you first load into a game with NPC Favor enabled, here is what to expect:
 For deeper details on each subsystem, see the following docs:
 
 - [Architecture Overview](architecture.md) -- System design, module layout, and data flow
-- [Relationship System](relationship-system.md) -- How relationship tiers, benefits, and progression work
 - [AI System](ai-system.md) -- NPC state machine, scheduling, pathfinding, and behavior
+- [Relationship System](relationship-system.md) -- How relationship tiers, benefits, and progression work
 - [Settings Reference](settings.md) -- All configurable options and their effects
+- [Universal Dialog System](universaldialog.md) -- DialogLoader pattern for registering, lazy-loading, and showing FS25 GUI dialogs
+- [Versioning Guide](versioning.md) -- Version number format, what to update per release, and file locations
 - [Changelog](../CHANGELOG.md) -- Version history and release notes
 
 ---
