@@ -8,7 +8,7 @@ All notable changes to the FS25_NPCFavor mod are documented below, organized by 
 
 **Branch:** `feature/living-neighborhood-system` (not yet merged)
 **Authors:** UsedPlus Team (XelaNull + Claude AI)
-**Scope:** 24 files changed, ~8,500 lines added
+**Scope:** 38 files changed, ~17,400 lines added
 
 A comprehensive AI overhaul transforming mechanical schedule-following NPCs into personality-driven characters with internal motivations, social dynamics, weather awareness, and visual feedback systems.
 
@@ -47,18 +47,18 @@ A comprehensive AI overhaul transforming mechanical schedule-following NPCs into
 - Farmers wake before sunrise for realistic agricultural schedules
 
 ### AI Behavior
-- Markov chain transition tables activated (existed unused in codebase)
+- Markov chain transition probabilities integrated into fallback decision weighting (12 state-to-state entries)
 - 4 field work patterns: row traversal, spiral inward, perimeter walk, spot check
 - Observable personality differentiation: wider speed ranges, idle micro-behaviors
 - Bezier curves for smooth path corners
-- Enhanced memory system (10 records per NPC with sentiment tracking)
+- Memory system (10 records per NPC with sentiment tracking, stored but not yet driving behavior)
 
 ### Visual Feedback
 - Floating relationship change text (+1, -2 popups above NPCs)
 - Speech bubbles during NPC-NPC socializing
 - Name tags and relationship tier above NPC heads
 - Height variation per NPC (0.95-1.05 Y scale)
-- Animated character models (male + female via FS25 HumanGraphicsComponent)
+- Animated character models (male + female via FS25 HumanGraphicsComponent) -- walk/idle animations work in most cases; some NPCs slide without animating (known issue, root cause not yet identified)
 
 ### Dialog Improvements
 - NPC backstory/bio section (visible at relationship 40+)
@@ -83,6 +83,8 @@ A comprehensive AI overhaul transforming mechanical schedule-following NPCs into
 - 25 TODO items marked as completed across 10 file headers
 
 ### Known Limitations
+- **NPC animation sliding** -- Some NPCs slide along the ground without their walk animation playing; root cause not yet identified
+- **Silent groups and walking pairs** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content; only 1-on-1 socializing produces speech bubbles
 - **Map hotspots** -- MapHotspot creation code exists but markers do not appear on the in-game map
 - **NPC vehicles/tractors** -- Code exists but i3d models cannot be loaded from game pak archives at runtime; NPCs walk everywhere
 - **Flavor text localization** -- Mood prefixes, backstories, birthday messages, and personality dialog added in v1.2.0 are English-only (core UI is fully localized)
@@ -155,6 +157,7 @@ This version encompasses three commits that took the mod from non-functional stu
 **3D NPC Models**
 - Basic NPC figure model (`models/npc_figure.i3d` + textures)
 - Loaded via `g_i3DManager:loadSharedI3DFile()` with ZIP compatibility
+- *Note: These custom models were replaced in v1.2.0 by FS25's built-in HumanGraphicsComponent; the original model files have been removed.*
 
 **Game Loop Wiring**
 - `NPCSystem:update(dt)` rewritten with server/client split
