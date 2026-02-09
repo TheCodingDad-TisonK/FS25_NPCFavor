@@ -268,11 +268,17 @@ function NPCListDialog:teleportToRow(rowNum)
         end
     end
 
-    -- Teleport the player
+    -- Calculate rotation to face NPC (Issue #5 fix)
+    local dx = npc.position.x - x
+    local dz = npc.position.z - z
+    local rotY = math.atan2(dx, dz)
+
+    -- Teleport the player and rotate to face NPC
     local teleported = false
     if g_localPlayer and g_localPlayer.rootNode and g_localPlayer.rootNode ~= 0 then
         pcall(function()
             setWorldTranslation(g_localPlayer.rootNode, x, y, z)
+            setWorldRotation(g_localPlayer.rootNode, 0, rotY, 0)  -- ADDED: Rotate to face NPC
             teleported = true
         end)
     end
@@ -281,9 +287,15 @@ function NPCListDialog:teleportToRow(rowNum)
         if player.rootNode and player.rootNode ~= 0 then
             pcall(function()
                 setWorldTranslation(player.rootNode, x, y, z)
+                setWorldRotation(player.rootNode, 0, rotY, 0)  -- ADDED: Rotate to face NPC
                 teleported = true
             end)
         end
+    end
+
+    -- Notify NPCSystem of teleportation for UI stabilization (Issue #6 fix)
+    if sys and teleported then
+        sys.lastTeleportTime = sys:getCurrentGameTime()
     end
 
     if teleported then
