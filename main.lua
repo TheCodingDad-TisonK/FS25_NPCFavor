@@ -32,7 +32,7 @@
 -- =========================================================
 
 -- =========================================================
--- FS25 NPC Favor Mod (version 1.1.0.0)
+-- FS25 NPC Favor Mod (version 1.2.0.0)
 -- =========================================================
 -- Living NPC Neighborhood System
 -- =========================================================
@@ -46,7 +46,7 @@
 -- =========================================================
 
 -- Add version tracking
-local MOD_VERSION = "1.1.0.0"
+local MOD_VERSION = "1.2.0.0"
 local MOD_NAME = "FS25_NPCFavor"
 
 local modDirectory = g_currentModDirectory
@@ -81,7 +81,9 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
 
     -- GUI
+    source(modDirectory .. "src/gui/DialogLoader.lua")
     source(modDirectory .. "src/gui/NPCDialog.lua")
+    source(modDirectory .. "src/gui/NPCListDialog.lua")
     source(modDirectory .. "src/settings/NPCFavorGUI.lua")
 
     -- Main coordinator
@@ -113,18 +115,15 @@ local function loadedMission(mission, node)
     end
 
     if npcSystem then
-        -- Register NPC dialog with g_gui
-        if g_gui and NPCDialog then
-            local npcDialog = NPCDialog.new()
-            g_gui:loadGui(modDirectory .. "gui/NPCDialog.xml", "NPCDialog", npcDialog)
-            npcSystem.npcDialogInstance = npcDialog
+        -- Register all dialogs via DialogLoader
+        if DialogLoader and g_gui then
+            DialogLoader.init(modDirectory)
+            DialogLoader.register("NPCDialog", NPCDialog, "gui/NPCDialog.xml")
+            DialogLoader.register("NPCListDialog", NPCListDialog, "gui/NPCListDialog.xml")
 
-            -- Verify registration
-            if g_gui.guis and g_gui.guis["NPCDialog"] then
-                print("[NPC Favor] NPCDialog registered with g_gui")
-            else
-                print("[NPC Favor] WARNING: NPCDialog registration failed after loadGui")
-            end
+            -- Eagerly load the NPC interaction dialog (used on E-key press)
+            DialogLoader.ensureLoaded("NPCDialog")
+            npcSystem.npcDialogInstance = DialogLoader.getDialog("NPCDialog")
         end
 
         -- Initialize NPC entity model loading
@@ -193,6 +192,11 @@ end
 local function unload()
     print("[NPC Favor] Unload function called")
 
+    -- Clean up dialogs
+    if DialogLoader then
+        DialogLoader.cleanup()
+    end
+
     if npcSystem ~= nil then
         npcSystem:delete()
         npcSystem = nil
@@ -254,6 +258,13 @@ if FSBaseMission and FSBaseMission.draw then
 end
 
 -- =========================================================
+-- Block player from entering NPC vehicles
+-- =========================================================
+-- Real vehicle spawning is currently disabled — FS25 provides no reliable
+-- API to prevent player entry into spawned vehicles. The lockNPCVehicle()
+-- code and hooks are preserved for future use when a solution is found.
+
+-- =========================================================
 -- E Key Input Binding (RVB Pattern from UsedPlus)
 -- =========================================================
 -- Hook PlayerInputComponent.registerActionEvents to add NPC_INTERACT
@@ -289,22 +300,32 @@ local function npcInteractActionCallback(self, actionName, inputValue, callbackS
         end
 
         if nearest then
-            -- Verify dialog exists before attempting to show
-            if not (g_gui.guis and g_gui.guis["NPCDialog"]) then
-                print("[NPC Favor] ERROR: NPCDialog not registered with g_gui")
-                return
-            end
+            -- Freeze NPC while player is talking to them
+            nearest.isTalking = true
 
-            -- Set data on dialog instance, then show via g_gui
-            if npcSystem.npcDialogInstance then
-                npcSystem.npcDialogInstance:setNPCData(nearest, npcSystem)
-            end
-
-            local ok, err = pcall(function()
-                g_gui:showDialog("NPCDialog")
-            end)
-            if not ok then
-                print("[NPC Favor] showDialog FAILED: " .. tostring(err))
+            -- Show dialog via DialogLoader (handles lazy loading + data setting)
+            if DialogLoader and DialogLoader.show then
+                local dialog = DialogLoader.getDialog("NPCDialog")
+                if dialog then
+                    dialog:setNPCData(nearest, npcSystem)
+                end
+                local shown = DialogLoader.show("NPCDialog")
+                if not shown then
+                    nearest.isTalking = false
+                    print("[NPC Favor] DialogLoader failed to show NPCDialog")
+                end
+            else
+                -- Fallback to direct g_gui
+                if npcSystem.npcDialogInstance then
+                    npcSystem.npcDialogInstance:setNPCData(nearest, npcSystem)
+                end
+                local ok, err = pcall(function()
+                    g_gui:showDialog("NPCDialog")
+                end)
+                if not ok then
+                    nearest.isTalking = false
+                    print("[NPC Favor] showDialog FAILED: " .. tostring(err))
+                end
             end
         end
     end

@@ -19,14 +19,14 @@
 -- SEASONS:
 -- [x] Growing season detection (April-October)
 -- [x] Winter detection (December-February)
--- [ ] Full four-season classification (spring, summer, autumn, winter)
+-- [x] Full four-season classification (spring, summer, autumn, winter)
 -- [ ] Southern hemisphere season support for map variety
 -- [ ] Weather-aware time checks (rainy day behavior, etc.)
 --
 -- TIME OF DAY:
 -- [x] Morning, afternoon, evening, night classification
 -- [x] getTimeOfDay returns string label for current period
--- [ ] Dawn/dusk transition periods for NPC schedule blending
+-- [x] Dawn/dusk transition periods for NPC schedule blending
 -- [ ] Configurable time-of-day thresholds per NPC personality
 -- =========================================================
 
@@ -255,5 +255,57 @@ function TimeHelper.getTimeOfDay(hour)
         return "evening"
     else
         return "night"
+    end
+end
+
+--- Check if it's dawn (sunrise transition period).
+-- @param hour  Game hour (0-23)
+-- @return boolean  True if during dawn (5:00-7:00)
+function TimeHelper.isDawn(hour)
+    return hour >= 5 and hour < 7
+end
+
+--- Check if it's dusk (sunset transition period).
+-- @param hour  Game hour (0-23)
+-- @return boolean  True if during dusk (19:00-21:00)
+function TimeHelper.isDusk(hour)
+    return hour >= 19 and hour < 21
+end
+
+--- Get detailed time-of-day including transition periods.
+-- Returns finer-grained periods: dawn, morning, afternoon, dusk, evening, night.
+-- @param hour  Game hour (0-23)
+-- @return string  Period name
+function TimeHelper.getDetailedTimeOfDay(hour)
+    if TimeHelper.isDawn(hour) then
+        return "dawn"
+    elseif TimeHelper.isMorning(hour) then
+        return "morning"
+    elseif TimeHelper.isAfternoon(hour) then
+        return "afternoon"
+    elseif TimeHelper.isDusk(hour) then
+        return "dusk"
+    elseif TimeHelper.isEvening(hour) then
+        return "evening"
+    else
+        return "night"
+    end
+end
+
+--- Get a light level estimate based on time of day (0.0=dark, 1.0=bright).
+-- Used for NPC behavior decisions (e.g., work in daylight, rest at night).
+-- @param hour  Game hour (0-23)
+-- @return number  Light level 0.0-1.0
+function TimeHelper.getLightLevel(hour)
+    if hour >= 7 and hour < 19 then
+        return 1.0  -- full daylight
+    elseif hour >= 5 and hour < 7 then
+        return 0.3 + 0.35 * (hour - 5)  -- dawn ramp up
+    elseif hour >= 19 and hour < 21 then
+        return 1.0 - 0.35 * (hour - 19)  -- dusk ramp down
+    elseif hour >= 21 and hour < 22 then
+        return 0.15  -- twilight
+    else
+        return 0.05  -- night
     end
 end

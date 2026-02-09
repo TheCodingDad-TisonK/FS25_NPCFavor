@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!--
+    FS25_NPCFavor - NPC Roster Dialog
+    Proper table layout with per-column elements, alternating row styling,
+    and per-row 3-layer "Go" buttons (Bitmap bg + Text label + invisible Button hit)
+    for teleporting to NPCs.
+    Columns: #, Name, Activity, Dist, Rel, Farm, [Go]
+    All positions use anchorTopCenter (X=0 is center, negative=left, positive=right)
+-->
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement profile="newLayer" />
+    <Bitmap profile="dialogFullscreenBg" id="dialogBg" />
+
+    <GuiElement profile="dialogBg" id="dialogElement" size="750px 570px">
+        <ThreePartBitmap profile="fs25_dialogBgMiddle" />
+        <ThreePartBitmap profile="fs25_dialogBgTop" />
+        <ThreePartBitmap profile="fs25_dialogBgBottom" />
+
+        <GuiElement profile="fs25_dialogContentContainer">
+
+            <!-- ===== TITLE AREA ===== -->
+            <Text profile="nlTitle" id="titleText" position="0px -12px" text="NPC Roster"/>
+            <Text profile="nlSubtitle" id="subtitleText" position="0px -36px" text=""/>
+
+            <!-- ===== HEADER DIVIDER ===== -->
+            <Bitmap profile="nlDivider" position="0px -54px"/>
+
+            <!-- ===== COLUMN HEADERS ===== -->
+            <Text profile="nlHdrNum"      position="-320px -58px" text="#"/>
+            <Text profile="nlHdrName"     position="-230px -58px" text="Name"/>
+            <Text profile="nlHdrActivity" position="-75px -58px"  text="Activity"/>
+            <Text profile="nlHdrDist"     position="30px -58px"   text="Dist"/>
+            <Text profile="nlHdrRel"      position="85px -58px"   text="Rel"/>
+            <Text profile="nlHdrHome"     position="185px -58px"  text="Farm"/>
+
+            <!-- ===== HEADER UNDERLINE ===== -->
+            <Bitmap profile="nlDivider" position="0px -73px"/>
+
+            <!-- ===== ROW 1 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r1bg" position="0px -76px"/>
+            <Text profile="nlCellNum"      id="r1num"  position="-320px -77px" text=""/>
+            <Text profile="nlCellName"     id="r1name" position="-230px -77px" text=""/>
+            <Text profile="nlCellActivity" id="r1act"  position="-75px -77px"  text=""/>
+            <Text profile="nlCellDist"     id="r1dist" position="30px -77px"   text=""/>
+            <Text profile="nlCellRel"      id="r1rel"  position="85px -77px"   text=""/>
+            <Text profile="nlCellHome"     id="r1farm" position="185px -77px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r1gobg" position="310px -77px"/>
+            <Text profile="nlGoText" id="r1gotxt" position="310px -78px" text="Go"/>
+            <Button profile="nlGoHit" id="r1go" position="310px -77px" onClick="onClickRow1"/>
+
+            <!-- ===== ROW 2 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r2bg" position="0px -95px"/>
+            <Text profile="nlCellNum"      id="r2num"  position="-320px -96px" text=""/>
+            <Text profile="nlCellName"     id="r2name" position="-230px -96px" text=""/>
+            <Text profile="nlCellActivity" id="r2act"  position="-75px -96px"  text=""/>
+            <Text profile="nlCellDist"     id="r2dist" position="30px -96px"   text=""/>
+            <Text profile="nlCellRel"      id="r2rel"  position="85px -96px"   text=""/>
+            <Text profile="nlCellHome"     id="r2farm" position="185px -96px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r2gobg" position="310px -96px"/>
+            <Text profile="nlGoText" id="r2gotxt" position="310px -97px" text="Go"/>
+            <Button profile="nlGoHit" id="r2go" position="310px -96px" onClick="onClickRow2"/>
+
+            <!-- ===== ROW 3 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r3bg" position="0px -114px"/>
+            <Text profile="nlCellNum"      id="r3num"  position="-320px -115px" text=""/>
+            <Text profile="nlCellName"     id="r3name" position="-230px -115px" text=""/>
+            <Text profile="nlCellActivity" id="r3act"  position="-75px -115px"  text=""/>
+            <Text profile="nlCellDist"     id="r3dist" position="30px -115px"   text=""/>
+            <Text profile="nlCellRel"      id="r3rel"  position="85px -115px"   text=""/>
+            <Text profile="nlCellHome"     id="r3farm" position="185px -115px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r3gobg" position="310px -115px"/>
+            <Text profile="nlGoText" id="r3gotxt" position="310px -116px" text="Go"/>
+            <Button profile="nlGoHit" id="r3go" position="310px -115px" onClick="onClickRow3"/>
+
+            <!-- ===== ROW 4 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r4bg" position="0px -133px"/>
+            <Text profile="nlCellNum"      id="r4num"  position="-320px -134px" text=""/>
+            <Text profile="nlCellName"     id="r4name" position="-230px -134px" text=""/>
+            <Text profile="nlCellActivity" id="r4act"  position="-75px -134px"  text=""/>
+            <Text profile="nlCellDist"     id="r4dist" position="30px -134px"   text=""/>
+            <Text profile="nlCellRel"      id="r4rel"  position="85px -134px"   text=""/>
+            <Text profile="nlCellHome"     id="r4farm" position="185px -134px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r4gobg" position="310px -134px"/>
+            <Text profile="nlGoText" id="r4gotxt" position="310px -135px" text="Go"/>
+            <Button profile="nlGoHit" id="r4go" position="310px -134px" onClick="onClickRow4"/>
+
+            <!-- ===== ROW 5 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r5bg" position="0px -152px"/>
+            <Text profile="nlCellNum"      id="r5num"  position="-320px -153px" text=""/>
+            <Text profile="nlCellName"     id="r5name" position="-230px -153px" text=""/>
+            <Text profile="nlCellActivity" id="r5act"  position="-75px -153px"  text=""/>
+            <Text profile="nlCellDist"     id="r5dist" position="30px -153px"   text=""/>
+            <Text profile="nlCellRel"      id="r5rel"  position="85px -153px"   text=""/>
+            <Text profile="nlCellHome"     id="r5farm" position="185px -153px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r5gobg" position="310px -153px"/>
+            <Text profile="nlGoText" id="r5gotxt" position="310px -154px" text="Go"/>
+            <Button profile="nlGoHit" id="r5go" position="310px -153px" onClick="onClickRow5"/>
+
+            <!-- ===== ROW 6 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r6bg" position="0px -171px"/>
+            <Text profile="nlCellNum"      id="r6num"  position="-320px -172px" text=""/>
+            <Text profile="nlCellName"     id="r6name" position="-230px -172px" text=""/>
+            <Text profile="nlCellActivity" id="r6act"  position="-75px -172px"  text=""/>
+            <Text profile="nlCellDist"     id="r6dist" position="30px -172px"   text=""/>
+            <Text profile="nlCellRel"      id="r6rel"  position="85px -172px"   text=""/>
+            <Text profile="nlCellHome"     id="r6farm" position="185px -172px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r6gobg" position="310px -172px"/>
+            <Text profile="nlGoText" id="r6gotxt" position="310px -173px" text="Go"/>
+            <Button profile="nlGoHit" id="r6go" position="310px -172px" onClick="onClickRow6"/>
+
+            <!-- ===== ROW 7 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r7bg" position="0px -190px"/>
+            <Text profile="nlCellNum"      id="r7num"  position="-320px -191px" text=""/>
+            <Text profile="nlCellName"     id="r7name" position="-230px -191px" text=""/>
+            <Text profile="nlCellActivity" id="r7act"  position="-75px -191px"  text=""/>
+            <Text profile="nlCellDist"     id="r7dist" position="30px -191px"   text=""/>
+            <Text profile="nlCellRel"      id="r7rel"  position="85px -191px"   text=""/>
+            <Text profile="nlCellHome"     id="r7farm" position="185px -191px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r7gobg" position="310px -191px"/>
+            <Text profile="nlGoText" id="r7gotxt" position="310px -192px" text="Go"/>
+            <Button profile="nlGoHit" id="r7go" position="310px -191px" onClick="onClickRow7"/>
+
+            <!-- ===== ROW 8 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r8bg" position="0px -209px"/>
+            <Text profile="nlCellNum"      id="r8num"  position="-320px -210px" text=""/>
+            <Text profile="nlCellName"     id="r8name" position="-230px -210px" text=""/>
+            <Text profile="nlCellActivity" id="r8act"  position="-75px -210px"  text=""/>
+            <Text profile="nlCellDist"     id="r8dist" position="30px -210px"   text=""/>
+            <Text profile="nlCellRel"      id="r8rel"  position="85px -210px"   text=""/>
+            <Text profile="nlCellHome"     id="r8farm" position="185px -210px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r8gobg" position="310px -210px"/>
+            <Text profile="nlGoText" id="r8gotxt" position="310px -211px" text="Go"/>
+            <Button profile="nlGoHit" id="r8go" position="310px -210px" onClick="onClickRow8"/>
+
+            <!-- ===== ROW 9 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r9bg" position="0px -228px"/>
+            <Text profile="nlCellNum"      id="r9num"  position="-320px -229px" text=""/>
+            <Text profile="nlCellName"     id="r9name" position="-230px -229px" text=""/>
+            <Text profile="nlCellActivity" id="r9act"  position="-75px -229px"  text=""/>
+            <Text profile="nlCellDist"     id="r9dist" position="30px -229px"   text=""/>
+            <Text profile="nlCellRel"      id="r9rel"  position="85px -229px"   text=""/>
+            <Text profile="nlCellHome"     id="r9farm" position="185px -229px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r9gobg" position="310px -229px"/>
+            <Text profile="nlGoText" id="r9gotxt" position="310px -230px" text="Go"/>
+            <Button profile="nlGoHit" id="r9go" position="310px -229px" onClick="onClickRow9"/>
+
+            <!-- ===== ROW 10 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r10bg" position="0px -247px"/>
+            <Text profile="nlCellNum"      id="r10num"  position="-320px -248px" text=""/>
+            <Text profile="nlCellName"     id="r10name" position="-230px -248px" text=""/>
+            <Text profile="nlCellActivity" id="r10act"  position="-75px -248px"  text=""/>
+            <Text profile="nlCellDist"     id="r10dist" position="30px -248px"   text=""/>
+            <Text profile="nlCellRel"      id="r10rel"  position="85px -248px"   text=""/>
+            <Text profile="nlCellHome"     id="r10farm" position="185px -248px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r10gobg" position="310px -248px"/>
+            <Text profile="nlGoText" id="r10gotxt" position="310px -249px" text="Go"/>
+            <Button profile="nlGoHit" id="r10go" position="310px -248px" onClick="onClickRow10"/>
+
+            <!-- ===== ROW 11 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r11bg" position="0px -266px"/>
+            <Text profile="nlCellNum"      id="r11num"  position="-320px -267px" text=""/>
+            <Text profile="nlCellName"     id="r11name" position="-230px -267px" text=""/>
+            <Text profile="nlCellActivity" id="r11act"  position="-75px -267px"  text=""/>
+            <Text profile="nlCellDist"     id="r11dist" position="30px -267px"   text=""/>
+            <Text profile="nlCellRel"      id="r11rel"  position="85px -267px"   text=""/>
+            <Text profile="nlCellHome"     id="r11farm" position="185px -267px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r11gobg" position="310px -267px"/>
+            <Text profile="nlGoText" id="r11gotxt" position="310px -268px" text="Go"/>
+            <Button profile="nlGoHit" id="r11go" position="310px -267px" onClick="onClickRow11"/>
+
+            <!-- ===== ROW 12 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r12bg" position="0px -285px"/>
+            <Text profile="nlCellNum"      id="r12num"  position="-320px -286px" text=""/>
+            <Text profile="nlCellName"     id="r12name" position="-230px -286px" text=""/>
+            <Text profile="nlCellActivity" id="r12act"  position="-75px -286px"  text=""/>
+            <Text profile="nlCellDist"     id="r12dist" position="30px -286px"   text=""/>
+            <Text profile="nlCellRel"      id="r12rel"  position="85px -286px"   text=""/>
+            <Text profile="nlCellHome"     id="r12farm" position="185px -286px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r12gobg" position="310px -286px"/>
+            <Text profile="nlGoText" id="r12gotxt" position="310px -287px" text="Go"/>
+            <Button profile="nlGoHit" id="r12go" position="310px -286px" onClick="onClickRow12"/>
+
+            <!-- ===== ROW 13 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r13bg" position="0px -304px"/>
+            <Text profile="nlCellNum"      id="r13num"  position="-320px -305px" text=""/>
+            <Text profile="nlCellName"     id="r13name" position="-230px -305px" text=""/>
+            <Text profile="nlCellActivity" id="r13act"  position="-75px -305px"  text=""/>
+            <Text profile="nlCellDist"     id="r13dist" position="30px -305px"   text=""/>
+            <Text profile="nlCellRel"      id="r13rel"  position="85px -305px"   text=""/>
+            <Text profile="nlCellHome"     id="r13farm" position="185px -305px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r13gobg" position="310px -305px"/>
+            <Text profile="nlGoText" id="r13gotxt" position="310px -306px" text="Go"/>
+            <Button profile="nlGoHit" id="r13go" position="310px -305px" onClick="onClickRow13"/>
+
+            <!-- ===== ROW 14 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r14bg" position="0px -323px"/>
+            <Text profile="nlCellNum"      id="r14num"  position="-320px -324px" text=""/>
+            <Text profile="nlCellName"     id="r14name" position="-230px -324px" text=""/>
+            <Text profile="nlCellActivity" id="r14act"  position="-75px -324px"  text=""/>
+            <Text profile="nlCellDist"     id="r14dist" position="30px -324px"   text=""/>
+            <Text profile="nlCellRel"      id="r14rel"  position="85px -324px"   text=""/>
+            <Text profile="nlCellHome"     id="r14farm" position="185px -324px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r14gobg" position="310px -324px"/>
+            <Text profile="nlGoText" id="r14gotxt" position="310px -325px" text="Go"/>
+            <Button profile="nlGoHit" id="r14go" position="310px -324px" onClick="onClickRow14"/>
+
+            <!-- ===== ROW 15 ===== -->
+            <Bitmap profile="nlRowBgOdd" id="r15bg" position="0px -342px"/>
+            <Text profile="nlCellNum"      id="r15num"  position="-320px -343px" text=""/>
+            <Text profile="nlCellName"     id="r15name" position="-230px -343px" text=""/>
+            <Text profile="nlCellActivity" id="r15act"  position="-75px -343px"  text=""/>
+            <Text profile="nlCellDist"     id="r15dist" position="30px -343px"   text=""/>
+            <Text profile="nlCellRel"      id="r15rel"  position="85px -343px"   text=""/>
+            <Text profile="nlCellHome"     id="r15farm" position="185px -343px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r15gobg" position="310px -343px"/>
+            <Text profile="nlGoText" id="r15gotxt" position="310px -344px" text="Go"/>
+            <Button profile="nlGoHit" id="r15go" position="310px -343px" onClick="onClickRow15"/>
+
+            <!-- ===== ROW 16 ===== -->
+            <Bitmap profile="nlRowBgEven" id="r16bg" position="0px -361px"/>
+            <Text profile="nlCellNum"      id="r16num"  position="-320px -362px" text=""/>
+            <Text profile="nlCellName"     id="r16name" position="-230px -362px" text=""/>
+            <Text profile="nlCellActivity" id="r16act"  position="-75px -362px"  text=""/>
+            <Text profile="nlCellDist"     id="r16dist" position="30px -362px"   text=""/>
+            <Text profile="nlCellRel"      id="r16rel"  position="85px -362px"   text=""/>
+            <Text profile="nlCellHome"     id="r16farm" position="185px -362px"  text=""/>
+            <Bitmap profile="nlGoBg" id="r16gobg" position="310px -362px"/>
+            <Text profile="nlGoText" id="r16gotxt" position="310px -363px" text="Go"/>
+            <Button profile="nlGoHit" id="r16go" position="310px -362px" onClick="onClickRow16"/>
+
+            <!-- ===== BOTTOM DIVIDER ===== -->
+            <Bitmap profile="nlDivider" id="bottomDivider" position="0px -380px"/>
+
+            <!-- ===== FOOTER ===== -->
+            <Text profile="nlFooter" id="footerText" position="0px -385px" text=""/>
+
+        </GuiElement>
+
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonBack" id="closeButton" text="Close" onClick="onClickClose"/>
+        </BoxLayout>
+
+    </GuiElement>
+
+    <GUIProfiles>
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
+        <!-- ===== TITLE ===== -->
+        <Profile name="nlTitle" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="700px 22px"/>
+            <textSize value="20px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ===== SUBTITLE ===== -->
+        <Profile name="nlSubtitle" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="700px 16px"/>
+            <textSize value="12px"/>
+            <textColor value="0.55 0.75 0.55 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ===== DIVIDER LINE ===== -->
+        <Profile name="nlDivider" extends="baseReference" with="anchorTopCenter">
+            <size value="690px 1px"/>
+            <imageColor value="0.3 0.35 0.45 0.8"/>
+        </Profile>
+
+        <!-- ===== COLUMN HEADERS (all anchorTopCenter) ===== -->
+        <Profile name="nlHdrBase" extends="fs25_textDefault" with="anchorTopCenter">
+            <textSize value="11px"/>
+            <textBold value="true"/>
+            <textColor value="0.55 0.7 0.9 1"/>
+        </Profile>
+        <Profile name="nlHdrNum" extends="nlHdrBase">
+            <size value="30px 14px"/>
+            <textAlignment value="right"/>
+        </Profile>
+        <Profile name="nlHdrName" extends="nlHdrBase">
+            <size value="140px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="nlHdrActivity" extends="nlHdrBase">
+            <size value="95px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="nlHdrDist" extends="nlHdrBase">
+            <size value="50px 14px"/>
+            <textAlignment value="right"/>
+        </Profile>
+        <Profile name="nlHdrRel" extends="nlHdrBase">
+            <size value="35px 14px"/>
+            <textAlignment value="center"/>
+        </Profile>
+        <Profile name="nlHdrHome" extends="nlHdrBase">
+            <size value="150px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+
+        <!-- ===== ROW BACKGROUNDS (alternating, anchorTopCenter) ===== -->
+        <Profile name="nlRowBgOdd" extends="baseReference" with="anchorTopCenter">
+            <size value="690px 18px"/>
+            <imageColor value="0.08 0.09 0.12 0.6"/>
+        </Profile>
+        <Profile name="nlRowBgEven" extends="baseReference" with="anchorTopCenter">
+            <size value="690px 18px"/>
+            <imageColor value="0.06 0.06 0.09 0.4"/>
+        </Profile>
+
+        <!-- ===== TABLE CELLS (all anchorTopCenter) ===== -->
+        <Profile name="nlCellBase" extends="fs25_textDefault" with="anchorTopCenter">
+            <textSize value="12px"/>
+            <textColor value="0.82 0.82 0.82 1"/>
+        </Profile>
+        <Profile name="nlCellNum" extends="nlCellBase">
+            <size value="30px 16px"/>
+            <textAlignment value="right"/>
+            <textColor value="0.5 0.55 0.65 1"/>
+        </Profile>
+        <Profile name="nlCellName" extends="nlCellBase">
+            <size value="140px 16px"/>
+            <textAlignment value="left"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+        </Profile>
+        <Profile name="nlCellActivity" extends="nlCellBase">
+            <size value="95px 16px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="nlCellDist" extends="nlCellBase">
+            <size value="50px 16px"/>
+            <textAlignment value="right"/>
+        </Profile>
+        <Profile name="nlCellRel" extends="nlCellBase">
+            <size value="35px 16px"/>
+            <textAlignment value="center"/>
+            <textBold value="true"/>
+        </Profile>
+        <Profile name="nlCellHome" extends="nlCellBase">
+            <size value="150px 16px"/>
+            <textAlignment value="left"/>
+            <textColor value="0.6 0.65 0.7 1"/>
+            <textSize value="11px"/>
+        </Profile>
+
+        <!-- ===== 3-LAYER GO BUTTON (UsedPlus pattern) ===== -->
+        <!-- Layer 1: Visual background -->
+        <Profile name="nlGoBg" extends="baseReference" with="anchorTopCenter">
+            <size value="42px 16px"/>
+            <imageColor value="0.12 0.2 0.35 0.95"/>
+        </Profile>
+        <!-- Layer 2: Text label -->
+        <Profile name="nlGoText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="42px 14px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+        <!-- Layer 3: Invisible hit area -->
+        <Profile name="nlGoHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="42px 16px"/>
+            <isFocusable value="true"/>
+        </Profile>
+
+        <!-- ===== FOOTER ===== -->
+        <Profile name="nlFooter" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="700px 16px"/>
+            <textSize value="11px"/>
+            <textColor value="0.45 0.5 0.6 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+    </GUIProfiles>
+</GUI>

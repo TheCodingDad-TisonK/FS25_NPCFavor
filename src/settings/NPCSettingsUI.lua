@@ -84,7 +84,7 @@ function NPCSettingsUI:inject()
     )
 
     self.maxNPCsOption = UIHelper.createNumberOption(
-        layout, "npc_max_count", "npc_max_count_short", self.settings.maxNPCs, 1, 50,
+        layout, "npc_max_count", "npc_max_count_short", self.settings.maxNPCs, 1, 16,
         function(val) self.settings.maxNPCs = val; self.settings:save(); print("[NPC] Max NPCs: " .. val) end,
         getTextSafe("npc_max_count_long")
     )

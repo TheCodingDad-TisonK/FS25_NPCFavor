@@ -130,7 +130,7 @@ function NPCSettingsSyncEvent:readStream(streamId, connection)
         self.bulkSettings.enabled = streamReadBool(streamId)
         local maxNPCs = streamReadInt32(streamId)
         -- OWASP Input Validation: Clamp maxNPCs to valid range
-        self.bulkSettings.maxNPCs = math.max(1, math.min(50, maxNPCs))
+        self.bulkSettings.maxNPCs = math.max(1, math.min(16, maxNPCs))
         self.bulkSettings.showNames = streamReadBool(streamId)
         self.bulkSettings.showNotifications = streamReadBool(streamId)
         self.bulkSettings.enableFavors = streamReadBool(streamId)
@@ -171,7 +171,7 @@ function NPCSettingsSyncEvent:applySettings()
         if self.key == "enabled" then
             settings.enabled = (self.value == true)
         elseif self.key == "maxNPCs" then
-            settings.maxNPCs = math.max(1, math.min(50, tonumber(self.value) or 8))
+            settings.maxNPCs = math.max(1, math.min(16, tonumber(self.value) or 8))
         elseif self.key == "showNames" then
             settings.showNames = (self.value == true)
         elseif self.key == "showNotifications" then

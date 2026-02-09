@@ -37,8 +37,8 @@ NPCSettingsIntegration = {}
 NPCSettingsIntegration_mt = Class(NPCSettingsIntegration)
 
 -- Max NPC dropdown values
-NPCSettingsIntegration.maxNPCOptions = {"4", "8", "12", "16", "20", "30", "50"}
-NPCSettingsIntegration.maxNPCValues = {4, 8, 12, 16, 20, 30, 50}
+NPCSettingsIntegration.maxNPCOptions = {"2", "4", "6", "8", "10", "12", "16"}
+NPCSettingsIntegration.maxNPCValues = {2, 4, 6, 8, 10, 12, 16}
 
 -- Constructor (called from NPCSystem.new)
 function NPCSettingsIntegration.new(npcSystem)

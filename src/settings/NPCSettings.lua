@@ -42,7 +42,7 @@ function NPCSettings:resetToDefaults(saveImmediately)
 
     -- Core
     self.enabled = true
-    self.maxNPCs = 8
+    self.maxNPCs = 10
     self.npcWorkStart = 8
     self.npcWorkEnd = 17
     self.favorFrequency = 3
@@ -64,6 +64,7 @@ function NPCSettings:resetToDefaults(saveImmediately)
     self.npcHelpPlayer = true
     self.npcSocialize = true
     self.npcDriveVehicles = true
+    self.npcVehicleMode = "hybrid"      -- "hybrid" (static prop, real when working), "realistic" (always real), "visual" (props only)
     self.allowMultipleFavors = true
     self.maxActiveFavors = 5
     self.favorTimeLimit = true
@@ -164,6 +165,7 @@ function NPCSettings:load()
     self.npcHelpPlayer = getBool("npcHelpPlayer", self.npcHelpPlayer)
     self.npcSocialize = getBool("npcSocialize", self.npcSocialize)
     self.npcDriveVehicles = getBool("npcDriveVehicles", self.npcDriveVehicles)
+    self.npcVehicleMode = getString("npcVehicleMode", self.npcVehicleMode)
     self.allowMultipleFavors = getBool("allowMultipleFavors", self.allowMultipleFavors)
     self.maxActiveFavors = getInt("maxActiveFavors", self.maxActiveFavors)
     self.favorTimeLimit = getBool("favorTimeLimit", self.favorTimeLimit)
@@ -254,6 +256,7 @@ function NPCSettings:save()
     setBool("npcHelpPlayer", self.npcHelpPlayer)
     setBool("npcSocialize", self.npcSocialize)
     setBool("npcDriveVehicles", self.npcDriveVehicles)
+    setString("npcVehicleMode", self.npcVehicleMode)
     setBool("allowMultipleFavors", self.allowMultipleFavors)
     setInt("maxActiveFavors", self.maxActiveFavors)
     setBool("favorTimeLimit", self.favorTimeLimit)
@@ -305,7 +308,7 @@ function NPCSettings:save()
 end
 
 function NPCSettings:validateSettings()
-    self.maxNPCs = math.max(1, math.min(50, self.maxNPCs))
+    self.maxNPCs = math.max(1, math.min(16, self.maxNPCs))
     self.npcWorkStart = math.max(0, math.min(23, self.npcWorkStart))
     self.npcWorkEnd = math.max(0, math.min(23, self.npcWorkEnd))
     self.favorFrequency = math.max(1, math.min(30, self.favorFrequency))
@@ -341,6 +344,11 @@ function NPCSettings:validateSettings()
     local validUpdateFrequencies = {"low","normal","high"}
     if not Utils.containsValue(validUpdateFrequencies, self.updateFrequency) then
         self.updateFrequency = "normal"
+    end
+
+    local validVehicleModes = {"realistic","visual","hybrid"}
+    if not Utils.containsValue(validVehicleModes, self.npcVehicleMode) then
+        self.npcVehicleMode = "hybrid"
     end
 
     self.enabled = not not self.enabled

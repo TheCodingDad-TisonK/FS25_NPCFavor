@@ -15,9 +15,9 @@
 -- [x] Time-of-day modifiers for social interactions (lunch/evening peaks)
 --
 -- NOT YET IMPLEMENTED:
--- [ ] Weather actually changing NPC behavior (rain → seek shelter, storm → cancel outdoor work)
+-- [x] Weather actually changing NPC behavior (rain → seek shelter, storm → cancel outdoor work)
 -- [ ] Custom per-NPC schedules (currently all NPCs use personality templates)
--- [ ] Weekend/holiday schedules (NPCs have days off, market days, festivals)
+-- [x] Weekend/holiday schedules (NPCs have days off, market days, festivals)
 -- [ ] Player-visible schedule board (UI showing when/where NPCs will be)
 -- [ ] Dynamic schedule adjustments (field harvested → switch to maintenance)
 -- [ ] Night shift workers (some NPCs work overnight at production points)
@@ -26,7 +26,7 @@
 -- [ ] Seasonal event integration (harvest festival, planting celebrations)
 -- [ ] Weather-based rest periods (heat breaks on hot days, early stops in storms)
 -- [ ] NPC preferences for specific activities (some hate certain tasks)
--- [ ] Energy/fatigue system affecting work duration and break needs
+-- [x] Energy/fatigue system affecting work duration and break needs
 -- [ ] Social relationship affecting scheduled interactions (friends meet more)
 -- [ ] Work assignment based on NPC skills/preferences (not just nearest field)
 -- [ ] Multi-NPC coordinated work (harvesting crews, barn raising events)

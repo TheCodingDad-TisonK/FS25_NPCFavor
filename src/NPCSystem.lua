@@ -27,8 +27,8 @@
 -- [ ] Migration system for savegame format changes
 --
 -- SPAWNING & POPULATION DYNAMICS:
--- [ ] NPC spawning at specific building types (shops, gas stations, production points)
--- [ ] Role-based spawning (shopkeeper at shop, mechanic at garage, farmer at farm)
+-- [x] NPC spawning at specific building types (shops, gas stations, production points)
+-- [x] Role-based spawning (shopkeeper at shop, mechanic at garage, farmer at farm)
 -- [ ] Dynamic NPC population (new NPCs arrive over time, some leave/move away)
 -- [ ] NPC lifecycle (birth/arrival, aging, retirement, death/departure)
 -- [ ] Population density settings (rural vs urban areas)
@@ -36,6 +36,7 @@
 -- [ ] NPC migration between farms/towns
 --
 -- ECONOMY & OWNERSHIP:
+-- [x] NPC farm ownership (farmland assignment, farm naming, field assignment)
 -- [ ] NPC economy (NPCs buy/sell at shops, own property, earn/spend money)
 -- [ ] NPC-owned vehicles (visible in world, can be borrowed/rented)
 -- [ ] NPC-owned fields (compete with player for harvest/sales)
@@ -69,7 +70,7 @@
 -- [ ] Custom NPC templates (modders can add new NPC types)
 -- [ ] Localization support (translate NPC names, dialog, quests)
 -- [ ] NPC model customization (clothing, appearance, accessories)
--- [ ] Building type definitions (categorize placeables for role assignment)
+-- [x] Building type definitions (categorize placeables for role assignment)
 -- [ ] Economy config (price multipliers, wage rates, loan terms)
 --
 -- ADVANCED AI & BEHAVIOR:
@@ -168,19 +169,32 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.npcNameIndex = 0
     self.npcPersonalityIndex = 0
 
+    -- Gender-separated name pools for proper name-sex alignment
+    self.maleNames = {
+        "Old MacDonald", "Farmer Joe", "Young Peter", "Hans Bauer",
+        "Wilhelm Braun", "Thomas Meier", "Gunther Schulz", "Erik Larsson",
+        "Klaus Fischer", "Fritz Weber", "Otto Hartmann", "Karl Richter"
+    }
+    self.femaleNames = {
+        "Mrs. Henderson", "Anna Schmidt", "Maria Stein", "Greta Hoffmann",
+        "Elsa Becker", "Helga Wagner", "Ingrid Muller", "Liesel Baumann",
+        "Clara Vogt", "Rosa Schreiber", "Martha Gruber", "Frieda Koch"
+    }
+    self.maleNameIndex = 0
+    self.femaleNameIndex = 0
+
     self.config = {
-        getNPCName = function()
-            local names = {
-                "Old MacDonald", "Farmer Joe", "Mrs. Henderson",
-                "Young Peter", "Anna Schmidt", "Hans Bauer",
-                "Wilhelm Braun", "Maria Stein"
-            }
-            self.npcNameIndex = self.npcNameIndex + 1
-            return names[((self.npcNameIndex - 1) % #names) + 1]
+        getNPCName = function(isFemale)
+            if isFemale then
+                self.femaleNameIndex = self.femaleNameIndex + 1
+                return self.femaleNames[((self.femaleNameIndex - 1) % #self.femaleNames) + 1]
+            else
+                self.maleNameIndex = self.maleNameIndex + 1
+                return self.maleNames[((self.maleNameIndex - 1) % #self.maleNames) + 1]
+            end
         end,
-        getRandomNPCName = function()
-            -- Alias for backward compat - uses sequential assignment
-            return self.config.getNPCName()
+        getRandomNPCName = function(isFemale)
+            return self.config.getNPCName(isFemale)
         end,
         getRandomPersonality = function()
             local personalities = {"hardworking", "lazy", "social", "generous", "grumpy"}
@@ -239,6 +253,17 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.lastSaveTime = 0
     self.saveInterval = 30000
     self.savedNPCData = nil
+
+    -- Town reputation (0-100 scale, average of all NPC relationships weighted by interaction frequency)
+    self.townReputation = 50
+
+    -- Proximity respawning: relocate HOMELESS NPCs near the player
+    -- NPCs with assigned homes stay at their homes — only unassigned NPCs get relocated
+    self.relocateTimer = 0
+    self.RELOCATE_INTERVAL = 30  -- seconds between relocation checks (less aggressive)
+    self.RELOCATE_MAX_DISTANCE = 500  -- only truly lost NPCs get relocated
+    self.RELOCATE_MIN_SPAWN = 60     -- minimum spawn distance from player
+    self.RELOCATE_MAX_SPAWN = 200    -- maximum spawn distance from player
 
     print("[NPCSystem] NPCSystem instance created successfully")
     return self
@@ -346,7 +371,251 @@ function NPCSystem:initializeGUI()
     end
 end
 
+--- Classify all placeables in the world into building categories.
+-- Each placeable is inspected for spec_ fields that indicate its type.
+-- Results stored in self.classifiedBuildings keyed by category name.
+-- Called once during initializeNPCs() before NPC creation.
+function NPCSystem:classifyBuildings()
+    self.classifiedBuildings = {
+        residential  = {},
+        farm_storage = {},
+        animal       = {},
+        production   = {},
+        shop         = {},
+        workshop     = {},
+        greenhouse   = {},
+        utility      = {},
+        other        = {}
+    }
+
+    if not g_currentMission or not g_currentMission.placeableSystem then
+        if self.settings.debugMode then
+            print("[NPC Favor] classifyBuildings: no placeableSystem available")
+        end
+        return
+    end
+
+    local placeables = g_currentMission.placeableSystem.placeables
+    if not placeables and g_currentMission.placeableSystem.getPlaceables then
+        placeables = g_currentMission.placeableSystem:getPlaceables()
+    end
+
+    for _, placeable in pairs(placeables or {}) do
+        -- Skip deleted/invalid placeables
+        if placeable.markedForDeletion or placeable.isDeleted then
+            -- skip
+        else
+            -- Skip fences and trivial objects
+            local typeName = placeable.typeName or ""
+            if typeName ~= "newFence" and typeName ~= "fence" then
+                -- Determine category from spec fields
+                local category = "other"
+
+                if placeable.spec_farmhouse ~= nil then
+                    category = "residential"
+                elseif placeable.spec_silo ~= nil or placeable.spec_bunkerSilo ~= nil then
+                    category = "farm_storage"
+                elseif placeable.spec_husbandry ~= nil or placeable.spec_husbandryAnimals ~= nil then
+                    category = "animal"
+                elseif placeable.spec_productionPoint ~= nil or placeable.spec_factory ~= nil then
+                    category = "production"
+                elseif placeable.spec_sellingStation ~= nil or placeable.spec_buyingStation ~= nil then
+                    category = "shop"
+                elseif placeable.spec_workshop ~= nil or placeable.spec_washingStation ~= nil then
+                    category = "workshop"
+                elseif placeable.spec_greenhouse ~= nil or placeable.spec_beehive ~= nil then
+                    category = "greenhouse"
+                elseif placeable.spec_weatherStation ~= nil or placeable.spec_windTurbine ~= nil then
+                    category = "utility"
+                end
+
+                -- Get world position via pcall
+                local x, y, z = 0, 0, 0
+                if placeable.rootNode then
+                    local ok, wx, wy, wz = pcall(getWorldTranslation, placeable.rootNode)
+                    if ok and wx then
+                        x, y, z = wx, wy, wz
+                    end
+                end
+
+                -- Get building name safely
+                local buildingName = "Building"
+                if placeable.getName then
+                    local ok, n = pcall(placeable.getName, placeable)
+                    if ok and n then
+                        buildingName = n
+                    end
+                end
+
+                -- Estimate building footprint radius for avoidance
+                local radius = self:estimateBuildingRadius(placeable, category)
+
+                local entry = {
+                    placeable   = placeable,
+                    x           = x,
+                    y           = y,
+                    z           = z,
+                    name        = buildingName,
+                    ownerFarmId = placeable.ownerFarmId or 0,
+                    category    = category,
+                    radius      = radius
+                }
+
+                table.insert(self.classifiedBuildings[category], entry)
+            end
+        end
+    end
+
+    -- Debug: log counts per category
+    if self.settings.debugMode then
+        local total = 0
+        for cat, entries in pairs(self.classifiedBuildings) do
+            local count = #entries
+            total = total + count
+            if count > 0 then
+                print(string.format("[NPC Favor] classifyBuildings: %s = %d", cat, count))
+            end
+        end
+        print(string.format("[NPC Favor] classifyBuildings: %d buildings classified total", total))
+    end
+end
+
+--- Estimate the footprint radius of a placeable building.
+-- Tries to measure from the i3d node hierarchy first; falls back to
+-- category-based defaults.
+-- @param placeable  FS25 placeable object
+-- @param category   Building category string from classifyBuildings
+-- @return number    Estimated radius in metres
+function NPCSystem:estimateBuildingRadius(placeable, category)
+    -- Category-based defaults (conservative — slightly smaller than real footprint
+    -- so NPCs don't get pushed too far from small decorative placeables)
+    local defaults = {
+        residential  = 7,
+        farm_storage = 9,
+        animal       = 11,
+        production   = 10,
+        shop         = 7,
+        workshop     = 8,
+        greenhouse   = 5,
+        utility      = 3,
+        other        = 5
+    }
+
+    -- Try to measure from child node extents for a more accurate size
+    local measured = nil
+    if placeable.rootNode then
+        local ok, result = pcall(function()
+            local rootX, _, rootZ = getWorldTranslation(placeable.rootNode)
+            local maxDist = 0
+            local numChildren = getNumOfChildren(placeable.rootNode)
+            for i = 0, math.min(numChildren - 1, 20) do  -- cap at 20 children
+                local child = getChildAt(placeable.rootNode, i)
+                if child and child ~= 0 then
+                    local cx, _, cz = getWorldTranslation(child)
+                    local dx = cx - rootX
+                    local dz = cz - rootZ
+                    local dist = math.sqrt(dx * dx + dz * dz)
+                    if dist > maxDist then
+                        maxDist = dist
+                    end
+                end
+            end
+            -- If children extend beyond 3m, use that as a better estimate
+            if maxDist > 3 then
+                return maxDist + 2  -- add 2m margin for walls
+            end
+            return nil
+        end)
+        if ok and result then
+            measured = result
+        end
+    end
+
+    return measured or defaults[category] or 5
+end
+
+--- Check if a world position is inside any classified building.
+-- Skips the building passed as excludePlaceable (NPC's home).
+-- @param x                 World X position
+-- @param z                 World Z position
+-- @param excludePlaceable  Placeable object to skip (NPC's home building), or nil
+-- @return boolean          true if inside a building
+-- @return table|nil        The building entry the position is inside, or nil
+function NPCSystem:isPositionInsideBuilding(x, z, excludePlaceable)
+    if not self.classifiedBuildings then return false, nil end
+
+    for _, entries in pairs(self.classifiedBuildings) do
+        for _, entry in ipairs(entries) do
+            if entry.placeable ~= excludePlaceable then
+                local dx = x - entry.x
+                local dz = z - entry.z
+                local dist = math.sqrt(dx * dx + dz * dz)
+                if dist < entry.radius then
+                    return true, entry
+                end
+            end
+        end
+    end
+    return false, nil
+end
+
+--- Given a position that may be inside a building, push it outward to safety.
+-- Returns the original position if it's already outside all buildings.
+-- @param x                 World X position
+-- @param z                 World Z position
+-- @param excludePlaceable  Placeable to skip (NPC's home building), or nil
+-- @return number, number   Safe X, Z coordinates
+function NPCSystem:getSafePosition(x, z, excludePlaceable)
+    local inside, building = self:isPositionInsideBuilding(x, z, excludePlaceable)
+    if not inside then
+        return x, z
+    end
+
+    -- Push position outward from building center to just beyond its radius
+    local dx = x - building.x
+    local dz = z - building.z
+    local dist = math.sqrt(dx * dx + dz * dz)
+
+    if dist < 0.5 then
+        -- Dead center — pick a random direction
+        local angle = math.random() * math.pi * 2
+        dx = math.cos(angle)
+        dz = math.sin(angle)
+        dist = 1
+    end
+
+    local safeRadius = building.radius + 2  -- 2m outside the building edge
+    local safeX = building.x + (dx / dist) * safeRadius
+    local safeZ = building.z + (dz / dist) * safeRadius
+
+    return safeX, safeZ
+end
+
+--- Get a position near a building that is guaranteed to be outside it.
+-- Used when choosing walking destinations near buildings.
+-- @param buildingX   Building center X
+-- @param buildingZ   Building center Z
+-- @param building    Building entry table (with .radius, .placeable)
+-- @param excludePlaceable  Placeable to skip for overlap check (NPC's home)
+-- @return number, number   Safe X, Z at the building's exterior
+function NPCSystem:getExteriorPositionNear(buildingX, buildingZ, building, excludePlaceable)
+    local angle = math.random() * math.pi * 2
+    local offset = (building.radius or 5) + 2 + math.random() * 3  -- radius + 2-5m
+    local x = buildingX + math.cos(angle) * offset
+    local z = buildingZ + math.sin(angle) * offset
+
+    -- Double-check we didn't land inside another building
+    x, z = self:getSafePosition(x, z, excludePlaceable)
+    return x, z
+end
+
 function NPCSystem:initializeNPCs()
+    -- Classify all world buildings before spawning NPCs
+    self:classifyBuildings()
+
+    -- Initialize the event scheduler for dynamic emergent events
+    self:initEventScheduler()
+
     -- Clear existing NPCs if any
     self:clearAllNPCs()
     
@@ -375,6 +644,13 @@ function NPCSystem:initializeNPCs()
         print(string.format("... and %d more NPCs created", self.npcCount - 3))
     end
     print(string.format("NPC Favor: Generated %d total NPCs", self.npcCount))
+
+    -- Assign farmlands and fields to farmer NPCs (after all NPCs are created)
+    self:assignFarmlands()
+
+    -- Phase B: Real vehicle spawning disabled — FS25 provides no reliable API
+    -- to prevent player entry into spawned vehicles. Keeping code for future use.
+    -- self:initializeNPCVehicles()
 end
 
 function NPCSystem:generateNewNPCs()
@@ -420,7 +696,60 @@ function NPCSystem:initializeNPCData(npc, location, npcId)
     -- Store home building reference from spawn location
     npc.homeBuilding = (location and location.building) or nil
     npc.homeBuildingName = (location and location.buildingName) or "Unknown"
-    npc.ownerFarmId = (location and location.ownerFarmId) or 0
+    npc.ownerFarmId = (location and location.ownerFarmId) or (FarmManager.SPECTATOR_FARM_ID or 15)
+
+    -- Assign workplace and role based on nearest classified building
+    npc.role = "farmer"  -- default role
+    npc.workplaceBuilding = nil
+
+    if self.classifiedBuildings and location then
+        local locX = location.x or 0
+        local locZ = location.z or 0
+        local bestDist = math.huge
+        local bestEntry = nil
+        local bestCategory = nil
+
+        -- Search all non-residential categories to find the nearest workplace
+        local workCategories = {"shop", "production", "farm_storage", "animal", "workshop", "greenhouse", "utility"}
+        for _, cat in ipairs(workCategories) do
+            for _, entry in ipairs(self.classifiedBuildings[cat] or {}) do
+                local dx = entry.x - locX
+                local dz = entry.z - locZ
+                local dist = math.sqrt(dx * dx + dz * dz)
+                if dist < bestDist then
+                    bestDist = dist
+                    bestEntry = entry
+                    bestCategory = cat
+                end
+            end
+        end
+
+        if bestEntry then
+            npc.workplaceBuilding = bestEntry
+
+            -- Assign role based on workplace category
+            if bestCategory == "shop" then
+                npc.role = "shopkeeper"
+            elseif bestCategory == "production" then
+                npc.role = "worker"
+            elseif bestCategory == "farm_storage" or bestCategory == "animal" then
+                npc.role = "farmhand"
+            elseif bestCategory == "workshop" then
+                npc.role = "worker"
+            elseif bestCategory == "greenhouse" then
+                npc.role = "farmhand"
+            elseif bestCategory == "utility" then
+                npc.role = "worker"
+            else
+                npc.role = "farmer"
+            end
+
+            if self.settings.debugMode then
+                print(string.format("[NPC Favor] NPC %s assigned role '%s' (nearest %s: %s at %.0fm)",
+                    npc.name or "?", npc.role, bestCategory, bestEntry.name or "?", bestDist))
+            end
+        end
+    end
 
     -- Guard against nil location for field lookup
     local locX = (location and location.x) or 0
@@ -433,8 +762,9 @@ function NPCSystem:initializeNPCData(npc, location, npcId)
     npc.currentAction = "idle"
     npc.path = nil
     
-    -- Initialize relationship
-    npc.relationship = 50
+    -- Initialize relationship: random 5-35 (Hostile to Neutral range).
+    -- New neighbors aren't enemies, but you haven't earned their trust yet either.
+    npc.relationship = math.random(5, 35)
     
     -- Set unique NPC ID
     npc.uniqueId = string.format("npc_%d_%s_%d", 
@@ -460,31 +790,88 @@ function NPCSystem:findNPCSpawnLocations()
         playerFarmId = g_currentMission:getFarmId()
     end
 
-    -- Collect non-player buildings as candidate spawn points
+    -- Prefer residential buildings from classified data, then fall back to others
     local buildings = {}
-    if g_currentMission and g_currentMission.placeableSystem then
-        local placeables = g_currentMission.placeableSystem.placeables
-        if not placeables and g_currentMission.placeableSystem.getPlaceables then
-            placeables = g_currentMission.placeableSystem:getPlaceables()
+
+    if self.classifiedBuildings then
+        -- First: add all non-player residential buildings
+        for _, entry in ipairs(self.classifiedBuildings.residential or {}) do
+            if entry.ownerFarmId ~= playerFarmId then
+                table.insert(buildings, {
+                    x = entry.x, y = entry.y, z = entry.z,
+                    placeable = entry.placeable,
+                    ownerFarmId = entry.ownerFarmId,
+                    name = entry.name,
+                    category = entry.category,
+                    isResidential = true
+                })
+            end
         end
 
-        for _, placeable in pairs(placeables or {}) do
-            -- Skip deleted/invalid
-            if not placeable.markedForDeletion and not placeable.isDeleted then
-                -- Skip fences and trivial objects
-                local typeName = placeable.typeName or ""
-                if typeName ~= "newFence" and typeName ~= "fence" then
-                    -- Skip player-owned buildings
-                    local isPlayerOwned = (placeable.ownerFarmId == playerFarmId)
-                    if not isPlayerOwned and placeable.rootNode then
-                        local ok, x, y, z = pcall(getWorldTranslation, placeable.rootNode)
-                        if ok and x then
-                            table.insert(buildings, {
-                                x = x, y = y, z = z,
-                                placeable = placeable,
-                                ownerFarmId = placeable.ownerFarmId or 0,
-                                name = (placeable.getName and placeable:getName()) or "Building"
-                            })
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] Found %d non-player residential buildings", #buildings))
+        end
+
+        -- If not enough residential buildings, also pull from other categories
+        if #buildings < self.settings.maxNPCs then
+            -- Add 'other' category buildings as secondary homes
+            for _, entry in ipairs(self.classifiedBuildings.other or {}) do
+                if entry.ownerFarmId ~= playerFarmId then
+                    table.insert(buildings, {
+                        x = entry.x, y = entry.y, z = entry.z,
+                        placeable = entry.placeable,
+                        ownerFarmId = entry.ownerFarmId,
+                        name = entry.name,
+                        category = entry.category,
+                        isResidential = false
+                    })
+                end
+            end
+        end
+
+        -- Still not enough? Pull from all remaining non-player categories
+        if #buildings < self.settings.maxNPCs then
+            local fallbackCategories = {"shop", "production", "workshop", "farm_storage", "animal", "greenhouse", "utility"}
+            for _, cat in ipairs(fallbackCategories) do
+                for _, entry in ipairs(self.classifiedBuildings[cat] or {}) do
+                    if entry.ownerFarmId ~= playerFarmId then
+                        table.insert(buildings, {
+                            x = entry.x, y = entry.y, z = entry.z,
+                            placeable = entry.placeable,
+                            ownerFarmId = entry.ownerFarmId,
+                            name = entry.name,
+                            category = entry.category,
+                            isResidential = false
+                        })
+                    end
+                end
+            end
+        end
+    else
+        -- Fallback: classifyBuildings not yet run, iterate placeables directly
+        if g_currentMission and g_currentMission.placeableSystem then
+            local placeables = g_currentMission.placeableSystem.placeables
+            if not placeables and g_currentMission.placeableSystem.getPlaceables then
+                placeables = g_currentMission.placeableSystem:getPlaceables()
+            end
+
+            for _, placeable in pairs(placeables or {}) do
+                if not placeable.markedForDeletion and not placeable.isDeleted then
+                    local typeName = placeable.typeName or ""
+                    if typeName ~= "newFence" and typeName ~= "fence" then
+                        local isPlayerOwned = (placeable.ownerFarmId == playerFarmId)
+                        if not isPlayerOwned and placeable.rootNode then
+                            local ok, x, y, z = pcall(getWorldTranslation, placeable.rootNode)
+                            if ok and x then
+                                table.insert(buildings, {
+                                    x = x, y = y, z = z,
+                                    placeable = placeable,
+                                    ownerFarmId = placeable.ownerFarmId or 0,
+                                    name = (placeable.getName and placeable:getName()) or "Building",
+                                    category = "other",
+                                    isResidential = false
+                                })
+                            end
                         end
                     end
                 end
@@ -520,7 +907,8 @@ function NPCSystem:findNPCSpawnLocations()
             buildingName = building.name,
             ownerFarmId = building.ownerFarmId or 0,
             isPredefined = true,
-            isResidential = false
+            isResidential = building.isResidential or false,
+            category = building.category or "other"
         })
     end
 
@@ -530,7 +918,7 @@ function NPCSystem:findNPCSpawnLocations()
             local success, terrainHeight = pcall(getTerrainHeightAtWorldPos,
                 g_currentMission.terrainRootNode, loc.x, 0, loc.z)
             if success and terrainHeight then
-                loc.y = terrainHeight + 0.5
+                loc.y = terrainHeight + 0.05
             end
         end
     end
@@ -548,9 +936,17 @@ function NPCSystem:createNPCAtLocation(location)
         return nil
     end
     
+    -- Determine gender: alternate male/female based on NPC count for balanced distribution
+    local npcCount = #self.activeNPCs
+    local isFemale = (npcCount % 2 == 0)
+    -- Appearance seed: use NPC count + location hash for variety, avoid math.randomseed corruption
+    local locHash = math.floor(math.abs((location and location.x or 0) * 7 + (location and location.z or 0) * 13)) % 1000
+    local appearanceSeed = (npcCount * 137 + locHash) % 1000 + 1
+
     local npc = {
         id = #self.activeNPCs + 1,
-        name = self.config.getRandomNPCName(),
+        name = self.config.getNPCName(isFemale),
+        isFemale = isFemale,
         age = math.random(25, 65),
         personality = self.config.getRandomPersonality(),
         
@@ -576,8 +972,8 @@ function NPCSystem:createNPCAtLocation(location)
         assignedField = nil,
         assignedVehicles = {},
         
-        -- Stats
-        relationship = 50,
+        -- Stats (random 5-35: mix of Hostile/Unfriendly/Neutral)
+        relationship = math.random(5, 35),
         favorCooldown = 0,
         lastInteractionTime = 0,
         totalFavorsCompleted = 0,
@@ -586,12 +982,15 @@ function NPCSystem:createNPCAtLocation(location)
         -- Visual
         model = self.config.getRandomNPCModel(),
         clothing = self.config.getRandomClothing(),
-        appearanceSeed = math.random(1, 1000),
+        appearanceSeed = appearanceSeed,
         
+        -- Visual variation
+        heightScale = 0.95 + math.random() * 0.1,  -- 0.95-1.05 height variation
+
         -- AI
         aiState = "idle",
         path = nil,
-        movementSpeed = 1.0 + math.random() * 0.5,
+        movementSpeed = 1.0, -- base speed, overridden by personality below
         aiPersonalityModifiers = {
             workEthic = 1.0,
             sociability = 1.0,
@@ -602,7 +1001,31 @@ function NPCSystem:createNPCAtLocation(location)
         -- Performance
         lastUpdateTime = 0,
         updatePriority = 1,
-        
+
+        -- Memory: recent encounters (max 5)
+        encounters = {},
+
+        -- Greeting state
+        lastGreetingTime = 0,
+        greetingText = nil,
+        greetingTimer = 0,
+
+        -- Vehicle dodge state
+        dodgeTimer = 0,
+
+        -- Needs system (0 = satisfied, 100 = desperate)
+        needs = {
+            energy = 20,            -- rises while awake, drops while sleeping
+            social = 30,            -- rises while alone, drops while socializing
+            hunger = 10,            -- rises over time, drops during meal slots
+            workSatisfaction = 50,  -- rises from working, drops from idle
+        },
+        mood = "neutral",           -- derived from needs: happy/neutral/stressed/tired
+
+        -- 4i: Special day events
+        birthdayMonth = math.random(1, 12),
+        birthdayDay = math.random(1, 28),
+
         -- Persistence
         uniqueId = nil,
         saveData = {},
@@ -626,8 +1049,16 @@ function NPCSystem:createNPCAtLocation(location)
         npc.aiPersonalityModifiers.generosity = 0.5
     end
     
-    -- Apply to movement speed
-    npc.movementSpeed = npc.movementSpeed * (0.8 + (npc.aiPersonalityModifiers.workEthic * 0.2))
+    -- Personality-specific movement speed ranges (observable differentiation)
+    local speedRanges = {
+        hardworking = {1.4, 1.6},   -- brisk, purposeful
+        lazy        = {0.7, 0.85},  -- dawdling, unhurried
+        social      = {1.0, 1.2},   -- normal, conversational pace
+        grumpy      = {1.1, 1.3},   -- impatient, quick
+        generous    = {0.9, 1.1},   -- relaxed, approachable
+    }
+    local range = speedRanges[npc.personality] or {0.9, 1.2}
+    npc.movementSpeed = range[1] + math.random() * (range[2] - range[1])
     
     return npc
 end
@@ -679,9 +1110,46 @@ function NPCSystem:findNearestField(x, z, npcId)
         end
     end
 
+    -- Enhance with crop/growth state info when available
+    if nearest then
+        nearest.cropInfo = nil
+        for _, field in pairs(g_fieldManager.fields) do
+            local fid = field.fieldId or 0
+            if fid == nearest.id then
+                local cropInfo = {}
+                -- Try to read fruit type
+                pcall(function()
+                    if field.fruitType then
+                        cropInfo.fruitType = field.fruitType
+                    elseif field.currentFruit then
+                        cropInfo.fruitType = field.currentFruit
+                    end
+                end)
+                -- Try to read growth state
+                pcall(function()
+                    if field.growthState then
+                        cropInfo.growthState = field.growthState
+                    elseif field.fieldState then
+                        cropInfo.growthState = field.fieldState
+                    end
+                end)
+                if cropInfo.fruitType or cropInfo.growthState then
+                    nearest.cropInfo = cropInfo
+                end
+                break
+            end
+        end
+    end
+
     if nearest and self.settings.debugMode then
-        print(string.format("[NPC Favor] Field #%d found for NPC %d at dist %.0fm",
-            nearest.id, npcId or 0, nearestDist))
+        local cropStr = ""
+        if nearest.cropInfo then
+            cropStr = string.format(" crop=%s growth=%s",
+                tostring(nearest.cropInfo.fruitType or "?"),
+                tostring(nearest.cropInfo.growthState or "?"))
+        end
+        print(string.format("[NPC Favor] Field #%d found for NPC %d at dist %.0fm%s",
+            nearest.id, npcId or 0, nearestDist, cropStr))
     end
 
     return nearest
@@ -704,6 +1172,1012 @@ function NPCSystem:generateNPCVehicles(npcId)
     return vehicles
 end
 
+--- Generate a farm name from an NPC's name.
+-- Extracts last name and appends " Farm".
+-- Special case: "Old MacDonald" -> "MacDonald Farm"
+-- @param npc  NPC data table with .name field
+-- @return string  Farm name (e.g., "Henderson Farm")
+function NPCSystem:generateFarmName(npc)
+    if not npc or not npc.name then
+        return "Unknown Farm"
+    end
+
+    local name = npc.name
+
+    -- Split name into words
+    local words = {}
+    for word in name:gmatch("%S+") do
+        table.insert(words, word)
+    end
+
+    if #words == 0 then
+        return "Unknown Farm"
+    end
+
+    -- Extract last name (last word), skipping common prefixes/titles
+    local lastName = words[#words]
+
+    -- Strip common title prefixes like "Mrs.", "Mr.", "Dr." if they are the last word
+    -- (shouldn't happen, but be safe)
+    local titlePrefixes = { "Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Old", "Young", "Farmer" }
+    if #words == 1 then
+        -- Single word name: check if it's a title, if so use it anyway
+        for _, prefix in ipairs(titlePrefixes) do
+            if lastName == prefix then
+                return name .. " Farm"
+            end
+        end
+    end
+
+    -- Store on NPC and return
+    local farmName = lastName .. " Farm"
+    npc.farmName = farmName
+    return farmName
+end
+
+--- Assign farmlands to NPC farmers using g_farmlandManager.
+-- Uses proximity-based matching: farmers get farmlands nearest their homes.
+-- Also finds fields belonging to each farmland and stores them on the NPC.
+-- Called after NPC creation in initializeNPCs().
+function NPCSystem:assignFarmlands()
+    -- Guard: need both farmland manager and field manager
+    local hasFarmlandManager = false
+    local farmlands = nil
+
+    pcall(function()
+        if g_farmlandManager then
+            if g_farmlandManager.getFarmlands then
+                farmlands = g_farmlandManager:getFarmlands()
+            elseif g_farmlandManager.farmlands then
+                farmlands = g_farmlandManager.farmlands
+            end
+            if farmlands then
+                hasFarmlandManager = true
+            end
+        end
+    end)
+
+    if not hasFarmlandManager or not farmlands then
+        if self.settings.debugMode then
+            print("[NPC Favor] assignFarmlands: g_farmlandManager not available, skipping")
+        end
+        return
+    end
+
+    -- Collect farmer NPCs (role == "farmer" or "farmhand")
+    local farmerNPCs = {}
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive and (npc.role == "farmer" or npc.role == "farmhand") then
+            table.insert(farmerNPCs, npc)
+        end
+    end
+
+    if #farmerNPCs == 0 then
+        if self.settings.debugMode then
+            print("[NPC Favor] assignFarmlands: no farmer NPCs found, skipping")
+        end
+        return
+    end
+
+    -- Collect assignable farmlands (unowned or NPC-owned)
+    local assignableFarmlands = {}
+    for _, farmland in pairs(farmlands) do
+        local farmlandId = nil
+        local ownerFarmId = nil
+        local isNPCOwned = false
+        local farmlandName = "Farmland"
+
+        pcall(function()
+            farmlandId = farmland.id or farmland.farmlandId
+            ownerFarmId = farmland.ownerFarmId or 0
+            isNPCOwned = farmland.isNPCOwned or false
+            if farmland.getName then
+                farmlandName = farmland:getName()
+            elseif farmland.name then
+                farmlandName = farmland.name
+            end
+        end)
+
+        if farmlandId then
+            -- Assign if unowned (farmId 0, nil, or 15=spectator) or marked as NPC-owned
+            -- FarmId 15 is the spectator farm — used for all non-ownable map features
+            local spectatorId = FarmManager.SPECTATOR_FARM_ID or 15
+            if ownerFarmId == 0 or ownerFarmId == nil or ownerFarmId == spectatorId or isNPCOwned then
+                table.insert(assignableFarmlands, {
+                    farmlandId = farmlandId,
+                    name = farmlandName or ("Farmland #" .. tostring(farmlandId)),
+                    farmland = farmland
+                })
+            end
+        end
+    end
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] assignFarmlands: %d assignable farmlands, %d farmer NPCs",
+            #assignableFarmlands, #farmerNPCs))
+    end
+
+    if #assignableFarmlands == 0 then
+        -- Generate farm names even without farmland assignments
+        for _, npc in ipairs(farmerNPCs) do
+            self:generateFarmName(npc)
+        end
+        return
+    end
+
+    -- Compute farmland centroids from their fields for distance matching
+    local farmlandCentroids = {}
+    for _, farmlandEntry in ipairs(assignableFarmlands) do
+        local cx, cz, fieldCount = 0, 0, 0
+        pcall(function()
+            if g_fieldManager and g_fieldManager.fields then
+                for _, field in pairs(g_fieldManager.fields) do
+                    local fieldFarmlandId = nil
+                    if field.farmland and field.farmland.id then
+                        fieldFarmlandId = field.farmland.id
+                    elseif field.farmlandId then
+                        fieldFarmlandId = field.farmlandId
+                    end
+                    if fieldFarmlandId and fieldFarmlandId == farmlandEntry.farmlandId then
+                        local fx, fz = nil, nil
+                        if field.fieldArea and field.fieldArea.fieldCenterX then
+                            fx = field.fieldArea.fieldCenterX
+                            fz = field.fieldArea.fieldCenterZ
+                        elseif field.posX and field.posZ then
+                            fx = field.posX
+                            fz = field.posZ
+                        elseif field.rootNode then
+                            local ok2, rx, _, rz = pcall(getWorldTranslation, field.rootNode)
+                            if ok2 and rx then fx = rx; fz = rz end
+                        end
+                        if fx and fz then
+                            cx = cx + fx
+                            cz = cz + fz
+                            fieldCount = fieldCount + 1
+                        end
+                    end
+                end
+            end
+        end)
+        if fieldCount > 0 then
+            farmlandCentroids[farmlandEntry.farmlandId] = { x = cx / fieldCount, z = cz / fieldCount }
+        else
+            -- Try farmland's own position as fallback
+            local fl = farmlandEntry.farmland
+            if fl and fl.posX and fl.posZ then
+                farmlandCentroids[farmlandEntry.farmlandId] = { x = fl.posX, z = fl.posZ }
+            end
+        end
+    end
+
+    -- Proximity-based greedy nearest-first assignment:
+    -- For each farmland, find the closest unassigned farmer NPC
+    local assignedNPCIds = {}
+
+    for _, farmlandEntry in ipairs(assignableFarmlands) do
+        local centroid = farmlandCentroids[farmlandEntry.farmlandId]
+        local bestNPC = nil
+        local bestDist = math.huge
+
+        if centroid then
+            for _, npc in ipairs(farmerNPCs) do
+                if not assignedNPCIds[npc.id] and npc.homePosition then
+                    local dx = npc.homePosition.x - centroid.x
+                    local dz = npc.homePosition.z - centroid.z
+                    local dist = math.sqrt(dx * dx + dz * dz)
+                    if dist < bestDist then
+                        bestDist = dist
+                        bestNPC = npc
+                    end
+                end
+            end
+        end
+
+        -- If all NPCs already assigned, wrap around (allow multiple farmlands per NPC)
+        if not bestNPC then
+            if centroid then
+                bestDist = math.huge
+                for _, npc in ipairs(farmerNPCs) do
+                    if npc.homePosition then
+                        local dx = npc.homePosition.x - centroid.x
+                        local dz = npc.homePosition.z - centroid.z
+                        local dist = math.sqrt(dx * dx + dz * dz)
+                        if dist < bestDist then
+                            bestDist = dist
+                            bestNPC = npc
+                        end
+                    end
+                end
+            else
+                -- No centroid, fall back to first farmer
+                bestNPC = farmerNPCs[1]
+                bestDist = 0
+            end
+        end
+
+        if bestNPC then
+            assignedNPCIds[bestNPC.id] = true
+
+            bestNPC.assignedFarmland = {
+                farmlandId = farmlandEntry.farmlandId,
+                name = farmlandEntry.name
+            }
+            bestNPC.homeToFieldDistance = bestDist
+
+            -- Find fields belonging to this farmland
+            bestNPC.assignedFields = bestNPC.assignedFields or {}
+            pcall(function()
+                if g_fieldManager and g_fieldManager.fields then
+                    for _, field in pairs(g_fieldManager.fields) do
+                        local fieldFarmlandId = nil
+                        if field.farmland and field.farmland.id then
+                            fieldFarmlandId = field.farmland.id
+                        elseif field.farmlandId then
+                            fieldFarmlandId = field.farmlandId
+                        end
+
+                        if fieldFarmlandId and fieldFarmlandId == farmlandEntry.farmlandId then
+                            local fieldId = field.fieldId or 0
+                            local fcx, fcz = nil, nil
+                            if field.fieldArea and field.fieldArea.fieldCenterX then
+                                fcx = field.fieldArea.fieldCenterX
+                                fcz = field.fieldArea.fieldCenterZ
+                            elseif field.posX and field.posZ then
+                                fcx = field.posX
+                                fcz = field.posZ
+                            elseif field.rootNode then
+                                local ok3, fx3, _, fz3 = pcall(getWorldTranslation, field.rootNode)
+                                if ok3 and fx3 then fcx = fx3; fcz = fz3 end
+                            end
+
+                            table.insert(bestNPC.assignedFields, {
+                                fieldId = fieldId,
+                                center = { x = fcx or 0, y = 0, z = fcz or 0 },
+                                field = field
+                            })
+                        end
+                    end
+                end
+            end)
+
+            -- Generate farm name for this NPC
+            self:generateFarmName(bestNPC)
+
+            -- Fallback: relocate home if field is >300m away
+            if bestDist > 300 and centroid then
+                self:tryRelocateNPCHome(bestNPC, centroid.x, centroid.z)
+            end
+
+            if self.settings.debugMode then
+                print(string.format("[NPC Favor] Farmland '%s' (#%d) assigned to %s (%s) with %d fields (%.0fm from home)",
+                    farmlandEntry.name, farmlandEntry.farmlandId,
+                    bestNPC.name or "?", bestNPC.farmName or "?",
+                    #bestNPC.assignedFields, bestDist))
+            end
+        end
+    end
+
+    -- Generate farm names for farmer NPCs that didn't get a farmland
+    for _, npc in ipairs(farmerNPCs) do
+        if not npc.farmName then
+            self:generateFarmName(npc)
+        end
+    end
+end
+
+--- Try to relocate an NPC's home to a residential building closer to their field.
+-- Only relocates if a residential building exists within 150m of the field centroid.
+-- @param npc       NPC data table
+-- @param fieldX    Field centroid X
+-- @param fieldZ    Field centroid Z
+function NPCSystem:tryRelocateNPCHome(npc, fieldX, fieldZ)
+    if not self.classifiedBuildings or not self.classifiedBuildings.residential then
+        return
+    end
+
+    local bestBuilding = nil
+    local bestDist = 150  -- max search radius
+
+    for _, entry in ipairs(self.classifiedBuildings.residential) do
+        local dx = entry.x - fieldX
+        local dz = entry.z - fieldZ
+        local dist = math.sqrt(dx * dx + dz * dz)
+        if dist < bestDist then
+            bestDist = dist
+            bestBuilding = entry
+        end
+    end
+
+    if bestBuilding then
+        local oldDist = npc.homeToFieldDistance or 0
+        npc.homePosition = { x = bestBuilding.x, y = bestBuilding.y or 0, z = bestBuilding.z }
+        npc.homeBuilding = bestBuilding.placeable or bestBuilding
+        npc.homeBuildingName = bestBuilding.name or "Relocated Home"
+        npc.homeToFieldDistance = bestDist
+
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] Relocated %s's home to %s (%.0fm from field, was %.0fm)",
+                npc.name or "?", bestBuilding.name or "?", bestDist, oldDist))
+        end
+    else
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] %s lives %.0fm from field — no closer home available",
+                npc.name or "?", npc.homeToFieldDistance or 0))
+        end
+    end
+end
+
+-- =========================================================
+-- Real Vehicle Spawning (Phase B1 + B2 + C)
+-- =========================================================
+
+--- Pool of base-game tractor XML paths for variety.
+-- These are validated at runtime via g_storeManager; invalid entries are removed.
+NPCSystem.TRACTOR_POOL = {
+    "data/vehicles/fendt/vario200/vario200.xml",
+}
+
+--- Pool of base-game implement XML paths (plows/cultivators for field work).
+NPCSystem.IMPLEMENT_POOL = {
+    "data/vehicles/poettinger/servoT6000Plus/servoT6000Plus.xml",
+    "data/vehicles/kuhn/kuhnCultimer400/kuhnCultimer400.xml",
+}
+
+--- Validate vehicle pools against the store manager at runtime.
+-- Removes entries that aren't registered storeitems and discovers alternatives.
+function NPCSystem:validateVehiclePools()
+    if not g_storeManager then return end
+
+    -- Validate tractor pool
+    local validTractors = {}
+    for _, path in ipairs(self.TRACTOR_POOL) do
+        local ok, item = pcall(function() return g_storeManager:getItemByXMLFilename(path) end)
+        if ok and item then
+            table.insert(validTractors, path)
+        else
+            print(string.format("[NPC Favor] Tractor pool: '%s' not found in store, removing", path))
+        end
+    end
+
+    -- Validate implement pool
+    local validImplements = {}
+    for _, path in ipairs(self.IMPLEMENT_POOL) do
+        local ok, item = pcall(function() return g_storeManager:getItemByXMLFilename(path) end)
+        if ok and item then
+            table.insert(validImplements, path)
+        else
+            print(string.format("[NPC Favor] Implement pool: '%s' not found in store, removing", path))
+        end
+    end
+
+    -- If pools are empty after validation, try runtime discovery
+    if #validTractors == 0 then
+        print("[NPC Favor] No valid tractors in pool — attempting store discovery")
+        validTractors = self:discoverVehiclesFromStore("TRACTOR")
+    end
+    if #validImplements == 0 then
+        print("[NPC Favor] No valid implements in pool — attempting store discovery")
+        validImplements = self:discoverVehiclesFromStore("CULTIVATOR")
+    end
+
+    self.TRACTOR_POOL = validTractors
+    self.IMPLEMENT_POOL = validImplements
+
+    print(string.format("[NPC Favor] Vehicle pools validated: %d tractors, %d implements",
+        #self.TRACTOR_POOL, #self.IMPLEMENT_POOL))
+end
+
+--- Discover valid vehicles from the store by category keyword.
+-- @param keyword  "TRACTOR" or "CULTIVATOR"
+-- @return table  Array of valid XML paths
+function NPCSystem:discoverVehiclesFromStore(keyword)
+    local results = {}
+    pcall(function()
+        local items = g_storeManager:getItems()
+        if not items then return end
+        for _, item in pairs(items) do
+            local catName = item.categoryName or ""
+            if catName:upper():find(keyword) and item.xmlFilename then
+                table.insert(results, item.xmlFilename)
+                if #results >= 3 then break end  -- limit to 3 per type
+            end
+        end
+    end)
+    return results
+end
+
+--- Select a tractor filename based on NPC's appearance seed for consistent variety.
+-- @param npc  NPC data table
+-- @return string  Vehicle XML path
+function NPCSystem:getTractorFilename(npc)
+    local seed = npc.appearanceSeed or npc.id or 1
+    local index = (seed % #self.TRACTOR_POOL) + 1
+    return self.TRACTOR_POOL[index]
+end
+
+--- Spawn a real FS25 vehicle for an NPC farmer using VehicleLoadingData.
+-- Gracefully falls back to nil if VehicleLoadingData API is unavailable.
+-- @param npc       NPC data table (requires npc.assignedField)
+-- @param callback  Optional function(vehicle) called on success/failure
+function NPCSystem:spawnNPCTractor(npc, callback)
+    -- Guard: API must exist
+    if not VehicleLoadingData then
+        if self.settings.debugMode then
+            print("[NPC Favor] VehicleLoadingData not available — using prop fallback")
+        end
+        if callback then callback(nil) end
+        return
+    end
+
+    -- Guard: need a field to position the tractor
+    if not npc.assignedField and not (npc.assignedFields and #npc.assignedFields > 0) then
+        if callback then callback(nil) end
+        return
+    end
+
+    -- Get field edge position for tractor placement
+    local field = npc.assignedField or (npc.assignedFields and npc.assignedFields[1])
+    local fieldEdgeX, fieldEdgeZ = self:getFieldEdgePosition(field)
+    if not fieldEdgeX then
+        if callback then callback(nil) end
+        return
+    end
+
+    local tractorFile = self:getTractorFilename(npc)
+
+    local loadingData = VehicleLoadingData.new()
+    loadingData:setFilename(tractorFile)
+    loadingData:setPosition(fieldEdgeX, nil, fieldEdgeZ)  -- nil y = auto terrain height
+    loadingData:setRotation(0, (npc.id or 0) * 1.2, 0)   -- varied facing
+
+    -- Use spectator farm ID so it doesn't appear in player's vehicle list
+    local spectatorFarmId = FarmManager.SPECTATOR_FARM_ID or 0
+    loadingData:setOwnerFarmId(spectatorFarmId)
+    loadingData:setPropertyState(VehiclePropertyState.OWNED)
+    loadingData:setIsRegistered(true)
+    loadingData:setAddToPhysics(true)
+    loadingData:setIsSaved(false)  -- Don't persist — we respawn on load
+
+    loadingData:load(function(vehicle, loadingState, args)
+        if vehicle then
+            npc.realTractor = vehicle
+            npc.realTractor.isNPCVehicle = true  -- tag for identification
+
+            -- Prevent player from entering the NPC's tractor.
+            -- FS25 entry flow: VehicleSystem.interactiveVehicles → getDistanceToNode()
+            -- → interactiveVehicleInRange → E key → vehicle:interact(player)
+            -- → player:requestToEnterVehicle(). We attack at multiple levels.
+            self:lockNPCVehicle(vehicle)
+            print(string.format("[NPC Favor] Tractor locked for %s (not enterable)", npc.name or "?"))
+
+            -- Seat NPC character in the cab
+            self:seatNPCInVehicle(npc, vehicle)
+
+            print(string.format("[NPC Favor] Real tractor spawned for %s at (%.0f, %.0f) — %s",
+                npc.name or "?", fieldEdgeX, fieldEdgeZ, tractorFile))
+        else
+            print(string.format("[NPC Favor] Tractor spawn FAILED for %s — %s",
+                npc.name or "?", tractorFile))
+        end
+
+        if callback then callback(vehicle) end
+    end, self, {npc = npc})
+end
+
+--- Seat an NPC's HumanModel character in a vehicle's cab via VehicleCharacter.
+-- @param npc      NPC data table
+-- @param vehicle  The spawned FS25 Vehicle object
+function NPCSystem:seatNPCInVehicle(npc, vehicle)
+    pcall(function()
+        if not vehicle.spec_enterable or not vehicle.spec_enterable.vehicleCharacter then
+            return
+        end
+
+        local vc = vehicle.spec_enterable.vehicleCharacter
+        local entity = self.entityManager and self.entityManager.npcEntities[npc.id]
+
+        if entity and entity.playerStyle then
+            vc:loadCharacter(entity.playerStyle, function()
+                -- NPC is now visually seated — hide the standalone walking model
+                if entity.node then
+                    pcall(function() setVisibility(entity.node, false) end)
+                end
+                npc.isSeatedInVehicle = true
+            end, self)
+        end
+    end)
+end
+
+--- Unseat an NPC from their vehicle and restore the walking model.
+-- @param npc  NPC data table
+function NPCSystem:unseatNPCFromVehicle(npc)
+    pcall(function()
+        if npc.realTractor and npc.realTractor.spec_enterable then
+            local vc = npc.realTractor.spec_enterable.vehicleCharacter
+            if vc and vc.setCharacterVisibility then
+                vc:setCharacterVisibility(false)
+            end
+        end
+
+        local entity = self.entityManager and self.entityManager.npcEntities[npc.id]
+        if entity and entity.node then
+            pcall(function() setVisibility(entity.node, true) end)
+        end
+        npc.isSeatedInVehicle = false
+    end)
+end
+
+--- Start an AI field work job for an NPC using their real tractor.
+-- Uses AIJobFieldWork with named parameters. Falls back gracefully if unavailable.
+-- @param npc  NPC data table (requires npc.realTractor and npc.assignedField)
+function NPCSystem:startNPCFieldWork(npc)
+    if not npc.realTractor or not AIJobFieldWork then
+        return false
+    end
+
+    -- Determine field target
+    local field = npc.assignedField or (npc.assignedFields and npc.assignedFields[1])
+    if not field then return false end
+
+    local cx = (field.center and field.center.x) or 0
+    local cz = (field.center and field.center.z) or 0
+
+    local job = AIJobFieldWork.new(g_currentMission:getIsServer())
+
+    -- Set vehicle via named parameter
+    pcall(function()
+        local vehicleParam = job:getNamedParameter("vehicle")
+        if vehicleParam and vehicleParam.setVehicle then
+            vehicleParam:setVehicle(npc.realTractor)
+        end
+    end)
+
+    -- Set field position/angle
+    pcall(function()
+        local posParam = job:getNamedParameter("positionAngle")
+        if posParam and posParam.setPosition then
+            posParam:setPosition(cx, cz)
+            posParam:setAngle(0)
+        end
+    end)
+
+    -- Validate before starting
+    local farmId = npc.ownerFarmId or FarmManager.SPECTATOR_FARM_ID or 0
+    local valid, errorMsg = false, "unknown"
+    pcall(function()
+        valid, errorMsg = job:validate(farmId)
+    end)
+
+    if valid then
+        pcall(function()
+            g_currentMission.aiSystem:startJob(job, farmId)
+        end)
+        npc.activeAIJob = job
+        npc.currentAction = "field work (AI)"
+
+        -- Seat NPC in tractor when AI starts
+        self:seatNPCInVehicle(npc, npc.realTractor)
+
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] AI field work started for %s on field at (%.0f, %.0f)",
+                npc.name or "?", cx, cz))
+        end
+        return true
+    else
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] AI job validation failed for %s: %s",
+                npc.name or "?", tostring(errorMsg)))
+        end
+        return false
+    end
+end
+
+--- Stop an active AI field work job for an NPC.
+-- @param npc  NPC data table
+function NPCSystem:stopNPCFieldWork(npc)
+    if npc.activeAIJob then
+        pcall(function()
+            g_currentMission.aiSystem:stopJob(npc.activeAIJob)
+        end)
+        npc.activeAIJob = nil
+    end
+
+    -- Unseat NPC from tractor
+    self:unseatNPCFromVehicle(npc)
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] AI field work stopped for %s", npc.name or "?"))
+    end
+end
+
+--- Spawn an implement and attach it to an NPC's real tractor.
+-- @param npc              NPC data table (requires npc.realTractor)
+-- @param implementIndex   Optional index into IMPLEMENT_POOL (default: 1)
+-- @param callback         Optional function(implement) on completion
+function NPCSystem:spawnNPCImplement(npc, implementIndex, callback)
+    if not VehicleLoadingData or not npc.realTractor or #self.IMPLEMENT_POOL == 0 then
+        if callback then callback(nil) end
+        return
+    end
+
+    implementIndex = implementIndex or 1
+    local implementFile = self.IMPLEMENT_POOL[math.min(implementIndex, #self.IMPLEMENT_POOL)]
+
+    -- Position implement near the tractor (use field edge as fallback)
+    local tractorX, tractorY, tractorZ = nil, nil, nil
+    pcall(function()
+        if npc.realTractor and npc.realTractor.rootNode then
+            tractorX, tractorY, tractorZ = getWorldTranslation(npc.realTractor.rootNode)
+        end
+    end)
+
+    -- Fallback to field edge position if tractor position unavailable
+    if not tractorX then
+        local field = npc.assignedField or (npc.assignedFields and npc.assignedFields[1])
+        if field then
+            tractorX, tractorZ = self:getFieldEdgePosition(field)
+            tractorY = nil  -- nil = auto terrain height detection
+        end
+    end
+
+    if not tractorX then
+        if callback then callback(nil) end
+        return
+    end
+
+    local loadingData = VehicleLoadingData.new()
+    loadingData:setFilename(implementFile)
+    loadingData:setPosition(tractorX, tractorY, tractorZ)
+    loadingData:setOwnerFarmId(FarmManager.SPECTATOR_FARM_ID or 0)
+    loadingData:setPropertyState(VehiclePropertyState.OWNED)
+    loadingData:setIsRegistered(true)
+    loadingData:setAddToPhysics(true)
+    loadingData:setIsSaved(false)
+
+    loadingData:load(function(implement, loadingState, args)
+        if implement and npc.realTractor then
+            -- Attach implement to tractor
+            pcall(function()
+                npc.realTractor:attachImplement(implement)
+            end)
+            npc.realImplement = implement
+            implement.isNPCVehicle = true
+
+            -- Prevent player entry
+            pcall(function()
+                if implement.spec_enterable then
+                    implement.spec_enterable.isEnterable = false
+                end
+            end)
+
+            if self.settings.debugMode then
+                print(string.format("[NPC Favor] Implement attached to %s's tractor — %s",
+                    npc.name or "?", implementFile))
+            end
+        end
+
+        if callback then callback(implement) end
+    end, self, {npc = npc})
+end
+
+--- Remove an NPC's real tractor and implement from the world.
+-- @param npc  NPC data table
+function NPCSystem:removeNPCTractor(npc)
+    -- Stop active AI job first
+    self:stopNPCFieldWork(npc)
+
+    -- Remove implement
+    if npc.realImplement then
+        pcall(function()
+            if npc.realTractor and npc.realTractor.detachImplement then
+                npc.realTractor:detachImplement(npc.realImplement)
+            end
+        end)
+        pcall(function()
+            g_currentMission:removeVehicle(npc.realImplement)
+        end)
+        npc.realImplement = nil
+    end
+
+    -- Remove tractor
+    if npc.realTractor then
+        pcall(function()
+            g_currentMission:removeVehicle(npc.realTractor)
+        end)
+        npc.realTractor = nil
+    end
+
+    npc.isSeatedInVehicle = false
+end
+
+--- Activate an NPC's parked tractor for field work (hybrid mode).
+-- Seats the NPC in the tractor and starts AI field work.
+-- Called when NPC enters WORKING state.
+-- @param npc  NPC data table
+function NPCSystem:activateNPCTractor(npc)
+    if not npc.realTractor then return false end
+
+    -- Seat NPC in the tractor
+    self:seatNPCInVehicle(npc, npc.realTractor)
+
+    -- Try to start AI field work
+    local started = self:startNPCFieldWork(npc)
+    if started then
+        print(string.format("[NPC Favor] %s activated tractor for AI field work", npc.name or "?"))
+    else
+        -- AI job didn't start — NPC is still visually in the tractor at least
+        npc.currentAction = "field work (manual)"
+        print(string.format("[NPC Favor] %s in tractor (AI job not available — parked at field)", npc.name or "?"))
+    end
+    return true
+end
+
+--- Deactivate an NPC's tractor after field work (hybrid mode).
+-- Unseats the NPC and stops AI. Tractor stays parked where it is.
+-- Called when NPC leaves WORKING state.
+-- @param npc  NPC data table
+function NPCSystem:deactivateNPCTractor(npc)
+    if not npc.realTractor then return end
+
+    -- Stop AI field work
+    self:stopNPCFieldWork(npc)
+
+    -- Unseat NPC from tractor — restore walking model
+    self:unseatNPCFromVehicle(npc)
+
+    print(string.format("[NPC Favor] %s left tractor (parked at field)", npc.name or "?"))
+end
+
+--- Initialize real vehicles for all farmer NPCs (called after NPC init).
+-- Modes: "hybrid" = spawn parked tractors at fields (activated when NPC works),
+--        "realistic" = spawn + immediately available for AI,
+--        "visual" = no real vehicles (prop-only).
+function NPCSystem:initializeNPCVehicles()
+    if not self.settings.npcDriveVehicles then return end
+    local mode = self.settings.npcVehicleMode
+    if mode ~= "realistic" and mode ~= "hybrid" then return end
+    if not g_currentMission:getIsServer() then return end  -- server authority only
+
+    -- Validate vehicle pools against the store before spawning
+    self:validateVehiclePools()
+
+    -- If no valid tractors found, can't spawn anything
+    if #self.TRACTOR_POOL == 0 then
+        print("[NPC Favor] No valid tractors available — skipping vehicle initialization")
+        return
+    end
+
+    local spawnCount = 0
+    local maxConcurrent = 4  -- limit concurrent real tractors for performance
+
+    for _, npc in ipairs(self.activeNPCs) do
+        if spawnCount >= maxConcurrent then break end
+        if npc.isActive and (npc.role == "farmer" or npc.role == "farmhand") then
+            if npc.assignedField or (npc.assignedFields and #npc.assignedFields > 0) then
+                self:spawnNPCTractor(npc, function(vehicle)
+                    if vehicle and mode == "hybrid" then
+                        -- Hybrid mode: tractor spawns parked at the field.
+                        -- NPC walks on foot normally. When NPC enters WORKING state,
+                        -- NPCAI calls activateNPCTractor() to seat NPC + start AI.
+                        -- When NPC leaves WORKING state, deactivateNPCTractor() restores walking.
+                        print(string.format("[NPC Favor] Hybrid tractor parked at field for %s", npc.name or "?"))
+                    end
+                end)
+                spawnCount = spawnCount + 1
+            end
+        end
+    end
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Initialized %d real NPC vehicles (mode: %s)",
+            spawnCount, self.settings.npcVehicleMode))
+    end
+end
+
+--- Switch vehicle mode at runtime (called from console command).
+-- @param oldMode  Previous mode string
+-- @param newMode  New mode string ("hybrid", "realistic", or "visual")
+function NPCSystem:switchVehicleMode(oldMode, newMode)
+    if oldMode == newMode then return end
+
+    if newMode == "visual" then
+        -- Despawn all real vehicles
+        for _, npc in ipairs(self.activeNPCs) do
+            if npc.realTractor then
+                self:removeNPCTractor(npc)
+            end
+        end
+        print("[NPC Favor] Switched to visual mode — real vehicles removed")
+    elseif newMode == "realistic" or newMode == "hybrid" then
+        -- Remove existing vehicles first (clean slate)
+        for _, npc in ipairs(self.activeNPCs) do
+            if npc.realTractor then
+                self:removeNPCTractor(npc)
+            end
+        end
+        -- Spawn fresh
+        self:initializeNPCVehicles()
+        print(string.format("[NPC Favor] Switched to %s mode — spawning vehicles", newMode))
+    end
+end
+
+--- Lock an NPC vehicle so the player cannot enter it.
+-- Uses three independent layers that each prevent entry on their own:
+-- 1) Remove from VehicleSystem.interactiveVehicles (no E prompt)
+-- 2) Override getDistanceToNode to return math.huge (invisible to proximity)
+-- 3) Override interact() to no-op (blocks entry if proximity somehow fires)
+-- Also schedules a delayed re-lock because async vehicle finalization
+-- can re-register the vehicle after our initial lock.
+function NPCSystem:lockNPCVehicle(vehicle)
+    if not vehicle then return end
+
+    local function applyLock(v)
+        -- Layer 1: Remove from interactive vehicles list
+        pcall(function()
+            if g_currentMission and g_currentMission.vehicleSystem then
+                g_currentMission.vehicleSystem:removeInteractiveVehicle(v)
+            end
+        end)
+
+        -- Layer 2: Override getDistanceToNode — makes vehicle invisible to
+        -- the proximity scan in BaseMission:getInteractiveVehicleInRange()
+        v.getDistanceToNode = function(self, node)
+            self.interactionFlag = Vehicle.INTERACTION_FLAG_NONE or 0
+            return math.huge
+        end
+
+        -- Layer 3: Override interact() on instance — blocks the E key action
+        v.interact = function(self, player) return end
+
+        -- Layer 4: Prevent Tab-cycling
+        pcall(function()
+            if v.setIsTabbable then v:setIsTabbable(false) end
+        end)
+        pcall(function()
+            if v.spec_enterable then
+                v.spec_enterable.isTabbable = false
+                v.spec_enterable.isEnterable = false
+            end
+        end)
+    end
+
+    -- Apply immediately
+    applyLock(vehicle)
+
+    -- Re-apply after a short delay — async vehicle finalization may
+    -- re-register the vehicle with VehicleSystem after our initial lock
+    if g_currentMission and g_currentMission.addDelayedCallback then
+        pcall(function()
+            g_currentMission:addDelayedCallback(function()
+                if vehicle ~= nil then
+                    applyLock(vehicle)
+                end
+            end, 2000) -- 2 second delay
+        end)
+    end
+
+    -- Also schedule a one-shot delayed re-lock via our own timer
+    if not vehicle._npcLockScheduled then
+        vehicle._npcLockScheduled = true
+        self._pendingVehicleLocks = self._pendingVehicleLocks or {}
+        table.insert(self._pendingVehicleLocks, {
+            vehicle = vehicle,
+            timer = 3.0  -- seconds until re-lock
+        })
+    end
+end
+
+--- Eject the player from any NPC vehicle they've managed to enter.
+-- This is the nuclear fallback — runs every 2 seconds in the update loop.
+function NPCSystem:ejectPlayerFromNPCVehicles()
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.realTractor then
+            pcall(function()
+                local vehicle = npc.realTractor
+                if vehicle.spec_enterable and vehicle.spec_enterable.isControlled then
+                    -- Player somehow got into this NPC vehicle — eject them
+                    if vehicle.spec_enterable.exitVehicle then
+                        vehicle.spec_enterable:exitVehicle()
+                    elseif vehicle.leaveVehicle then
+                        vehicle:leaveVehicle()
+                    end
+                    print(string.format("[NPC Favor] Ejected player from %s's tractor!", npc.name or "?"))
+
+                    -- Re-apply full lockdown
+                    vehicle._npcLockScheduled = nil
+                    self:lockNPCVehicle(vehicle)
+                end
+            end)
+
+            -- Also ensure lock is maintained every check cycle
+            -- (vehicle may have been re-registered by VehicleSystem)
+            pcall(function()
+                local v = npc.realTractor
+                if g_currentMission and g_currentMission.vehicleSystem then
+                    g_currentMission.vehicleSystem:removeInteractiveVehicle(v)
+                end
+                v.interact = function(self, player) return end
+                v.getDistanceToNode = function(self, node)
+                    self.interactionFlag = 0
+                    return math.huge
+                end
+            end)
+        end
+    end
+end
+
+--- Get a position at the edge of a field closest to the nearest road spline.
+-- Used to position NPCs at field edges rather than field centers when they
+-- are "planning" or "inspecting" their fields.
+-- @param field  Field data table (from g_fieldManager.fields or assignedFields entry)
+-- @return x, z  World position at field edge, or nil if field is invalid
+function NPCSystem:getFieldEdgePosition(field)
+    if not field then
+        return nil, nil
+    end
+
+    -- Get field center position
+    local cx, cz = nil, nil
+
+    pcall(function()
+        if field.center then
+            cx = field.center.x
+            cz = field.center.z
+        elseif field.fieldArea and field.fieldArea.fieldCenterX then
+            cx = field.fieldArea.fieldCenterX
+            cz = field.fieldArea.fieldCenterZ
+        elseif field.posX and field.posZ then
+            cx = field.posX
+            cz = field.posZ
+        elseif field.rootNode then
+            local ok, fx, _, fz = pcall(getWorldTranslation, field.rootNode)
+            if ok and fx then
+                cx = fx
+                cz = fz
+            end
+        end
+    end)
+
+    if not cx or not cz then
+        return nil, nil
+    end
+
+    -- Try to find nearest road spline via AI pathfinder
+    local splineX, splineZ = nil, nil
+    pcall(function()
+        if self.aiSystem and self.aiSystem.pathfinder and self.aiSystem.pathfinder.findNearestSpline then
+            local ok, sx, _, sz = pcall(self.aiSystem.pathfinder.findNearestSpline,
+                self.aiSystem.pathfinder, cx, 0, cz, 100)
+            if ok and sx then
+                splineX = sx
+                splineZ = sz
+            end
+        end
+    end)
+
+    if splineX and splineZ then
+        -- Position at field edge closest to the spline
+        -- Direction from field center to spline
+        local dirX = splineX - cx
+        local dirZ = splineZ - cz
+        local dist = math.sqrt(dirX * dirX + dirZ * dirZ)
+        if dist > 0.1 then
+            -- Normalize and offset 10-15m from center toward road
+            local edgeDist = 10 + math.random() * 5
+            local ex = cx + (dirX / dist) * edgeDist
+            local ez = cz + (dirZ / dist) * edgeDist
+            return ex, ez
+        end
+    end
+
+    -- Fallback: offset 10-15m from field center in a random direction
+    local angle = math.random() * math.pi * 2
+    local offset = 10 + math.random() * 5
+    local ex = cx + math.cos(angle) * offset
+    local ez = cz + math.sin(angle) * offset
+    return ex, ez
+end
+
 --- Main update loop, called every frame by the mission.
 -- Converts dt from milliseconds to seconds, then dispatches to subsystems.
 -- Server: runs full simulation + periodic multiplayer sync.
@@ -722,6 +2196,13 @@ function NPCSystem:update(dt)
     -- Both server and client need player position for proximity checks / UI
     self:updatePlayerPosition()
 
+    -- Periodically relocate far-away NPCs near the player
+    self.relocateTimer = self.relocateTimer + dt
+    if self.relocateTimer >= self.RELOCATE_INTERVAL then
+        self.relocateTimer = 0
+        self:relocateFarNPCs()
+    end
+
     if self.isServer then
         -- SERVER: Full simulation
         self:updateNPCs(dt)                    -- AI states + entity positions
@@ -729,6 +2210,54 @@ function NPCSystem:update(dt)
         self.favorSystem:update(dt)            -- Favor timers + generation
         self.relationshipManager:update(dt)    -- Mood decay + behavior updates
         self.interactionUI:update(dt)          -- Timers + logic only (no rendering)
+
+        -- Check emergent events once per game hour
+        local currentHour = self.scheduler:getCurrentHour()
+        if self.eventScheduler and currentHour ~= self.eventScheduler.lastCheckHour then
+            self.eventScheduler.lastCheckHour = currentHour
+            local weatherFactor = self:getWeatherFactor()
+            local currentDay = self.scheduler:getCurrentDay()
+            self:updateEventScheduler(currentHour, currentDay, weatherFactor)
+        end
+
+        -- Update town reputation every ~10 seconds (not every frame)
+        self.reputationTimer = (self.reputationTimer or 0) + dt
+        if self.reputationTimer >= 10 then
+            self.reputationTimer = 0
+            self:updateTownReputation()
+        end
+
+        -- NPC vehicle protection: process pending locks + eject player
+        self.vehicleCheckTimer = (self.vehicleCheckTimer or 0) + dt
+        if self.vehicleCheckTimer >= 2 then  -- check every 2 seconds
+            self.vehicleCheckTimer = 0
+            self:ejectPlayerFromNPCVehicles()
+        end
+
+        -- Process delayed vehicle re-locks (async finalization workaround)
+        if self._pendingVehicleLocks then
+            for i = #self._pendingVehicleLocks, 1, -1 do
+                local entry = self._pendingVehicleLocks[i]
+                entry.timer = entry.timer - dt
+                if entry.timer <= 0 then
+                    if entry.vehicle then
+                        -- Re-apply lock directly (don't call lockNPCVehicle to avoid recursion)
+                        pcall(function()
+                            local v = entry.vehicle
+                            if g_currentMission and g_currentMission.vehicleSystem then
+                                g_currentMission.vehicleSystem:removeInteractiveVehicle(v)
+                            end
+                            v.getDistanceToNode = function(self, node)
+                                self.interactionFlag = 0
+                                return math.huge
+                            end
+                            v.interact = function(self, player) return end
+                        end)
+                    end
+                    table.remove(self._pendingVehicleLocks, i)
+                end
+            end
+        end
 
         -- Periodic sync to clients
         self.syncTimer = self.syncTimer + dt
@@ -919,16 +2448,155 @@ function NPCSystem:updateNPCs(dt)
     end
 end
 
+--- Find buildings/placeables near a world position within a given radius.
+-- Filters out fences, deleted objects. Includes all non-fence placeables.
+-- @param centerX  World X center position
+-- @param centerZ  World Z center position
+-- @param radius   Search radius in meters
+-- @return table   Array of {x, y, z, distance, name, placeable} sorted by distance
+--- Look up a placeable's cached radius from classifiedBuildings.
+-- @param placeable  FS25 placeable object
+-- @return number|nil  Radius if found, nil otherwise
+function NPCSystem:getBuildingRadius(placeable)
+    if not self.classifiedBuildings then return nil end
+    for _, entries in pairs(self.classifiedBuildings) do
+        for _, entry in ipairs(entries) do
+            if entry.placeable == placeable then
+                return entry.radius
+            end
+        end
+    end
+    return nil
+end
+
+function NPCSystem:findNearbyBuildings(centerX, centerZ, radius)
+    local buildings = {}
+
+    if not g_currentMission or not g_currentMission.placeableSystem then
+        return buildings
+    end
+
+    local placeables = g_currentMission.placeableSystem.placeables
+    if not placeables and g_currentMission.placeableSystem.getPlaceables then
+        placeables = g_currentMission.placeableSystem:getPlaceables()
+    end
+
+    for _, placeable in pairs(placeables or {}) do
+        if not placeable.markedForDeletion and not placeable.isDeleted then
+            local typeName = placeable.typeName or ""
+            if typeName ~= "newFence" and typeName ~= "fence" then
+                if placeable.rootNode then
+                    local ok, x, y, z = pcall(getWorldTranslation, placeable.rootNode)
+                    if ok and x then
+                        local dx = x - centerX
+                        local dz = z - centerZ
+                        local dist = math.sqrt(dx * dx + dz * dz)
+                        if dist <= radius then
+                            -- Look up building radius from classified data, or estimate
+                            local bRadius = self:getBuildingRadius(placeable) or 5
+                            table.insert(buildings, {
+                                x = x, y = y, z = z,
+                                distance = dist,
+                                name = (placeable.getName and placeable:getName()) or "Building",
+                                placeable = placeable,
+                                radius = bRadius
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(buildings, function(a, b) return a.distance < b.distance end)
+    return buildings
+end
+
+--- Relocate only HOMELESS NPCs that are truly lost (no home, no field, drifted far).
+-- NPCs with assigned homes or fields live their lives at those locations — they are
+-- NOT teleported to follow the player. This creates a realistic spread-out world
+-- where you encounter different NPCs as you travel to different parts of the map.
+function NPCSystem:relocateFarNPCs()
+    if not self.playerPositionValid then return end
+
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            -- Skip NPCs that have a home — they belong where they are
+            if npc.homePosition then
+                -- If NPC drifted very far from their own home (>400m), send them home
+                local hx = npc.homePosition.x - npc.position.x
+                local hz = npc.homePosition.z - npc.position.z
+                local homeDist = math.sqrt(hx * hx + hz * hz)
+                if homeDist > 400 then
+                    local newY = npc.homePosition.y or npc.position.y
+                    if g_currentMission and g_currentMission.terrainRootNode then
+                        local ok, h = pcall(getTerrainHeightAtWorldPos,
+                            g_currentMission.terrainRootNode, npc.homePosition.x, 0, npc.homePosition.z)
+                        if ok and h then newY = h + 0.05 end
+                    end
+                    npc.position.x = npc.homePosition.x
+                    npc.position.y = newY
+                    npc.position.z = npc.homePosition.z
+                    self.entityManager:updateNPCEntity(npc, 0)
+                    if self.settings.debugMode then
+                        print(string.format("[NPC Favor] %s drifted too far, sent home (%.0f, %.0f)",
+                            npc.name, npc.position.x, npc.position.z))
+                    end
+                end
+            else
+                -- Homeless NPC — only relocate if truly far from player
+                local dx = npc.position.x - self.playerPosition.x
+                local dz = npc.position.z - self.playerPosition.z
+                local distance = math.sqrt(dx * dx + dz * dz)
+
+                if distance > self.RELOCATE_MAX_DISTANCE then
+                    -- Place near a random building within range of player
+                    local nearbyBuildings = self:findNearbyBuildings(
+                        self.playerPosition.x, self.playerPosition.z, self.RELOCATE_MAX_SPAWN)
+                    if #nearbyBuildings > 0 then
+                        local building = nearbyBuildings[math.random(1, #nearbyBuildings)]
+                        local newX, newZ = self:getExteriorPositionNear(
+                            building.x, building.z, building, npc.homeBuilding)
+                        local newY = building.y
+                        if g_currentMission and g_currentMission.terrainRootNode then
+                            local ok, h = pcall(getTerrainHeightAtWorldPos,
+                                g_currentMission.terrainRootNode, newX, 0, newZ)
+                            if ok and h then newY = h + 0.05 end
+                        end
+                        npc.position.x = newX
+                        npc.position.y = newY
+                        npc.position.z = newZ
+                        self.entityManager:updateNPCEntity(npc, 0)
+                        if self.settings.debugMode then
+                            print(string.format("[NPC Favor] Relocated homeless %s near %s (%.0f, %.0f)",
+                                npc.name, building.name or "?", newX, newZ))
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function NPCSystem:checkPlayerProximity(npc)
     if not self.playerPositionValid then
         npc.canInteract = false
         return
     end
-    
+
+    -- Sleeping NPCs cannot be interacted with (they're inside their house)
+    if npc.isSleeping then
+        npc.canInteract = false
+        if self.interactionUI and self.interactionUI.interactionHintNPC == npc then
+            self.interactionUI:hideInteractionHint()
+        end
+        return
+    end
+
     local dx = npc.position.x - self.playerPosition.x
     local dz = npc.position.z - self.playerPosition.z
     local distance = math.sqrt(dx * dx + dz * dz)
-    
+
     -- Show interaction hint when player is close
     if distance < 5 then
         npc.canInteract = true
@@ -995,6 +2663,10 @@ function NPCSystem:consoleCommandStatus()
             hours, minutes, tostring(env.currentDay or "?"))
     end
 
+    -- Town reputation
+    local repLabel = self:getReputationLabel(self.townReputation)
+    status = status .. string.format("Town Reputation: %s (%d/100)\n", repLabel, self.townReputation)
+
     -- Subsystem health
     status = status .. string.format("Subsystems: Entity=%s AI=%s Sched=%s Rel=%s Favor=%s UI=%s\n",
         tostring(self.entityManager ~= nil), tostring(self.aiSystem ~= nil),
@@ -1030,8 +2702,8 @@ function NPCSystem:consoleCommandStatus()
             end
 
             status = status .. string.format(
-                "%d. %s [%s] | pos=(%.0f,%.0f,%.0f) | dist=%sm | action=%s | ai=%s | rel=%d | upd=%s\n",
-                i, npc.name, npc.personality,
+                "%d. %s [%s] role=%s | pos=(%.0f,%.0f,%.0f) | dist=%sm | action=%s | ai=%s | rel=%d | upd=%s\n",
+                i, npc.name, npc.personality, npc.role or "farmer",
                 npc.position.x, npc.position.y, npc.position.z,
                 dist, npc.currentAction or "?", npc.aiState or "?",
                 npc.relationship or 0, age)
@@ -1043,6 +2715,31 @@ function NPCSystem:consoleCommandStatus()
             end
         end
     end
+
+    -- Farmland summary section
+    status = status .. "\n--- Farmland Summary ---\n"
+    local totalFarmlandsAssigned = 0
+    local farmerCount = 0
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            local isFarmer = (npc.role == "farmer" or npc.role == "farmhand")
+            if isFarmer then
+                farmerCount = farmerCount + 1
+            end
+            if npc.assignedFarmland then
+                totalFarmlandsAssigned = totalFarmlandsAssigned + 1
+                local numFields = npc.assignedFields and #npc.assignedFields or 0
+                status = status .. string.format("  %s (%s): farmland=#%d '%s' | %d fields\n",
+                    npc.name or "?",
+                    npc.farmName or "?",
+                    npc.assignedFarmland.farmlandId or 0,
+                    npc.assignedFarmland.name or "?",
+                    numFields)
+            end
+        end
+    end
+    status = status .. string.format("Total: %d farmlands assigned to %d farmer NPCs\n",
+        totalFarmlandsAssigned, farmerCount)
 
     return status
 end
@@ -1057,16 +2754,12 @@ function NPCSystem:consoleCommandSpawn(name)
             self.npcCount, self.settings.maxNPCs)
     end
     
-    if not name or name == "" then
-        name = self.config.getRandomNPCName()
-    end
-    
     -- Find position near player
     local location = nil
     if self.playerPositionValid then
         local angle = math.random() * math.pi * 2
         local distance = 20 + math.random(0, 30)
-        
+
         location = {
             x = self.playerPosition.x + math.cos(angle) * distance,
             y = self.playerPosition.y,
@@ -1075,10 +2768,14 @@ function NPCSystem:consoleCommandSpawn(name)
     else
         location = {x = 0, y = 0, z = 0}
     end
-    
+
     local npc = self:createNPCAtLocation(location)
     if npc then
-        npc.name = name
+        -- Override name only if user specified one; otherwise keep the gendered name
+        if name and name ~= "" then
+            npc.name = name
+        end
+        name = npc.name
         
         -- Initialize NPC data
         self:initializeNPCData(npc, location, #self.activeNPCs + 1)
@@ -1093,17 +2790,28 @@ function NPCSystem:consoleCommandSpawn(name)
     return "Failed to spawn NPC"
 end
 
+--- Convert world coordinates to map display coordinates.
+-- FS25 world origin is at terrain center; map HUD shows coords from corner.
+-- @param worldX  World X coordinate
+-- @param worldZ  World Z coordinate
+-- @return mapX, mapZ  Map display coordinates
+function NPCSystem:worldToMap(worldX, worldZ)
+    local halfSize = (g_currentMission and g_currentMission.terrainSize or 2048) / 2
+    return worldX + halfSize, worldZ + halfSize
+end
+
 function NPCSystem:consoleCommandList()
     if self.npcCount == 0 then
         return "No active NPCs. System initialized: " .. tostring(self.isInitialized)
     end
 
     local gameTime = self:getCurrentGameTime()
-    local list = string.format("=== Active NPCs (%d/%d) | Updates: %d ===\n",
-        self.npcCount, self.settings.maxNPCs, self.updateCounter)
-    list = list .. string.format("%-4s %-18s %-11s %-8s %-8s %5s %3s %4s %s\n",
-        "#", "Name", "Personality", "Action", "AI", "Dist", "Rel", "Farm", "Updated")
-    list = list .. string.rep("-", 90) .. "\n"
+    local terrainSize = g_currentMission and g_currentMission.terrainSize or 2048
+    local list = string.format("=== Active NPCs (%d/%d) | Updates: %d | Terrain: %d ===\n",
+        self.npcCount, self.settings.maxNPCs, self.updateCounter, terrainSize)
+    list = list .. string.format("%-4s %-18s %-10s %-8s %5s %3s %-15s %-15s %s\n",
+        "#", "Name", "Role", "Action", "Dist", "Rel", "Map Pos (X,Z)", "Map Home (X,Z)", "Building")
+    list = list .. string.rep("-", 110) .. "\n"
 
     for i, npc in ipairs(self.activeNPCs) do
         if npc.isActive then
@@ -1115,47 +2823,44 @@ function NPCSystem:consoleCommandList()
                 dist = string.format("%4.0f", math.sqrt(dx * dx + dz * dz))
             end
 
-            -- Time since last update
-            local upd = "never"
-            if npc.lastUpdateTime and npc.lastUpdateTime > 0 and gameTime > 0 then
-                local ms = gameTime - npc.lastUpdateTime
-                if ms < 2000 then
-                    upd = "LIVE"
-                else
-                    upd = string.format("%.0fs", ms / 1000)
-                end
+            -- Map display coordinates (offset from world coords)
+            local mx, mz = self:worldToMap(npc.position.x, npc.position.z)
+            local pos = string.format("(%d, %d)", math.floor(mx), math.floor(mz))
+            local homePos = "  -"
+            if npc.homePosition then
+                local hx, hz = self:worldToMap(npc.homePosition.x, npc.homePosition.z)
+                homePos = string.format("(%d, %d)", math.floor(hx), math.floor(hz))
             end
 
-            list = list .. string.format("%-4d %-18s %-11s %-8s %-8s %4sm %3d %4s %s\n",
+            list = list .. string.format("%-4d %-18s %-10s %-8s %4sm %3d %-15s %-15s %s\n",
                 i,
                 (npc.name or "?"):sub(1, 18),
-                (npc.personality or "?"):sub(1, 11),
+                (npc.role or "farmer"):sub(1, 10),
                 (npc.currentAction or "?"):sub(1, 8),
-                (npc.aiState or "?"):sub(1, 8),
                 dist,
                 npc.relationship or 0,
-                tostring(npc.ownerFarmId or "?"),
-                upd)
+                pos,
+                homePos,
+                (npc.homeBuildingName or "?"):sub(1, 20))
         end
     end
 
-    -- Footer with positions for findability
-    list = list .. "\nPositions:\n"
-    for i, npc in ipairs(self.activeNPCs) do
-        if npc.isActive then
-            list = list .. string.format("  %d. %s @ (%.0f, %.0f, %.0f)",
-                i, npc.name, npc.position.x, npc.position.y, npc.position.z)
-            if npc.homePosition then
-                list = list .. string.format("  home=(%.0f, %.0f, %.0f)",
-                    npc.homePosition.x, npc.homePosition.y, npc.homePosition.z)
+    -- Debug footer (only shown when debugMode is on)
+    if self.settings and self.settings.debugMode then
+        list = list .. "\n--- Debug Details ---\n"
+        for i, npc in ipairs(self.activeNPCs) do
+            if npc.isActive then
+                local mx, mz = self:worldToMap(npc.position.x, npc.position.z)
+                local parts = {string.format("  %d. %s @ map(%d, %d)", i, npc.name, math.floor(mx), math.floor(mz))}
+                if npc.farmName then table.insert(parts, "farm=" .. npc.farmName) end
+                if npc.assignedFarmland then table.insert(parts, string.format("farmland=#%d", npc.assignedFarmland.farmlandId or 0)) end
+                if npc.assignedField then table.insert(parts, string.format("field=#%d", npc.assignedField.id or 0)) end
+                local numFields = npc.assignedFields and #npc.assignedFields or 0
+                if numFields > 0 then table.insert(parts, string.format("fields=%d", numFields)) end
+                if npc.ownerFarmId and npc.ownerFarmId > 0 then table.insert(parts, string.format("farm#%d", npc.ownerFarmId)) end
+                if npc.homeToFieldDistance then table.insert(parts, string.format("fieldDist=%.0fm", npc.homeToFieldDistance)) end
+                list = list .. table.concat(parts, "  ") .. "\n"
             end
-            if npc.homeBuildingName then
-                list = list .. string.format("  bldg=%s", npc.homeBuildingName)
-            end
-            if npc.ownerFarmId and npc.ownerFarmId > 0 then
-                list = list .. string.format("  farm#%d", npc.ownerFarmId)
-            end
-            list = list .. "\n"
         end
     end
 
@@ -1183,9 +2888,13 @@ end
 
 function NPCSystem:clearAllNPCs()
     for _, npc in ipairs(self.activeNPCs) do
+        -- Remove real vehicles before entity cleanup
+        if npc.realTractor then
+            self:removeNPCTractor(npc)
+        end
         self.entityManager:removeNPCEntity(npc)
     end
-    
+
     self.activeNPCs = {}
     self.npcCount = 0
     self.nearbyNPCs = {}
@@ -1374,10 +3083,102 @@ function NPCSystem:serverUpdateRelationship(npc, farmId, change, reason)
 end
 
 -- =========================================================
+-- Town Reputation & NPC Memory
+-- =========================================================
+
+--- Update town reputation as weighted average of all NPC relationships.
+-- NPCs with more interactions (encounters) contribute more to the score.
+-- Called periodically from update loop.
+function NPCSystem:updateTownReputation()
+    local ok, err = pcall(function()
+        if not self.activeNPCs or #self.activeNPCs == 0 then
+            return
+        end
+
+        local weightedSum = 0
+        local totalWeight = 0
+
+        for _, npc in ipairs(self.activeNPCs) do
+            if npc.isActive then
+                -- Weight by interaction frequency: more encounters = more influence
+                local encounterCount = npc.encounters and #npc.encounters or 0
+                local weight = 1 + encounterCount  -- minimum weight of 1
+                weightedSum = weightedSum + (npc.relationship or 50) * weight
+                totalWeight = totalWeight + weight
+            end
+        end
+
+        if totalWeight > 0 then
+            self.townReputation = math.floor(weightedSum / totalWeight + 0.5)
+            self.townReputation = math.max(0, math.min(100, self.townReputation))
+        end
+    end)
+
+    if not ok and self.settings.debugMode then
+        print("[NPC Favor] updateTownReputation error: " .. tostring(err))
+    end
+end
+
+--- Get the reputation label for a given reputation value.
+-- @param reputation  Reputation value (0-100)
+-- @return string     Label: "Outcast", "Disliked", "Neutral", "Respected", or "Beloved"
+function NPCSystem:getReputationLabel(reputation)
+    if reputation <= 20 then
+        return "Outcast"
+    elseif reputation <= 40 then
+        return "Disliked"
+    elseif reputation <= 60 then
+        return "Neutral"
+    elseif reputation <= 80 then
+        return "Respected"
+    else
+        return "Beloved"
+    end
+end
+
+--- Record an encounter with an NPC (max 5 recent entries, newest first).
+-- @param npc            NPC data table
+-- @param encounterType  String: "talked", "favor_completed", "favor_failed", "gift_given", "helped"
+-- @param details        Optional string with extra context
+function NPCSystem:recordEncounter(npc, encounterType, details, partnerName, sentiment)
+    if not npc then return end
+
+    local ok, err = pcall(function()
+        npc.encounters = npc.encounters or {}
+
+        local gameTime = self:getCurrentGameTime()
+        local entry = {
+            type = encounterType or "talked",
+            time = gameTime,
+            details = details or "",
+            partner = partnerName or nil,      -- who was involved
+            sentiment = sentiment or "neutral", -- positive/neutral/negative
+        }
+
+        -- Insert at front (newest first)
+        table.insert(npc.encounters, 1, entry)
+
+        -- Trim to max 10 entries (expanded from 5)
+        while #npc.encounters > 10 do
+            table.remove(npc.encounters)
+        end
+
+        if self.settings.debugMode then
+            print(string.format("[NPC Favor] Recorded encounter: %s with %s (%s, %s)",
+                encounterType, npc.name or "?", details or "", sentiment or "neutral"))
+        end
+    end)
+
+    if not ok and self.settings.debugMode then
+        print("[NPC Favor] recordEncounter error: " .. tostring(err))
+    end
+end
+
+-- =========================================================
 -- Save/Load Persistence
 -- =========================================================
 -- File: savegameX/npc_favor.xml
--- Saves: NPC positions, relationships, favor stats, unique IDs
+-- Saves: NPC positions, relationships, favor stats, unique IDs, encounters
 -- Follows UsedPlus pattern: XMLFile.create/loadIfExists
 
 local NPC_SAVE_FILE = "npc_favor.xml"
@@ -1387,6 +3188,15 @@ local NPC_SAVE_ROOT = "npcFavor"
 -- Called from FSCareerMissionInfo.saveToXMLFile hook in main.lua.
 -- @param missionInfo  FS25 missionInfo table (has savegameDirectory)
 function NPCSystem:saveToXMLFile(missionInfo)
+    local ok, err = pcall(function()
+        self:_doSaveToXMLFile(missionInfo)
+    end)
+    if not ok then
+        print(string.format("[NPC Favor] Save error (non-fatal): %s", tostring(err)))
+    end
+end
+
+function NPCSystem:_doSaveToXMLFile(missionInfo)
     local savegameDirectory = missionInfo and missionInfo.savegameDirectory
     if not savegameDirectory then
         return
@@ -1406,7 +3216,8 @@ function NPCSystem:saveToXMLFile(missionInfo)
     end
 
     -- Save mod version for future migration
-    xmlFile:setString(NPC_SAVE_ROOT .. "#version", "1.0.0.0")
+    local saveVersion = (g_NPCFavorMod and g_NPCFavorMod.version) or "1.2.0.0"
+    xmlFile:setString(NPC_SAVE_ROOT .. "#version", saveVersion)
     xmlFile:setInt(NPC_SAVE_ROOT .. "#npcCount", self.npcCount)
 
     -- Save each NPC
@@ -1455,7 +3266,30 @@ function NPCSystem:saveToXMLFile(missionInfo)
 
             -- Visual
             xmlFile:setInt(npcKey .. ".visual#appearanceSeed", npc.appearanceSeed or 1)
+            xmlFile:setBool(npcKey .. ".visual#isFemale", npc.isFemale or false)
             xmlFile:setFloat(npcKey .. ".visual#movementSpeed", npc.movementSpeed or 1.0)
+
+            -- Needs system
+            if npc.needs then
+                xmlFile:setFloat(npcKey .. ".needs#energy", npc.needs.energy or 20)
+                xmlFile:setFloat(npcKey .. ".needs#social", npc.needs.social or 30)
+                xmlFile:setFloat(npcKey .. ".needs#hunger", npc.needs.hunger or 10)
+                xmlFile:setFloat(npcKey .. ".needs#workSatisfaction", npc.needs.workSatisfaction or 50)
+            end
+            xmlFile:setString(npcKey .. ".needs#mood", npc.mood or "neutral")
+
+            -- Encounters (up to 10 recent, with sentiment + partner)
+            if npc.encounters and #npc.encounters > 0 then
+                for ei, encounter in ipairs(npc.encounters) do
+                    if ei > 10 then break end
+                    local eKey = string.format("%s.encounters.encounter(%d)", npcKey, ei - 1)
+                    xmlFile:setString(eKey .. "#type", encounter.type or "")
+                    xmlFile:setFloat(eKey .. "#time", encounter.time or 0)
+                    xmlFile:setString(eKey .. "#details", encounter.details or "")
+                    xmlFile:setString(eKey .. "#partner", encounter.partner or "")
+                    xmlFile:setString(eKey .. "#sentiment", encounter.sentiment or "neutral")
+                end
+            end
 
             npcIndex = npcIndex + 1
         end
@@ -1477,6 +3311,19 @@ function NPCSystem:saveToXMLFile(missionInfo)
                 xmlFile:setFloat(favorKey .. "#reward", favor.reward or 0)
                 favorIndex = favorIndex + 1
             end
+        end
+    end
+
+    -- Save NPC-NPC relationships
+    if self.relationshipManager and self.relationshipManager.npcRelationships then
+        local relIndex = 0
+        for key, rel in pairs(self.relationshipManager.npcRelationships) do
+            local relKey = string.format(NPC_SAVE_ROOT .. ".npcRelationships.rel(%d)", relIndex)
+            xmlFile:setString(relKey .. "#key", key)
+            xmlFile:setFloat(relKey .. "#value", rel.value or 50)
+            xmlFile:setFloat(relKey .. "#lastInteraction", rel.lastInteraction or 0)
+            xmlFile:setInt(relKey .. "#interactionCount", rel.interactionCount or 0)
+            relIndex = relIndex + 1
         end
     end
 
@@ -1574,7 +3421,34 @@ function NPCSystem:loadFromXMLFile(missionInfo)
 
             -- Restore visual properties
             npc.appearanceSeed = xmlFile:getInt(npcKey .. ".visual#appearanceSeed", npc.appearanceSeed)
+            npc.isFemale = xmlFile:getBool(npcKey .. ".visual#isFemale", npc.isFemale or false)
             npc.movementSpeed = xmlFile:getFloat(npcKey .. ".visual#movementSpeed", npc.movementSpeed)
+
+            -- Restore needs system
+            if npc.needs then
+                npc.needs.energy = xmlFile:getFloat(npcKey .. ".needs#energy", npc.needs.energy)
+                npc.needs.social = xmlFile:getFloat(npcKey .. ".needs#social", npc.needs.social)
+                npc.needs.hunger = xmlFile:getFloat(npcKey .. ".needs#hunger", npc.needs.hunger)
+                npc.needs.workSatisfaction = xmlFile:getFloat(npcKey .. ".needs#workSatisfaction", npc.needs.workSatisfaction)
+            end
+            npc.mood = xmlFile:getString(npcKey .. ".needs#mood", npc.mood or "neutral")
+
+            -- Restore encounters (up to 10, with sentiment + partner)
+            npc.encounters = {}
+            pcall(function()
+                xmlFile:iterate(npcKey .. ".encounters.encounter", function(_, eKey)
+                    if #npc.encounters >= 10 then return end
+                    local encounter = {
+                        type = xmlFile:getString(eKey .. "#type", ""),
+                        time = xmlFile:getFloat(eKey .. "#time", 0),
+                        details = xmlFile:getString(eKey .. "#details", ""),
+                        partner = xmlFile:getString(eKey .. "#partner", ""),
+                        sentiment = xmlFile:getString(eKey .. "#sentiment", "neutral"),
+                    }
+                    if encounter.partner == "" then encounter.partner = nil end
+                    table.insert(npc.encounters, encounter)
+                end)
+            end)
 
             -- Update entity position to match restored data
             self.entityManager:updateNPCEntity(npc, 0)
@@ -1599,10 +3473,540 @@ function NPCSystem:loadFromXMLFile(missionInfo)
         end)
     end
 
+    -- Restore NPC-NPC relationships
+    if self.relationshipManager then
+        pcall(function()
+            xmlFile:iterate(NPC_SAVE_ROOT .. ".npcRelationships.rel", function(_, relKey)
+                local key = xmlFile:getString(relKey .. "#key", "")
+                if key ~= "" then
+                    self.relationshipManager.npcRelationships[key] = {
+                        value = xmlFile:getFloat(relKey .. "#value", 50),
+                        lastInteraction = xmlFile:getFloat(relKey .. "#lastInteraction", 0),
+                        interactionCount = xmlFile:getInt(relKey .. "#interactionCount", 0),
+                    }
+                end
+            end)
+        end)
+    end
+
     xmlFile:delete()
 
     if self.settings.debugMode then
         print(string.format("[NPC Favor] Restored %d/%d NPCs from save", restoredCount, savedNpcCount))
+    end
+end
+
+-- =========================================================
+-- Dynamic Emergent Events (Step 9)
+-- =========================================================
+-- Event scheduler drives community-scale activities:
+--   Friday night party, harvest gathering, morning market,
+--   Sunday rest day, and rainy day shelter behavior.
+-- Events are checked once per game hour and override normal
+-- NPC AI decisions for participants. Non-participants and
+-- player interactions are unaffected.
+-- =========================================================
+
+--- Initialize the event scheduler data structure.
+-- Called from initializeNPCs() after building classification.
+function NPCSystem:initEventScheduler()
+    self.eventScheduler = {
+        lastCheckHour = -1,
+        activeEvent = nil,
+        eventParticipants = {},
+    }
+
+    if self.settings.debugMode then
+        print("[NPC Favor] Event scheduler initialized")
+    end
+end
+
+--- Get current weather factor for event decisions.
+-- Reads from g_currentMission.environment.weather and returns
+-- a numeric factor: 1.0 = clear, 0.7 = rain, 0.3 = storm.
+-- @return number  Weather factor (0.0 - 1.0)
+function NPCSystem:getWeatherFactor()
+    if not g_currentMission or not g_currentMission.environment then
+        return 1.0
+    end
+
+    local weather = g_currentMission.environment.weather
+    if not weather then
+        return 1.0
+    end
+
+    local weatherType = nil
+    pcall(function()
+        weatherType = weather.currentWeather or weather.weatherType
+    end)
+
+    if not weatherType then
+        return 1.0
+    end
+
+    local factors = {
+        clear  = 1.0,
+        sunny  = 1.0,
+        cloudy = 0.9,
+        rain   = 0.7,
+        storm  = 0.3,
+        snow   = 0.5,
+        fog    = 0.8,
+    }
+
+    return factors[weatherType] or 1.0
+end
+
+--- Get terrain height at a world position, with safe fallback.
+-- @param x  World X
+-- @param z  World Z
+-- @return number  Terrain Y height (0 if unavailable)
+function NPCSystem:getTerrainHeight(x, z)
+    if g_currentMission and g_currentMission.terrainRootNode then
+        local ok, h = pcall(getTerrainHeightAtWorldPos,
+            g_currentMission.terrainRootNode, x, 0, z)
+        if ok and h then
+            return h + 0.05
+        end
+    end
+    return 0
+end
+
+--- Check if any NPC's assigned field has mature/ready-to-harvest crops.
+-- Returns the NPC and field info if found.
+-- @return npc, field  or nil, nil
+function NPCSystem:findHarvestReadyNPC()
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive and npc.assignedField then
+            local cropInfo = npc.assignedField.cropInfo
+            if cropInfo then
+                -- Growth state patterns: look for harvest-ready indicators
+                local gs = cropInfo.growthState
+                if gs then
+                    -- FS25 growth states: typically 4+ means mature/harvestable
+                    if type(gs) == "number" and gs >= 4 then
+                        return npc, npc.assignedField
+                    elseif type(gs) == "string" then
+                        local gsLower = gs:lower()
+                        if gsLower == "harvest" or gsLower == "mature" or gsLower == "ready" then
+                            return npc, npc.assignedField
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+--- Main event scheduler update. Called once per game hour from update().
+-- Evaluates conditions and triggers at most one event at a time.
+-- Active events are ended when their time window expires.
+-- @param hour           Current game hour (0-23)
+-- @param day            Current game day
+-- @param weatherFactor  Weather factor from getWeatherFactor()
+function NPCSystem:updateEventScheduler(hour, day, weatherFactor)
+    -- Safety: need AI system and active NPCs
+    if not self.aiSystem or #self.activeNPCs == 0 then
+        return
+    end
+
+    local scheduler = self.eventScheduler
+
+    -- -------------------------------------------------------
+    -- End expired events first
+    -- -------------------------------------------------------
+    if scheduler.activeEvent then
+        local ev = scheduler.activeEvent
+        local shouldEnd = false
+
+        if ev.type == "friday_party" and hour >= 22 then
+            shouldEnd = true
+        elseif ev.type == "harvest_gathering" then
+            ev.hoursElapsed = (ev.hoursElapsed or 0) + 1
+            if ev.hoursElapsed >= 2 then
+                shouldEnd = true
+            end
+        elseif ev.type == "morning_market" and hour >= 10 then
+            shouldEnd = true
+        elseif ev.type == "sunday_rest" and hour >= 22 then
+            shouldEnd = true
+        elseif ev.type == "rainy_day" and weatherFactor >= 0.7 then
+            shouldEnd = true
+        end
+
+        if shouldEnd then
+            self:endEvent(scheduler.activeEvent)
+            scheduler.activeEvent = nil
+            scheduler.eventParticipants = {}
+        else
+            -- Event still active, skip new event evaluation
+            return
+        end
+    end
+
+    -- -------------------------------------------------------
+    -- Rainy Day (highest priority -- overrides other events)
+    -- -------------------------------------------------------
+    if weatherFactor < 0.7 then
+        self:startRainyDayEvent()
+        return
+    end
+
+    -- -------------------------------------------------------
+    -- Sunday Rest (day % 7 == 0)
+    -- -------------------------------------------------------
+    if day % 7 == 0 then
+        if hour >= 7 and hour <= 21 then
+            self:startSundayRestEvent(hour)
+            return
+        end
+    end
+
+    -- -------------------------------------------------------
+    -- Friday Night Party (day % 7 == 5, hour 19-21)
+    -- -------------------------------------------------------
+    if day % 7 == 5 and hour >= 19 and hour < 22 then
+        self:startFridayPartyEvent()
+        return
+    end
+
+    -- -------------------------------------------------------
+    -- Morning Market (hour 8-9, any day, needs shop building)
+    -- -------------------------------------------------------
+    if hour >= 8 and hour < 10 then
+        self:startMorningMarketEvent()
+        return
+    end
+
+    -- -------------------------------------------------------
+    -- Harvest Gathering (any time during work hours, if crops ready)
+    -- -------------------------------------------------------
+    if hour >= 7 and hour <= 17 then
+        self:startHarvestGatheringEvent()
+        -- Note: may not start if no harvest-ready fields found
+    end
+end
+
+--- Start Friday Night Party event.
+-- The most sociable NPC hosts; 4-6 NPCs attend at host's home.
+function NPCSystem:startFridayPartyEvent()
+    -- Find host: NPC with highest sociability
+    local host = nil
+    local bestSociability = -1
+
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            local soc = (npc.aiPersonalityModifiers and npc.aiPersonalityModifiers.sociability) or 1.0
+            if soc > bestSociability then
+                bestSociability = soc
+                host = npc
+            end
+        end
+    end
+
+    if not host or not host.homePosition then
+        return
+    end
+
+    -- Select 4-6 attendees (excluding host)
+    local candidates = {}
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive and npc ~= host then
+            table.insert(candidates, npc)
+        end
+    end
+
+    -- Shuffle candidates
+    for i = #candidates, 2, -1 do
+        local j = math.random(1, i)
+        candidates[i], candidates[j] = candidates[j], candidates[i]
+    end
+
+    local attendeeCount = math.min(math.random(4, 6), #candidates)
+    local participants = {host}
+
+    for i = 1, attendeeCount do
+        local npc = candidates[i]
+        table.insert(participants, npc)
+
+        -- Send attendees to host's home
+        local angle = (i / attendeeCount) * math.pi * 2
+        local offset = 2 + math.random() * 3
+        local targetX = host.homePosition.x + math.cos(angle) * offset
+        local targetZ = host.homePosition.z + math.sin(angle) * offset
+
+        self.aiSystem:startEventBehavior(npc, "party", {
+            targetX = targetX,
+            targetZ = targetZ,
+            hostNPC = host,
+        })
+    end
+
+    -- Host stays home and socializes
+    host.currentAction = "partying"
+
+    self.eventScheduler.activeEvent = {
+        type = "friday_party",
+        host = host,
+        startHour = self.scheduler:getCurrentHour(),
+    }
+    self.eventScheduler.eventParticipants = participants
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Friday party started at %s's home with %d guests",
+            host.name, attendeeCount))
+    end
+
+    if self.settings.showNotifications then
+        self:showNotification("Community Event",
+            string.format("%s is hosting a Friday night party!", host.name))
+    end
+end
+
+--- Start Harvest Gathering event.
+-- Find an NPC with a harvest-ready field; 2-3 nearby NPCs join to help.
+function NPCSystem:startHarvestGatheringEvent()
+    local ownerNPC, field = self:findHarvestReadyNPC()
+    if not ownerNPC or not field then
+        return
+    end
+
+    -- Find 2-3 nearby NPCs to help
+    local helpers = {}
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive and npc ~= ownerNPC then
+            local dx = npc.position.x - ownerNPC.position.x
+            local dz = npc.position.z - ownerNPC.position.z
+            local dist = math.sqrt(dx * dx + dz * dz)
+            if dist < 200 then
+                table.insert(helpers, {npc = npc, dist = dist})
+            end
+        end
+    end
+
+    -- Sort by distance, take closest 2-3
+    table.sort(helpers, function(a, b) return a.dist < b.dist end)
+    local helperCount = math.min(math.random(2, 3), #helpers)
+
+    local participants = {ownerNPC}
+
+    -- Send owner to their field for harvesting
+    self.aiSystem:startEventBehavior(ownerNPC, "harvest", {
+        field = field,
+        rowIndex = 0,
+    })
+
+    for i = 1, helperCount do
+        local helper = helpers[i].npc
+        table.insert(participants, helper)
+        self.aiSystem:startEventBehavior(helper, "harvest", {
+            field = field,
+            rowIndex = i,
+        })
+    end
+
+    self.eventScheduler.activeEvent = {
+        type = "harvest_gathering",
+        owner = ownerNPC,
+        field = field,
+        hoursElapsed = 0,
+    }
+    self.eventScheduler.eventParticipants = participants
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Harvest gathering started at %s's field #%d with %d helpers",
+            ownerNPC.name, field.id or 0, helperCount))
+    end
+
+    if self.settings.showNotifications then
+        self:showNotification("Community Event",
+            string.format("%s's field is ready! Neighbors are helping with the harvest.", ownerNPC.name))
+    end
+end
+
+--- Start Morning Market event.
+-- NPCs gather near a shop building for casual shopping/socializing.
+function NPCSystem:startMorningMarketEvent()
+    -- Need classified shop buildings
+    if not self.classifiedBuildings or not self.classifiedBuildings.shop then
+        return
+    end
+
+    local shops = self.classifiedBuildings.shop
+    if #shops == 0 then
+        return
+    end
+
+    -- Pick a random shop
+    local shop = shops[math.random(1, #shops)]
+
+    -- Select 3-5 NPCs to attend
+    local candidates = {}
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            table.insert(candidates, npc)
+        end
+    end
+
+    -- Shuffle
+    for i = #candidates, 2, -1 do
+        local j = math.random(1, i)
+        candidates[i], candidates[j] = candidates[j], candidates[i]
+    end
+
+    local attendeeCount = math.min(math.random(3, 5), #candidates)
+    local participants = {}
+
+    for i = 1, attendeeCount do
+        local npc = candidates[i]
+        table.insert(participants, npc)
+
+        self.aiSystem:startEventBehavior(npc, "market", {
+            centerX = shop.x,
+            centerZ = shop.z,
+            radius = 8,
+        })
+    end
+
+    self.eventScheduler.activeEvent = {
+        type = "morning_market",
+        shop = shop,
+    }
+    self.eventScheduler.eventParticipants = participants
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Morning market started near %s with %d NPCs",
+            shop.name or "shop", attendeeCount))
+    end
+end
+
+--- Start Sunday Rest event.
+-- NPCs stay home in the morning, visit neighbors in the afternoon.
+-- @param hour  Current hour (affects morning vs afternoon behavior)
+function NPCSystem:startSundayRestEvent(hour)
+    local participants = {}
+
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            table.insert(participants, npc)
+
+            if hour < 12 then
+                -- Morning: stay near home
+                self.aiSystem:startEventBehavior(npc, "sunday_rest", {
+                    phase = "morning",
+                    homeX = npc.homePosition and npc.homePosition.x or npc.position.x,
+                    homeZ = npc.homePosition and npc.homePosition.z or npc.position.z,
+                })
+            else
+                -- Afternoon: visit 1-2 neighbors or form groups in town
+                local neighbor = nil
+                for _, other in ipairs(self.activeNPCs) do
+                    if other.isActive and other ~= npc then
+                        local dx = other.position.x - npc.position.x
+                        local dz = other.position.z - npc.position.z
+                        if math.sqrt(dx * dx + dz * dz) < 100 then
+                            neighbor = other
+                            break
+                        end
+                    end
+                end
+
+                if neighbor and neighbor.homePosition then
+                    self.aiSystem:startEventBehavior(npc, "sunday_rest", {
+                        phase = "visit",
+                        targetX = neighbor.homePosition.x,
+                        targetZ = neighbor.homePosition.z,
+                    })
+                else
+                    self.aiSystem:startEventBehavior(npc, "sunday_rest", {
+                        phase = "morning",
+                        homeX = npc.homePosition and npc.homePosition.x or npc.position.x,
+                        homeZ = npc.homePosition and npc.homePosition.z or npc.position.z,
+                    })
+                end
+            end
+        end
+    end
+
+    self.eventScheduler.activeEvent = {
+        type = "sunday_rest",
+        hour = hour,
+    }
+    self.eventScheduler.eventParticipants = participants
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Sunday rest event active (%s) with %d NPCs",
+            hour < 12 and "morning" or "afternoon", #participants))
+    end
+end
+
+--- Start Rainy Day event.
+-- All NPCs seek shelter at the nearest building and increase movement speed.
+function NPCSystem:startRainyDayEvent()
+    local participants = {}
+
+    for _, npc in ipairs(self.activeNPCs) do
+        if npc.isActive then
+            table.insert(participants, npc)
+
+            -- Find nearest building for shelter
+            local buildings = self:findNearbyBuildings(npc.position.x, npc.position.z, 100)
+            local shelterX, shelterZ = npc.position.x, npc.position.z
+
+            if #buildings > 0 then
+                local building = buildings[1]
+                -- Stand right next to the building
+                local angle = math.random() * math.pi * 2
+                local offset = 1 + math.random() * 2
+                shelterX = building.x + math.cos(angle) * offset
+                shelterZ = building.z + math.sin(angle) * offset
+            elseif npc.homePosition then
+                shelterX = npc.homePosition.x
+                shelterZ = npc.homePosition.z
+            end
+
+            self.aiSystem:startEventBehavior(npc, "rain_shelter", {
+                targetX = shelterX,
+                targetZ = shelterZ,
+            })
+        end
+    end
+
+    self.eventScheduler.activeEvent = {
+        type = "rainy_day",
+    }
+    self.eventScheduler.eventParticipants = participants
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Rainy day event: %d NPCs seeking shelter", #participants))
+    end
+end
+
+--- End an active event: restore NPC states to idle.
+-- @param event  The active event table to end
+function NPCSystem:endEvent(event)
+    if not event then
+        return
+    end
+
+    for _, npc in ipairs(self.eventScheduler.eventParticipants or {}) do
+        if npc.isActive then
+            -- Restore normal movement speed if it was boosted
+            if npc._originalSpeed then
+                npc.movementSpeed = npc._originalSpeed
+                npc._originalSpeed = nil
+            end
+
+            -- Clear event-specific action and return to idle
+            npc.currentAction = "idle"
+            self.aiSystem:setState(npc, self.aiSystem.STATES.IDLE)
+        end
+    end
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] Event '%s' ended, participants returned to idle",
+            event.type or "unknown"))
     end
 end
 

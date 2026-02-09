@@ -6,8 +6,8 @@
 -- [x] Scalar and vector linear interpolation (lerp)
 -- [x] Value clamping (scalar and vector)
 -- [x] Dot product and cross product
--- [ ] Smoothstep / ease-in-out interpolation for smoother NPC movement
--- [ ] Bezier curve evaluation for curved NPC walking paths
+-- [x] Smoothstep / ease-in-out interpolation for smoother NPC movement
+-- [x] Bezier curve evaluation for curved NPC walking paths
 --
 -- GEOMETRY:
 -- [x] Point-in-circle and point-in-rectangle tests
@@ -126,6 +126,59 @@ end
 function VectorHelper.reflectVector(x, z, normalX, normalZ)
     local dot = VectorHelper.dotProduct(x, z, normalX, normalZ)
     return x - 2 * dot * normalX, z - 2 * dot * normalZ
+end
+
+--- Smoothstep interpolation (ease-in-out).
+-- @param t  Value in range [0,1]
+-- @return number  Smoothed value in [0,1]
+function VectorHelper.smoothstep(t)
+    t = math.max(0, math.min(1, t))
+    return t * t * (3 - 2 * t)
+end
+
+--- Evaluate a quadratic Bezier curve at parameter t.
+-- @param p0x,p0z  Start point
+-- @param p1x,p1z  Control point
+-- @param p2x,p2z  End point
+-- @param t        Parameter in [0,1]
+-- @return number, number  Point on the curve
+function VectorHelper.bezierQuadratic(p0x, p0z, p1x, p1z, p2x, p2z, t)
+    local u = 1 - t
+    local x = u * u * p0x + 2 * u * t * p1x + t * t * p2x
+    local z = u * u * p0z + 2 * u * t * p1z + t * t * p2z
+    return x, z
+end
+
+--- Smooth a list of waypoints by replacing sharp corners with Bezier curves.
+-- @param waypoints  Array of {x, z} tables
+-- @param segments   Number of curve segments per corner (default 4)
+-- @return table  New array of smoothed {x, z} waypoints
+function VectorHelper.smoothPath(waypoints, segments)
+    if not waypoints or #waypoints < 3 then return waypoints end
+    segments = segments or 4
+
+    local smoothed = {{x = waypoints[1].x, z = waypoints[1].z}}
+
+    for i = 2, #waypoints - 1 do
+        local prev = waypoints[i - 1]
+        local curr = waypoints[i]
+        local next = waypoints[i + 1]
+
+        -- Control point is the corner itself; start/end are midpoints
+        local startX = (prev.x + curr.x) / 2
+        local startZ = (prev.z + curr.z) / 2
+        local endX = (curr.x + next.x) / 2
+        local endZ = (curr.z + next.z) / 2
+
+        for s = 0, segments do
+            local t = s / segments
+            local bx, bz = VectorHelper.bezierQuadratic(startX, startZ, curr.x, curr.z, endX, endZ, t)
+            table.insert(smoothed, {x = bx, z = bz})
+        end
+    end
+
+    table.insert(smoothed, {x = waypoints[#waypoints].x, z = waypoints[#waypoints].z})
+    return smoothed
 end
 
 function VectorHelper.moveTowards(currentX, currentZ, targetX, targetZ, maxDistanceDelta)

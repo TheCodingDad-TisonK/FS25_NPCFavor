@@ -89,6 +89,9 @@
     </GuiElement>
 
     <GUIProfiles>
+        <!-- Provide local definition to suppress "Could not retrieve" warnings -->
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
         <!-- ========== NPC NAME ========== -->
         <Profile name="npcNameText" extends="fs25_textDefault" with="anchorTopCenter">
             <size value="500px 25px"/>

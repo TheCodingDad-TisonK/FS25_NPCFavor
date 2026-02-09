@@ -15,7 +15,7 @@
 -- [x] NaN and infinity checks on numeric value field
 -- [x] NPC existence validation before dispatch
 -- [ ] Per-action rate limiting (max N interactions per minute per player)
--- [ ] Interaction distance check (reject if player too far from NPC)
+-- [x] Interaction distance check (reject if player too far from NPC)
 -- [ ] Action-specific value range validation (gift value caps, etc.)
 --
 -- MULTIPLAYER:
@@ -179,6 +179,31 @@ function NPCInteractionEvent.execute(actionType, npcId, farmId, value, data)
     if math.abs(value) >= 1e9 then
         print("[NPCFavor SECURITY] Rejected out-of-bounds value")
         return false
+    end
+
+    -- OWASP Layer 4: Interaction distance validation
+    -- Reject if the NPC is too far from any player on the requesting farm
+    if npc.position and g_currentMission and g_currentMission.playerSystem then
+        local maxInteractionDist = 15  -- meters
+        local closestDist = math.huge
+        local players = g_currentMission.playerSystem:getPlayers()
+        if players then
+            for _, player in pairs(players) do
+                if player.farmId == farmId and player.rootNode then
+                    local px, py, pz = getWorldTranslation(player.rootNode)
+                    local dx = px - npc.position.x
+                    local dz = pz - npc.position.z
+                    local dist = math.sqrt(dx * dx + dz * dz)
+                    if dist < closestDist then
+                        closestDist = dist
+                    end
+                end
+            end
+        end
+        if closestDist > maxInteractionDist then
+            print(string.format("[NPCFavor SECURITY] Rejected interaction: player too far from NPC %d (%.1fm)", npcId, closestDist))
+            return false
+        end
     end
 
     -- Dispatch to appropriate handler

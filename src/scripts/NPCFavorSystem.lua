@@ -5,7 +5,7 @@
 -- [x] Seven favor types across vehicle, fieldwork, transport, repair, delivery, financial, security
 -- [x] Difficulty-scaled rewards and penalties per favor type
 -- [x] Equipment and relationship requirements for favor eligibility
--- [ ] Seasonal favors (snow clearing in winter, irrigation in summer)
+-- [x] Seasonal favors (snow clearing in winter, irrigation in summer)
 -- [ ] Chain favors that unlock follow-up quests from the same NPC
 -- [ ] Community favors involving multiple NPCs cooperating
 --
@@ -22,7 +22,7 @@
 -- [x] Failure and abandonment penalty system with reputation impact
 -- [x] Statistics tracking (fastest completion, total earnings, etc.)
 -- [x] Save/restore of active favors across game sessions
--- [ ] Bonus rewards for completing favors ahead of deadline
+-- [x] Bonus rewards for completing favors ahead of deadline
 -- [ ] Reputation system affecting all NPC interactions globally
 -- [ ] Tiered reward multipliers for consecutive favor streaks
 -- =========================================================
@@ -434,7 +434,25 @@ function NPCFavorSystem:generateFavorRequest()
         elseif selectedNPC.personality == "greedy" and favorType.difficulty >= 2 then
             weight = weight * 1.5
         end
-        
+
+        -- 4j: Seasonal favor weighting
+        local season = nil
+        if self.npcSystem.scheduler and self.npcSystem.scheduler.getCurrentSeason then
+            season = self.npcSystem.scheduler:getCurrentSeason()
+        end
+        if season then
+            local category = favorType.category or ""
+            if season == "autumn" and (category == "harvest" or category == "delivery" or category == "field") then
+                weight = weight * 2.0  -- Harvest season: more field/delivery requests
+            elseif season == "spring" and (category == "field" or category == "planting") then
+                weight = weight * 1.8  -- Spring: more planting/field prep requests
+            elseif season == "winter" and (category == "repair" or category == "maintenance" or category == "social") then
+                weight = weight * 1.5  -- Winter: more indoor/repair requests
+            elseif season == "summer" and (category == "delivery" or category == "social") then
+                weight = weight * 1.3  -- Summer: more social/delivery requests
+            end
+        end
+
         favorWeights[favorType.id] = weight
     end
     
@@ -1065,11 +1083,55 @@ function NPCFavorSystem:applyFavorRewards(favor)
         
         -- Update NPC stats
         npc.totalFavorsCompleted = (npc.totalFavorsCompleted or 0) + 1
-        
+
+        -- 4m: Bonus rewards for perfect completion
+        -- Perfect = completed well before deadline (>50% time remaining)
+        local isPerfect = false
+        if favor.completionDuration and favor.expirationTime and favor.createdTime then
+            local totalTime = favor.expirationTime - favor.createdTime
+            local timeUsed = favor.completionDuration
+            if totalTime > 0 and timeUsed < totalTime * 0.5 then
+                isPerfect = true
+            end
+        end
+
+        if isPerfect then
+            local bonusRel = math.ceil((favor.reward.relationship or 0) * 0.5)
+            local bonusMoney = math.ceil((favor.reward.money or 0) * 0.25)
+
+            if bonusRel > 0 then
+                self.npcSystem.relationshipManager:updateRelationship(
+                    npc.id, bonusRel, "perfect_completion"
+                )
+            end
+            if bonusMoney > 0 and g_currentMission.player then
+                g_currentMission:addMoney(
+                    bonusMoney,
+                    g_currentMission.player.farmId,
+                    MoneyType.OTHER,
+                    true
+                )
+            end
+
+            -- Notification about perfect completion
+            self:queueNotification(
+                "Perfect Completion!",
+                string.format("Bonus: +%d relationship, +$%d for completing early!", bonusRel, bonusMoney),
+                "favor_perfect",
+                5000
+            )
+
+            if self.npcSystem.settings.debugMode then
+                print(string.format("PERFECT favor completion bonus: +%d rel, +%d money for %s",
+                    bonusRel, bonusMoney, npc.name))
+            end
+        end
+
         -- Log for debugging
         if self.npcSystem.settings.debugMode then
-            print(string.format("Favor rewards applied: +%d relationship, +%d money for %s",
-                favor.reward.relationship or 0, favor.reward.money or 0, npc.name))
+            print(string.format("Favor rewards applied: +%d relationship, +%d money for %s%s",
+                favor.reward.relationship or 0, favor.reward.money or 0, npc.name,
+                isPerfect and " (PERFECT)" or ""))
         end
     end
 end

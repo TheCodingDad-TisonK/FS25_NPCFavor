@@ -1,5 +1,6 @@
 # Build artifacts
 *.zip
+nul
 
 # IDE / Editor
 .vscode/
@@ -14,3 +15,6 @@ Thumbs.db
 
 # Node (if using build tools)
 node_modules/
+
+# Windows Build and Deploy Script
+build.ps1

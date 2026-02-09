@@ -48,6 +48,9 @@ function NPCFavorGUI:registerConsoleCommands()
     addConsoleCommand("npcDebug", "Toggle debug mode", "npcDebug", self)
     addConsoleCommand("npcReload", "Reload NPC settings", "npcReload", self)
     addConsoleCommand("npcTest", "Test function", "npcTest", self)
+    addConsoleCommand("npcGoto", "Teleport to an NPC by number", "npcGoto", self)
+    addConsoleCommand("npcProbe", "Probe animation system APIs", "npcProbe", self)
+    addConsoleCommand("npcVehicleMode", "Switch vehicle mode (hybrid/realistic/visual)", "npcVehicleMode", self)
 
     print("[NPC Favor] Console commands registered successfully")
 end
@@ -72,11 +75,20 @@ function NPCFavorGUI:npcSpawn(name)
 end
 
 function NPCFavorGUI:npcList()
-    if g_NPCSystem then
-        return g_NPCSystem:consoleCommandList()
-    else
+    if not g_NPCSystem then
         return "NPC System not initialized"
     end
+
+    -- Show popup dialog if DialogLoader is available
+    if DialogLoader and DialogLoader.show then
+        local shown = DialogLoader.show("NPCListDialog", "setNPCSystem", g_NPCSystem)
+        if shown then
+            return "NPC roster dialog opened"
+        end
+    end
+
+    -- Fallback to console text if dialog unavailable
+    return g_NPCSystem:consoleCommandList()
 end
 
 function NPCFavorGUI:npcReset()
@@ -98,11 +110,15 @@ npcReset            - Reset/Initialize NPC system
 npcHelp             - Show this help message
 npcDebug [on|off]   - Toggle debug mode
 npcReload           - Reload NPC settings
+npcGoto [number]    - Teleport to an NPC (no number = show list)
+npcProbe            - Probe animation system APIs
+npcVehicleMode [mode] - Switch vehicle mode (hybrid/realistic/visual)
 npcTest             - Test function
 
 === Interaction ===
 Press E near an NPC to interact
 Favors will appear in your task list
+NPCs will roam near you as you move around the map
 
 === Troubleshooting ===
 If commands don't work, try:
@@ -143,6 +159,332 @@ end
 function NPCFavorGUI:npcTest()
     print("[NPC Favor] Test function called - console commands are working!")
     return "NPC Favor test successful. Type 'npcHelp' for commands."
+end
+
+function NPCFavorGUI:npcGoto(num)
+    if not g_NPCSystem then
+        return "NPC System not initialized"
+    end
+
+    local index = tonumber(num)
+    if not index then
+        -- No number given: show a quick list with numbers
+        if g_NPCSystem.npcCount == 0 then
+            return "No active NPCs"
+        end
+        local list = "Usage: npcGoto <number>\n"
+        for i, npc in ipairs(g_NPCSystem.activeNPCs) do
+            if npc.isActive then
+                local dist = "?"
+                if g_NPCSystem.playerPositionValid then
+                    local dx = npc.position.x - g_NPCSystem.playerPosition.x
+                    local dz = npc.position.z - g_NPCSystem.playerPosition.z
+                    dist = string.format("%.0f", math.sqrt(dx * dx + dz * dz))
+                end
+                list = list .. string.format("  %d. %s (%sm away)\n", i, npc.name, dist)
+            end
+        end
+        return list
+    end
+
+    local npc = g_NPCSystem.activeNPCs[index]
+    if not npc then
+        return string.format("NPC #%d not found. Use npcGoto to see the list.", index)
+    end
+
+    -- Teleport player 3m away from NPC (so we don't land on top)
+    -- Also ensure we land outside any buildings
+    local angle = math.random() * math.pi * 2
+    local x = npc.position.x + math.cos(angle) * 3
+    local y = npc.position.y
+    local z = npc.position.z + math.sin(angle) * 3
+
+    if g_NPCSystem.getSafePosition then
+        x, z = g_NPCSystem:getSafePosition(x, z, nil)
+    end
+
+    -- Snap to terrain
+    if g_currentMission and g_currentMission.terrainRootNode then
+        local ok, h = pcall(getTerrainHeightAtWorldPos,
+            g_currentMission.terrainRootNode, x, 0, z)
+        if ok and h then
+            y = h + 0.05
+        end
+    end
+
+    -- Teleport the player
+    local teleported = false
+    if g_localPlayer and g_localPlayer.rootNode and g_localPlayer.rootNode ~= 0 then
+        pcall(function()
+            setWorldTranslation(g_localPlayer.rootNode, x, y, z)
+            teleported = true
+        end)
+    end
+    if not teleported and g_currentMission and g_currentMission.player then
+        local player = g_currentMission.player
+        if player.rootNode and player.rootNode ~= 0 then
+            pcall(function()
+                setWorldTranslation(player.rootNode, x, y, z)
+                teleported = true
+            end)
+        end
+    end
+
+    if teleported then
+        -- Show map coordinates (matching the in-game HUD display)
+        local halfSize = (g_currentMission and g_currentMission.terrainSize or 2048) / 2
+        local mapX = math.floor(x + halfSize)
+        local mapZ = math.floor(z + halfSize)
+        return string.format("Teleported to %s at map(%d, %d)", npc.name, mapX, mapZ)
+    else
+        local halfSize = (g_currentMission and g_currentMission.terrainSize or 2048) / 2
+        local mapX = math.floor(npc.position.x + halfSize)
+        local mapZ = math.floor(npc.position.z + halfSize)
+        return string.format("Could not teleport. %s is at map(%d, %d) - go there manually.",
+            npc.name, mapX, mapZ)
+    end
+end
+
+function NPCFavorGUI:npcProbe()
+    local out = "=== NPC ANIMATION SYSTEM PROBE v3 ===\n"
+
+    -- =====================================================
+    -- SECTION 1: OUR SPAWNED NPC ENTITIES — animation clips
+    -- =====================================================
+    out = out .. "\n-- OUR NPC ENTITY ANIMATION CLIPS --\n"
+    if g_NPCSystem and g_NPCSystem.entityManager then
+        local em = g_NPCSystem.entityManager
+        local entityCount = 0
+        for npcId, entity in pairs(em.npcEntities) do
+            entityCount = entityCount + 1
+            out = out .. string.format("\nEntity #%d (npcId=%s):\n", entity.id, tostring(npcId))
+            out = out .. "  isAnimatedCharacter: " .. tostring(entity.isAnimatedCharacter) .. "\n"
+            out = out .. "  useDirectAnimation: " .. tostring(entity.useDirectAnimation) .. "\n"
+            out = out .. "  animatedModelLoaded: " .. tostring(entity.animatedModelLoaded) .. "\n"
+            out = out .. "  animCharSet: " .. tostring(entity.animCharSet) .. "\n"
+            out = out .. "  isFemale: " .. tostring(entity.isFemale) .. "\n"
+
+            -- Dump ALL clips from this entity's character set
+            if entity.animCharSet and entity.animCharSet ~= 0 then
+                local okNC, numClips = pcall(function() return getAnimNumOfClips(entity.animCharSet) end)
+                out = out .. "  numClips: " .. tostring(okNC and numClips) .. "\n"
+                if okNC and numClips and numClips > 0 then
+                    for ci = 0, numClips - 1 do
+                        local okCN, clipName = pcall(function() return getAnimClipName(entity.animCharSet, ci) end)
+                        local clipDuration = 0
+                        pcall(function() clipDuration = getAnimClipDuration(entity.animCharSet, ci) end)
+                        out = out .. string.format("    clip[%d]: %-40s  dur=%.2fs\n",
+                            ci, tostring(okCN and clipName or "?"), clipDuration)
+                    end
+                end
+            end
+
+            -- Check humanModel skeleton
+            if entity.humanModel then
+                out = out .. "  humanModel.rootNode: " .. tostring(entity.humanModel.rootNode) .. "\n"
+                out = out .. "  humanModel.skeleton: " .. tostring(entity.humanModel.skeleton) .. "\n"
+
+                -- Search skeleton tree for any char sets we might have missed
+                if entity.humanModel.skeleton and entity.humanModel.skeleton ~= 0 then
+                    local function findCharSets(node, depth, maxDepth)
+                        if depth > maxDepth then return end
+                        local okA, acs = pcall(function() return getAnimCharacterSet(node) end)
+                        if okA and acs and acs ~= 0 and acs ~= entity.animCharSet then
+                            local nc2 = 0
+                            pcall(function() nc2 = getAnimNumOfClips(acs) end)
+                            out = out .. string.format("  EXTRA charSet at depth %d: '%s' id=%s clips=%d\n",
+                                depth, tostring(getName(node)), tostring(acs), nc2)
+                            for ci = 0, math.min(nc2 - 1, 10) do
+                                local okCN, cn = pcall(function() return getAnimClipName(acs, ci) end)
+                                out = out .. string.format("    clip[%d]: %s\n", ci, tostring(okCN and cn))
+                            end
+                        end
+                        for i = 0, getNumOfChildren(node) - 1 do
+                            findCharSets(getChildAt(node, i), depth + 1, maxDepth)
+                        end
+                    end
+                    pcall(function() findCharSets(entity.humanModel.skeleton, 0, 4) end)
+                end
+            end
+
+            -- Check track states
+            if entity.animCharSet and entity.animCharSet ~= 0 then
+                out = out .. "  -- Track States --\n"
+                for track = 0, 3 do
+                    local enabled = false
+                    local weight = 0
+                    local speed = 0
+                    pcall(function() enabled = isAnimTrackEnabled(entity.animCharSet, track) end)
+                    pcall(function() weight = getAnimTrackBlendWeight(entity.animCharSet, track) end)
+                    pcall(function() speed = getAnimTrackSpeedScale(entity.animCharSet, track) end)
+                    if enabled then
+                        out = out .. string.format("    track[%d]: enabled=%s weight=%.2f speed=%.2f\n",
+                            track, tostring(enabled), weight, speed)
+                    end
+                end
+            end
+
+            -- Only probe first 2 entities in detail
+            if entityCount >= 2 then
+                out = out .. "\n  (... remaining entities omitted, showing first 2 ...)\n"
+                break
+            end
+        end
+        if entityCount == 0 then
+            out = out .. "  (no NPC entities found)\n"
+        end
+    else
+        out = out .. "  g_NPCSystem or entityManager not available\n"
+    end
+
+    -- =====================================================
+    -- SECTION 2: ANIMATION CACHE — what clips are available
+    -- =====================================================
+    out = out .. "\n-- ANIMATION CACHE CLIP CATALOG --\n"
+    if g_animCache and AnimationCache then
+        -- List all AnimationCache constants
+        out = out .. "AnimationCache constants:\n"
+        pcall(function()
+            for k, v in pairs(AnimationCache) do
+                if type(v) == "number" then
+                    out = out .. string.format("  AnimationCache.%s = %d\n", tostring(k), v)
+                end
+            end
+        end)
+
+        -- Dump clips from CHARACTER cache
+        local charNode = nil
+        pcall(function() charNode = g_animCache:getNode(AnimationCache.CHARACTER) end)
+        out = out .. "\nCHARACTER cache node: " .. tostring(charNode) .. "\n"
+        if charNode and charNode ~= 0 then
+            -- Walk the cache node children looking for char sets
+            local function dumpCacheNode(node, label, depth)
+                local okCS, cs = pcall(function() return getAnimCharacterSet(node) end)
+                if okCS and cs and cs ~= 0 then
+                    local nc = 0
+                    pcall(function() nc = getAnimNumOfClips(cs) end)
+                    out = out .. string.format("  %s '%s' clips=%d\n", label, tostring(getName(node)), nc)
+                    for ci = 0, math.min(nc - 1, 50) do
+                        local okCN, cn = pcall(function() return getAnimClipName(cs, ci) end)
+                        out = out .. string.format("    [%d] %s\n", ci, tostring(okCN and cn))
+                    end
+                end
+                if depth < 3 then
+                    for i = 0, getNumOfChildren(node) - 1 do
+                        dumpCacheNode(getChildAt(node, i), label .. "/" .. tostring(i), depth + 1)
+                    end
+                end
+            end
+            pcall(function() dumpCacheNode(charNode, "CHAR", 0) end)
+        end
+
+        -- Dump clips from PEDESTRIAN cache if it exists
+        local pedNode = nil
+        pcall(function() pedNode = g_animCache:getNode(AnimationCache.PEDESTRIAN) end)
+        if pedNode and pedNode ~= 0 then
+            out = out .. "\nPEDESTRIAN cache node: " .. tostring(pedNode) .. "\n"
+            pcall(function()
+                local function dumpP(node, label, depth)
+                    local okCS, cs = pcall(function() return getAnimCharacterSet(node) end)
+                    if okCS and cs and cs ~= 0 then
+                        local nc = 0
+                        pcall(function() nc = getAnimNumOfClips(cs) end)
+                        out = out .. string.format("  %s '%s' clips=%d\n", label, tostring(getName(node)), nc)
+                        for ci = 0, math.min(nc - 1, 50) do
+                            local okCN, cn = pcall(function() return getAnimClipName(cs, ci) end)
+                            out = out .. string.format("    [%d] %s\n", ci, tostring(okCN and cn))
+                        end
+                    end
+                    if depth < 3 then
+                        for i = 0, getNumOfChildren(node) - 1 do
+                            dumpP(getChildAt(node, i), label .. "/" .. tostring(i), depth + 1)
+                        end
+                    end
+                end
+                dumpP(pedNode, "PED", 0)
+            end)
+        else
+            out = out .. "\nPEDESTRIAN cache: not found (tried AnimationCache.PEDESTRIAN)\n"
+        end
+    else
+        out = out .. "  g_animCache or AnimationCache not available\n"
+    end
+
+    -- =====================================================
+    -- SECTION 3: Try common clip names on entity #1
+    -- =====================================================
+    out = out .. "\n-- CLIP NAME SEARCH (entity #1) --\n"
+    if g_NPCSystem and g_NPCSystem.entityManager then
+        local firstEntity = nil
+        for _, entity in pairs(g_NPCSystem.entityManager.npcEntities) do
+            firstEntity = entity
+            break
+        end
+        if firstEntity and firstEntity.animCharSet and firstEntity.animCharSet ~= 0 then
+            local cs = firstEntity.animCharSet
+            local tryNames = {
+                -- Standard player clips
+                "idle1Source", "idle2Source", "idleSource",
+                "idle1FemaleSource", "idle2FemaleSource",
+                "walkSource", "walk1Source", "walkFemaleSource",
+                "runSource", "run1Source", "runFemaleSource",
+                "sprintSource",
+                -- NPC-specific clips
+                "NPCWalkMale01Source", "NPCWalkFemale01Source",
+                "NPCIdleMale01Source", "NPCIdleFemale01Source",
+                "NPCRunMale01Source", "NPCRunFemale01Source",
+                -- Generic names
+                "walk", "run", "idle", "sprint",
+                -- Pedestrian clips
+                "pedestrianWalk", "pedestrianIdle",
+                "npcWalk", "npcIdle", "npcRun",
+            }
+            for _, name in ipairs(tryNames) do
+                local okIdx, idx = pcall(function() return getAnimClipIndex(cs, name) end)
+                if okIdx and idx and idx >= 0 then
+                    out = out .. string.format("  FOUND: '%s' -> clipIndex=%d\n", name, idx)
+                end
+            end
+            out = out .. "  (names with no result were not found)\n"
+        else
+            out = out .. "  No entity with animCharSet available\n"
+        end
+    end
+
+    out = out .. "\n=== END PROBE v3 ===\n"
+    print(out)
+    return out
+end
+
+function NPCFavorGUI:npcVehicleMode(mode)
+    if not g_NPCSystem then
+        return "NPC System not initialized"
+    end
+
+    local settings = g_NPCSystem.settings
+    if not settings then
+        return "NPC settings not available"
+    end
+
+    if not mode or mode == "" then
+        return string.format("Current vehicle mode: %s (options: hybrid, realistic, visual)", settings.npcVehicleMode or "hybrid")
+    end
+
+    mode = string.lower(mode)
+    if mode ~= "realistic" and mode ~= "visual" and mode ~= "hybrid" then
+        return "Invalid mode. Use: npcVehicleMode hybrid  OR  npcVehicleMode realistic  OR  npcVehicleMode visual"
+    end
+
+    local oldMode = settings.npcVehicleMode
+    settings.npcVehicleMode = mode
+    settings:save()
+
+    -- Notify the NPC system to switch vehicle modes
+    if g_NPCSystem.switchVehicleMode then
+        g_NPCSystem:switchVehicleMode(oldMode, mode)
+    end
+
+    return string.format("Vehicle mode changed: %s -> %s", oldMode or "realistic", mode)
 end
 
 function NPCFavorGUI:delete()

@@ -32,7 +32,7 @@ NPCFavorSettingsManager.XMLTAG = "NPCFavorSettings"
 
 NPCFavorSettingsManager.defaultConfig = {
     enabled = true,
-    maxNPCs = 8,
+    maxNPCs = 10,
     npcWorkStart = 8,
     npcWorkEnd = 17,
     favorFrequency = 3,

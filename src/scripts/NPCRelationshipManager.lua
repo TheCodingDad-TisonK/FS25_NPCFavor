@@ -12,15 +12,15 @@
 -- [x] Temporary mood system with expiration timers
 -- [x] Mood modifiers affecting relationship change magnitude
 -- [x] Automatic cleanup of expired moods and old history
--- [ ] Passive relationship decay over time for inactive NPCs
+-- [x] Passive relationship decay over time for inactive NPCs
 -- [ ] Weather/season influence on NPC mood baseline
--- [ ] NPC memory of past slights with grudge mechanic
+-- [x] NPC memory of past slights with grudge mechanic
 --
 -- GIFTS & BENEFITS:
 -- [x] Gift system with per-day limits and personality modifiers
 -- [x] Trade discounts scaling with relationship tier
 -- [x] Equipment borrowing unlocked at friend tier
--- [ ] NPC-initiated gift giving at best_friend tier
+-- [x] NPC-initiated gift giving at best_friend tier
 -- [ ] Shared resource pools between best friends
 -- [ ] Unlock exclusive items/vehicles through max relationship
 -- =========================================================
@@ -39,11 +39,24 @@ function NPCRelationshipManager.new(npcSystem)
     
     self.npcSystem = npcSystem
     
-    -- Enhanced relationship levels with benefits
+    -- 7-tier relationship levels (aligned with NPCDialog:getRelationshipLevelName)
+    -- NPCs start at 0 (hostile/stranger) and must earn trust through interaction.
     self.RELATIONSHIP_LEVELS = {
         {
-            min = 0,   max = 20,  
-            name = "stranger",    
+            min = 0,   max = 9,
+            name = "Hostile",
+            color = {r = 0.8, g = 0.2, b = 0.2},
+            benefits = {
+                canAskFavor = false,
+                favorFrequency = 0,
+                giftEffectiveness = 0.3,
+                discount = 0,
+                helpChance = 0
+            }
+        },
+        {
+            min = 10,  max = 24,
+            name = "Unfriendly",
             color = {r = 1.0, g = 0.3, b = 0.3},
             benefits = {
                 canAskFavor = false,
@@ -54,48 +67,63 @@ function NPCRelationshipManager.new(npcSystem)
             }
         },
         {
-            min = 20,  max = 40,  
-            name = "acquaintance",
+            min = 25,  max = 39,
+            name = "Neutral",
             color = {r = 1.0, g = 0.6, b = 0.3},
             benefits = {
                 canAskFavor = true,
                 favorFrequency = 0.3,
                 giftEffectiveness = 0.7,
                 discount = 5,
-                helpChance = 10
+                helpChance = 5
             }
         },
         {
-            min = 40,  max = 60,  
-            name = "friend",      
+            min = 40,  max = 59,
+            name = "Acquaintance",
             color = {r = 0.8, g = 0.8, b = 0.3},
             benefits = {
                 canAskFavor = true,
-                favorFrequency = 0.6,
-                giftEffectiveness = 0.9,
+                favorFrequency = 0.5,
+                giftEffectiveness = 0.8,
                 discount = 10,
-                helpChance = 25,
+                helpChance = 15,
                 canBorrowEquipment = true
             }
         },
         {
-            min = 60,  max = 80,  
-            name = "good_friend", 
+            min = 60,  max = 74,
+            name = "Friend",
             color = {r = 0.5, g = 0.8, b = 0.3},
             benefits = {
                 canAskFavor = true,
-                favorFrequency = 0.8,
-                giftEffectiveness = 1.0,
+                favorFrequency = 0.7,
+                giftEffectiveness = 0.9,
                 discount = 15,
-                helpChance = 50,
+                helpChance = 35,
                 canBorrowEquipment = true,
                 mayOfferHelp = true
             }
         },
         {
-            min = 80,  max = 100, 
-            name = "best_friend", 
-            color = {r = 0.3, g = 1.0, b = 0.3},
+            min = 75,  max = 89,
+            name = "Close Friend",
+            color = {r = 0.3, g = 0.85, b = 0.3},
+            benefits = {
+                canAskFavor = true,
+                favorFrequency = 0.85,
+                giftEffectiveness = 1.0,
+                discount = 18,
+                helpChance = 55,
+                canBorrowEquipment = true,
+                mayOfferHelp = true,
+                mayGiveGifts = true
+            }
+        },
+        {
+            min = 90,  max = 100,
+            name = "Best Friend",
+            color = {r = 0.3, g = 0.6, b = 1.0},
             benefits = {
                 canAskFavor = true,
                 favorFrequency = 1.0,
@@ -187,8 +215,95 @@ function NPCRelationshipManager.new(npcSystem)
     
     -- Mood system for temporary relationship modifiers
     self.npcMoods = {} -- npcId -> {mood, modifier, expiration}
-    
+
+    -- 4l: Grudge system — persistent negative feelings from bad interactions
+    -- npcId -> {count, lastSlightTime, severity}
+    self.grudges = {}
+
+    -- NPC-NPC relationship graph: keyed by canonical id pair "id1:id2" (lower id first)
+    self.npcRelationships = {}
+
+    -- Personality compatibility matrix: how much personalities drift toward liking/disliking
+    -- Positive = compatible (drift toward friendship), Negative = incompatible (drift toward rivalry)
+    self.personalityCompatibility = {
+        hardworking = { hardworking = 0.2, lazy = -0.5, social = 0.1, grumpy = 0.1, generous = 0.3 },
+        lazy        = { hardworking = -0.5, lazy = 0.3, social = 0.2, grumpy = 0.0, generous = 0.1 },
+        social      = { hardworking = 0.1, lazy = 0.2, social = 0.5, grumpy = -0.3, generous = 0.3 },
+        grumpy      = { hardworking = 0.1, lazy = 0.0, social = -0.3, grumpy = -0.2, generous = -0.1 },
+        generous    = { hardworking = 0.3, lazy = 0.1, social = 0.3, grumpy = -0.1, generous = 0.4 },
+    }
+
     return self
+end
+
+--- Get canonical key for an NPC-NPC relationship pair (lower id first).
+-- @param id1  First NPC id
+-- @param id2  Second NPC id
+-- @return string  Canonical key "id1:id2"
+function NPCRelationshipManager:getNPCPairKey(id1, id2)
+    if id1 < id2 then
+        return id1 .. ":" .. id2
+    else
+        return id2 .. ":" .. id1
+    end
+end
+
+--- Get or create an NPC-NPC relationship record.
+-- @param id1  First NPC id
+-- @param id2  Second NPC id
+-- @return table  {value, lastInteraction, interactionCount}
+function NPCRelationshipManager:getNPCRelationship(id1, id2)
+    local key = self:getNPCPairKey(id1, id2)
+    if not self.npcRelationships[key] then
+        self.npcRelationships[key] = {
+            value = 50,              -- neutral start
+            lastInteraction = 0,
+            interactionCount = 0,
+        }
+    end
+    return self.npcRelationships[key]
+end
+
+--- Update NPC-NPC relationship when they interact (socialize, gather, work together).
+-- Applies personality compatibility drift.
+-- @param npc1  First NPC data table
+-- @param npc2  Second NPC data table
+-- @param interactionType  "socialize", "work", "gather"
+function NPCRelationshipManager:updateNPCNPCRelationship(npc1, npc2, interactionType)
+    if not npc1 or not npc2 then return end
+    local rel = self:getNPCRelationship(npc1.id, npc2.id)
+
+    -- Base change from interaction
+    local change = 1
+    if interactionType == "work" then
+        change = 2
+    elseif interactionType == "gather" then
+        change = 1.5
+    end
+
+    -- Apply personality compatibility drift
+    local p1 = npc1.personality or "generous"
+    local p2 = npc2.personality or "generous"
+    local compat = 0
+    if self.personalityCompatibility[p1] then
+        compat = self.personalityCompatibility[p1][p2] or 0
+    end
+    change = change + compat
+
+    -- Apply change (bounded 0-100)
+    rel.value = math.max(0, math.min(100, rel.value + change))
+    rel.lastInteraction = self.npcSystem:getCurrentGameTime()
+    rel.interactionCount = rel.interactionCount + 1
+end
+
+--- Get the NPC-NPC relationship value for sorting social partners.
+-- @param id1  First NPC id
+-- @param id2  Second NPC id
+-- @return number  Relationship value (0-100, 50 = neutral)
+function NPCRelationshipManager:getNPCNPCValue(id1, id2)
+    local key = self:getNPCPairKey(id1, id2)
+    local rel = self.npcRelationships[key]
+    return rel and rel.value or 50
 end
 
 function NPCRelationshipManager:updateRelationship(npcId, change, reason)
@@ -207,7 +322,7 @@ function NPCRelationshipManager:updateRelationship(npcId, change, reason)
     end
     
     -- Store old value
-    local oldValue = npc.relationship or 50
+    local oldValue = npc.relationship or 0
     local oldLevel = self:getRelationshipLevel(oldValue)
     
     -- Apply mood modifier if any
@@ -243,10 +358,42 @@ function NPCRelationshipManager:updateRelationship(npcId, change, reason)
     }
     
     self:addRelationshipHistory(npcId, historyEntry)
-    
+
+    -- Show floating relationship change text (+1, -2, etc.)
+    if self.npcSystem.interactionUI and self.npcSystem.interactionUI.addFloatingText then
+        local text = string.format("%+d", effectiveChange)
+        local r, g, b = 0.3, 1, 0.3  -- green for positive
+        if effectiveChange < 0 then
+            r, g, b = 1, 0.3, 0.3    -- red for negative
+        end
+        self.npcSystem.interactionUI:addFloatingText(
+            npc.position.x, npc.position.y + 2.5, npc.position.z,
+            text, r, g, b
+        )
+    end
+
+    -- 4l: Track grudges from negative interactions
+    if effectiveChange < 0 then
+        local grudge = self.grudges[npcId]
+        if not grudge then
+            grudge = {count = 0, lastSlightTime = 0, severity = 0}
+            self.grudges[npcId] = grudge
+        end
+        grudge.count = grudge.count + 1
+        grudge.lastSlightTime = g_currentMission.time
+        grudge.severity = math.min(5, grudge.severity + math.abs(effectiveChange) * 0.1)
+    elseif effectiveChange > 0 and self.grudges[npcId] then
+        -- Positive interactions slowly reduce grudge severity
+        local grudge = self.grudges[npcId]
+        grudge.severity = math.max(0, grudge.severity - 0.1)
+        if grudge.severity <= 0 then
+            self.grudges[npcId] = nil  -- Grudge fully forgiven
+        end
+    end
+
     -- Update daily trackers
     self:updateDailyTrackers(npcId, reason)
-    
+
     -- Update mood based on change
     self:updateNPCMood(npcId, effectiveChange, reason)
     
@@ -326,7 +473,15 @@ function NPCRelationshipManager:getMoodModifier(npcId)
         return 0
     end
     
-    return mood.modifier or 0
+    local modifier = mood.modifier or 0
+
+    -- 4l: Grudge penalty reduces positive relationship gains
+    local grudge = self.grudges and self.grudges[npcId]
+    if grudge and grudge.severity > 0 then
+        modifier = modifier - grudge.severity * 0.1  -- up to -50% at max severity
+    end
+
+    return modifier
 end
 
 function NPCRelationshipManager:updateNPCMood(npcId, change, reason)
@@ -493,7 +648,7 @@ function NPCRelationshipManager:updateNPCBehaviorForRelationship(npc, level)
     
     -- Update mood based on relationship level
     if level.min >= 60 then
-        -- Good friends have positive base mood
+        -- Friends+ have positive base mood toward player
         if not self.npcMoods[npc.id] then
             self.npcMoods[npc.id] = {
                 value = 0.2,
@@ -501,8 +656,8 @@ function NPCRelationshipManager:updateNPCBehaviorForRelationship(npc, level)
                 expiration = nil
             }
         end
-    elseif level.min <= 20 then
-        -- Strangers have neutral to slightly negative mood
+    elseif level.min <= 9 then
+        -- Hostile NPCs have negative mood toward player
         if not self.npcMoods[npc.id] then
             self.npcMoods[npc.id] = {
                 value = -0.1,
@@ -810,8 +965,61 @@ function NPCRelationshipManager:update(dt)
                 self:updateNPCBehaviorForRelationship(npc, level)
             end
         end
+        -- 4k: NPC-initiated gifts to player (best friends, rare chance)
+        self:checkNPCGiftGiving()
         -- Cleanup expired moods and old history
         self:cleanupExpiredData()
+    end
+end
+
+--- 4k: Check if any best-friend NPC wants to give the player a gift.
+-- Only happens for relationships >= 75, with a small daily chance.
+function NPCRelationshipManager:checkNPCGiftGiving()
+    self._giftCheckDay = self._giftCheckDay or 0
+    local currentDay = 1
+    if TimeHelper and TimeHelper.getGameDay then
+        currentDay = TimeHelper.getGameDay()
+    end
+    -- Only check once per game day
+    if currentDay == self._giftCheckDay then return end
+    self._giftCheckDay = currentDay
+
+    for _, npc in ipairs(self.npcSystem.activeNPCs) do
+        if npc.isActive and npc.relationship and npc.relationship >= 75 then
+            -- 5% chance per day for close friends, 15% for best friends (90+)
+            local chance = npc.relationship >= 90 and 0.15 or 0.05
+            -- Generous NPCs give more often
+            if npc.personality == "generous" then chance = chance * 2 end
+            -- Grumpy NPCs almost never give
+            if npc.personality == "grumpy" then chance = chance * 0.2 end
+
+            if math.random() < chance then
+                -- NPC gives player a small relationship boost + notification
+                local giftBonus = math.random(2, 5)
+                npc.relationship = math.min(100, npc.relationship + giftBonus)
+
+                -- Set greeting text so player sees it
+                local giftMessages = {
+                    "I brought you something from the farm. Hope you like it!",
+                    "Found this and thought of you. Here, take it!",
+                    "A little something to show my appreciation.",
+                }
+                npc.greetingText = npc.name .. ": \"" .. giftMessages[math.random(1, #giftMessages)] .. "\""
+                npc.greetingTimer = 6  -- visible for 6 seconds
+
+                -- Floating text
+                if self.npcSystem.interactionUI then
+                    self.npcSystem.interactionUI:addFloatingText(
+                        npc.position.x, npc.position.y + 2.5, npc.position.z,
+                        "+" .. giftBonus .. " (gift!)", 0.9, 0.7, 0.2
+                    )
+                end
+
+                if self.npcSystem.settings.debugMode then
+                    print(string.format("[NPC Favor] %s gave player a gift (+%d relationship)", npc.name, giftBonus))
+                end
+            end
+        end
     end
 end
 
@@ -833,10 +1041,42 @@ function NPCRelationshipManager:cleanupExpiredData()
                 table.remove(history, i)
             end
         end
-        
+
         -- Remove empty history
         if #history == 0 then
             self.relationshipHistory[npcId] = nil
+        end
+    end
+
+    -- Passive player-NPC relationship decay: -0.5 per in-game day for inactive NPCs
+    -- Only applies to relationships above 25 (neutral), preventing decay below baseline
+    -- Note: cleanupExpiredData() is called once per 60 real seconds from update()
+    for _, npc in ipairs(self.npcSystem.activeNPCs) do
+        if npc.isActive and npc.relationship and npc.relationship > 25 then
+            local lastInteraction = npc.lastGreetingTime or 0
+            local timeSince = currentTime - lastInteraction
+            -- Decay if no interaction for 2+ in-game days
+            local twoDays = 2 * 24 * 60 * 60 * 1000
+            if timeSince > twoDays then
+                local decayAmount = 0.008  -- ~0.5 per minute at 60s intervals
+                npc.relationship = math.max(25, npc.relationship - decayAmount)
+            end
+        end
+    end
+
+    -- NPC-NPC relationship decay: idle pairs slowly drift toward neutral (50)
+    if self.npcRelationships then
+        for key, rel in pairs(self.npcRelationships) do
+            local timeSince = currentTime - (rel.lastInteraction or 0)
+            local threeDays = 3 * 24 * 60 * 60 * 1000
+            if timeSince > threeDays then
+                -- Drift toward 50 at 0.1 per check
+                if rel.value > 50 then
+                    rel.value = math.max(50, rel.value - 0.1)
+                elseif rel.value < 50 then
+                    rel.value = math.min(50, rel.value + 0.1)
+                end
+            end
         end
     end
 end

@@ -15,19 +15,19 @@
 -- [ ] Branching dialog trees (not just single-action buttons — choose response A/B/C)
 -- [ ] Dialog history / conversation log (scrollable panel showing past 5-10 exchanges)
 -- [ ] Animated text reveal (typewriter effect for NPC responses, not instant)
--- [ ] NPC mood indicator (happy/neutral/angry face icon next to name, changes based on recent interactions)
+-- [x] NPC mood indicator (happy/neutral/angry face icon next to name, changes based on recent interactions)
 -- [ ] Gift selection UI (choose from multiple gift types: money, crops, equipment, not just $500 hardcoded)
 -- [ ] Favor acceptance/rejection dialog (player chooses which favor to accept from multiple offers)
 -- [ ] Audio cues (sound effects on button hover/click, NPC voice samples on greet/respond?)
 -- [ ] Consolidate getPersonalityColor() duplication with NPCInteractionUI (shared utility file?)
--- [ ] Relationship decay warning ("You haven't talked to [NPC] in 3 days, relationship may drop")
+-- [x] Relationship decay warning ("You haven't talked to [NPC] in 3 days, relationship may drop")
 -- [ ] Special event indicators (birthday, festival, holiday-specific dialog options)
--- [ ] NPC schedule display ("Ask about plans" → shows their next 3 activities with timestamps)
+-- [x] NPC schedule display ("Ask about plans" → shows their next 3 activities with timestamps)
 -- [ ] Context-aware action buttons (if player owns borrowed equipment, show "Return equipment")
 -- [ ] Multi-page response area (for long relationship info, add pagination or scrolling)
 -- [x] Localization support (all hardcoded strings moved to translation files)
 -- [ ] Favor quest details panel (expanded view with objectives, map markers, progress bars)
--- [ ] NPC backstory/bio section ("Learn more about [NPC]" → shows personality traits, likes/dislikes)
+-- [x] NPC backstory/bio section ("Learn more about [NPC]" → shows personality traits, likes/dislikes)
 -- [ ] Comparison view (show multiple NPCs' relationships side-by-side for prioritizing gifts/favors)
 -- [ ] Accessibility features (keyboard navigation, colorblind-friendly relationship colors, larger text option)
 -- =========================================================
@@ -42,10 +42,10 @@
 -- XML binds onFocus/onLeave → per-button focus/leave handlers here.
 --
 -- 5 action buttons:
---   Talk             — Random conversation topic, +1 relationship
+--   Talk             — Random conversation topic, +1 relationship (once per day)
 --   Ask about work   — Shows NPC's current AI activity
---   Ask for favor    — Generate/check favor (requires rel >= 20)
---   Give gift        — Spend $500 for relationship boost (requires rel >= 30)
+--   Ask for favor    — Generate/check favor (requires Neutral 25+)
+--   Give gift        — Spend $500 for relationship boost (requires Neutral 30+)
 --   Relationship info — Shows level, benefits, next unlock, favor stats
 --
 -- Opened via NPCFavorGUI → DialogLoader pattern.
@@ -142,18 +142,38 @@ function NPCDialog:updateDisplay()
 
     if self.npcPersonalityText then
         local personality = npc.personality or "unknown"
-        self.npcPersonalityText:setText("(" .. personality .. ")")
+        -- 4g: Show mood indicator alongside personality
+        local moodIcon = ""
+        if npc.mood then
+            local moodSymbols = {happy = " [+]", neutral = "", stressed = " [!]", tired = " [~]"}
+            moodIcon = moodSymbols[npc.mood] or ""
+        end
+        self.npcPersonalityText:setText("(" .. personality .. moodIcon .. ")")
         local color = self:getPersonalityColor(personality)
-        self.npcPersonalityText:setTextColor(color[1], color[2], color[3], 1)
+        -- Tint by mood: green=happy, orange=stressed, blue=tired
+        if npc.mood == "happy" then
+            self.npcPersonalityText:setTextColor(0.3, 0.9, 0.3, 1)
+        elseif npc.mood == "stressed" then
+            self.npcPersonalityText:setTextColor(0.9, 0.6, 0.2, 1)
+        elseif npc.mood == "tired" then
+            self.npcPersonalityText:setTextColor(0.5, 0.5, 0.8, 1)
+        else
+            self.npcPersonalityText:setTextColor(color[1], color[2], color[3], 1)
+        end
     end
 
     if self.greetingText then
         local greeting = self:getGreeting()
+        -- 3h: Append relationship decay warning if NPC hasn't been talked to recently
+        local decayWarning = self:getDecayWarning()
+        if decayWarning then
+            greeting = greeting .. "\n" .. decayWarning
+        end
         self.greetingText:setText("\"" .. greeting .. "\"")
     end
 
     if self.relationshipText then
-        local relValue = npc.relationship or 50
+        local relValue = npc.relationship or 0
         local levelName = self:getRelationshipLevelName(relValue)
         self.relationshipText:setText(string.format(g_i18n:getText("npc_dialog_relationship_fmt") or "Relationship: %d/100 (%s)", relValue, levelName))
         local r, g, b = self:getRelationshipColor(relValue)
@@ -177,8 +197,8 @@ function NPCDialog:updateButtonStates()
     -- Ask about work - always enabled
     self:setButtonEnabled("Work", true, g_i18n:getText("npc_dialog_btn_work") or "Ask about work")
 
-    -- Ask for favor - needs relationship >= 20
-    local favorEnabled = relationship >= 20
+    -- Ask for favor - needs Neutral relationship (25+)
+    local favorEnabled = relationship >= 25
     local favorText = g_i18n:getText("npc_dialog_btn_favor") or "Ask for favor"
 
     if favorEnabled and self.npcSystem and self.npcSystem.favorSystem then
@@ -192,13 +212,13 @@ function NPCDialog:updateButtonStates()
     end
 
     if not favorEnabled then
-        favorText = g_i18n:getText("npc_dialog_btn_favor_locked") or "Ask for favor (need rel 20+)"
+        favorText = g_i18n:getText("npc_dialog_btn_favor_locked") or "Ask for favor (need Neutral 25+)"
     end
     self:setButtonEnabled("Favor", favorEnabled, favorText)
 
     -- Give gift - needs relationship >= 30
     local giftEnabled = relationship >= 30
-    local giftText = giftEnabled and (g_i18n:getText("npc_dialog_btn_gift") or "Give gift ($500)") or (g_i18n:getText("npc_dialog_btn_gift_locked") or "Give gift (need rel 30+)")
+    local giftText = giftEnabled and (g_i18n:getText("npc_dialog_btn_gift") or "Give gift ($500)") or (g_i18n:getText("npc_dialog_btn_gift_locked") or "Give gift (need Neutral 30+)")
     self:setButtonEnabled("Gift", giftEnabled, giftText)
 
     -- Relationship info - always enabled
@@ -277,18 +297,26 @@ end
 -- =========================================================
 
 --- "Talk" button: pick a random conversation topic, award +1 relationship.
+-- Daily limit: only the first talk per in-game day awards relationship points.
 function NPCDialog:onClickTalk()
     if not self.npc or not self.npcSystem then return end
 
     local topic = self.npcSystem.interactionUI:getRandomConversationTopic(self.npc)
-    self:setResponse(self.npc.name .. ": \"" .. topic .. "\"")
 
     if self.npcSystem.relationshipManager then
-        self.npcSystem.relationshipManager:updateRelationship(self.npc.id, 1, "DAILY_INTERACTION")
-        local info = self.npcSystem.relationshipManager:getRelationshipInfo(self.npc.id)
-        if info then
-            self.npc.relationship = info.value
+        local success = self.npcSystem.relationshipManager:updateRelationship(self.npc.id, 1, "daily_interaction")
+        if success then
+            local info = self.npcSystem.relationshipManager:getRelationshipInfo(self.npc.id)
+            if info then
+                self.npc.relationship = info.value
+            end
+            self:setResponse(self.npc.name .. ": \"" .. topic .. "\"")
+        else
+            -- Daily limit reached — still show topic but no relationship gain
+            self:setResponse(self.npc.name .. ": \"" .. topic .. "\"\n(Already chatted today — no relationship change)")
         end
+    else
+        self:setResponse(self.npc.name .. ": \"" .. topic .. "\"")
     end
 
     self:updateDisplay()
@@ -309,7 +337,7 @@ function NPCDialog:onClickFavor()
     if not self.npc or not self.npcSystem then return end
 
     local relationship = self.npc.relationship or 0
-    if relationship < 20 then return end
+    if relationship < 25 then return end
 
     local activeFavor = nil
     if self.npcSystem.favorSystem then
@@ -351,6 +379,7 @@ function NPCDialog:onClickFavor()
     self:updateButtonStates()
 end
 
+
 --- "Give gift" button: spend $500 for a relationship boost.
 -- Requires relationship >= 30.
 function NPCDialog:onClickGift()
@@ -366,7 +395,16 @@ function NPCDialog:onClickGift()
             if info then
                 self.npc.relationship = info.value
             end
-            self:setResponse(self.npc.name .. ": \"" .. (g_i18n:getText("npc_dialog_gift_thanks") or "Thank you for the gift! That's very generous of you!") .. "\"")
+            -- Personality-flavored thanks
+            local thanks = {
+                hardworking = "Much appreciated! I can put this to good use.",
+                lazy = "Oh nice, thanks! That's really kind of you.",
+                social = "You're the best! I'll tell everyone how generous you are!",
+                grumpy = "Hmph. Well... thanks, I guess.",
+                generous = "Thank you! I'll find a way to return the favor.",
+            }
+            local thankMsg = thanks[self.npc.personality] or "Thank you for the gift!"
+            self:setResponse(self.npc.name .. ": \"" .. thankMsg .. "\"")
         else
             self:setResponse(g_i18n:getText("npc_dialog_gift_failed") or "Could not give a gift right now.")
         end
@@ -478,8 +516,15 @@ function NPCDialog:onClickRelationship()
 
     -- Build response
     local levelName = info.level and info.level.name or self:getRelationshipLevelName(currentValue)
+
+    -- 4h: Include backstory at high relationship
+    local backstoryStr = ""
+    if currentValue >= 40 then
+        backstoryStr = "\n" .. self:getBackstory(self.npc)
+    end
+
     self:setResponse(string.format(
-        "%s (%s) | %s: %d/100%s | Benefits: %s | %s | Favors: %d done, %d failed (%d%%)",
+        "%s (%s) | %s: %d/100%s | Benefits: %s | %s | Favors: %d done, %d failed (%d%%)%s",
         self.npc.name,
         self.npc.personality or "?",
         levelName,
@@ -489,7 +534,8 @@ function NPCDialog:onClickRelationship()
         nextLevelStr,
         completedFavors,
         failedFavors,
-        successRate
+        successRate,
+        backstoryStr
     ))
 end
 
@@ -498,6 +544,10 @@ function NPCDialog:onClickClose()
 end
 
 function NPCDialog:onClose()
+    -- Unfreeze the NPC so they resume AI behavior
+    if self.npc then
+        self.npc.isTalking = false
+    end
     NPCDialog:superClass().onClose(self)
     self.npc = nil
 end
@@ -514,6 +564,32 @@ function NPCDialog:getGreeting()
         return self.npcSystem.interactionUI:getGreetingForNPC(self.npc)
     end
     return g_i18n:getText("npc_dialog_hello") or "Hello there, neighbor!"
+end
+
+--- Check if this NPC's relationship is at risk of decaying.
+-- Returns a warning string if the NPC hasn't been interacted with recently
+-- and their relationship is above the decay threshold (25).
+function NPCDialog:getDecayWarning()
+    if not self.npc or not self.npcSystem then return nil end
+    local npc = self.npc
+    if not npc.relationship or npc.relationship <= 25 then return nil end
+
+    local currentTime = self.npcSystem:getCurrentGameTime()
+    local lastInteraction = npc.lastGreetingTime or 0
+    if lastInteraction == 0 then return nil end
+
+    local timeSince = currentTime - lastInteraction
+    local oneDay = 24 * 60 * 60 * 1000
+    local daysSince = timeSince / oneDay
+
+    if daysSince >= 1.5 then
+        local daysText = math.floor(daysSince)
+        return string.format(
+            g_i18n:getText("npc_decay_warning") or "(You haven't talked in %d days — relationship may decay!)",
+            daysText
+        )
+    end
+    return nil
 end
 
 --- Get RGB color for a personality trait (for display text coloring).
@@ -550,6 +626,36 @@ function NPCDialog:getRelationshipLevelName(value)
     elseif value < 90 then return g_i18n:getText("npc_rel_close_friend") or "Close Friend"
     else return g_i18n:getText("npc_rel_best_friend") or "Best Friend"
     end
+end
+
+--- Generate a short backstory/bio for an NPC based on their personality and farm.
+-- @param npc  NPC data table
+-- @return string  Backstory text
+function NPCDialog:getBackstory(npc)
+    if not npc then return "" end
+
+    local personalityBios = {
+        hardworking = "Known around town as an early riser who never misses a day in the fields.",
+        lazy        = "Prefers a leisurely pace. Often found relaxing in the shade.",
+        social      = "The neighborhood's most talkative resident. Knows everyone's business.",
+        grumpy      = "Not much for small talk, but respected for straight-shooting honesty.",
+        generous    = "Always first to lend a hand or share from the harvest.",
+    }
+
+    local bio = personalityBios[npc.personality] or "A quiet member of the community."
+
+    if npc.farmName then
+        bio = bio .. " Works at " .. npc.farmName .. "."
+        if npc.assignedFields and #npc.assignedFields > 0 then
+            bio = bio .. " Tends " .. #npc.assignedFields .. " field(s)."
+        end
+    end
+
+    if npc.age then
+        bio = "Age " .. npc.age .. ". " .. bio
+    end
+
+    return bio
 end
 
 function NPCDialog:getRelationshipColor(value)
