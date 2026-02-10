@@ -134,6 +134,18 @@ local function loadedMission(mission, node)
 
         print("[NPC Favor] Calling onMissionLoaded...")
         npcSystem:onMissionLoaded()
+
+        -- Hook IngameMap.drawFields to render NPC name labels on the map
+        if g_currentMission.hud and g_currentMission.hud.ingameMap then
+            g_currentMission.hud.ingameMap.drawFields = Utils.appendedFunction(
+                g_currentMission.hud.ingameMap.drawFields,
+                function(map)
+                    if npcSystem and npcSystem.entityManager then
+                        npcSystem.entityManager:drawMapLabels(map)
+                    end
+                end
+            )
+        end
     else
         print("[NPC Favor] ERROR - npcSystem is nil in loadedMission!")
 
@@ -149,6 +161,18 @@ local function loadedMission(mission, node)
             }
             print("[NPC Favor] Late initialization successful")
             npcSystem:onMissionLoaded()
+
+            -- Hook IngameMap.drawFields for NPC name labels (late-init path)
+            if g_currentMission.hud and g_currentMission.hud.ingameMap then
+                g_currentMission.hud.ingameMap.drawFields = Utils.appendedFunction(
+                    g_currentMission.hud.ingameMap.drawFields,
+                    function(map)
+                        if npcSystem and npcSystem.entityManager then
+                            npcSystem.entityManager:drawMapLabels(map)
+                        end
+                    end
+                )
+            end
         else
             print("[NPC Favor] ERROR - Failed to create NPCSystem")
         end

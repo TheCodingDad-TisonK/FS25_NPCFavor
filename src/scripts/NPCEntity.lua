@@ -1396,7 +1396,16 @@ function NPCEntity:updateNPCEntity(npc, dt)
                 pcall(function() setVisibility(entity.humanModel.rootNode, false) end)
             end
         end
+        -- Remove map hotspot while sleeping
+        if entity.mapHotspot then
+            self:removeMapHotspot(entity)
+        end
         return  -- Skip all other entity updates while sleeping
+    end
+
+    -- Recreate hotspot if NPC woke up (sleeping removed it)
+    if not entity.mapHotspot then
+        self:createMapHotspot(entity, npc)
     end
 
     entity.position.x = npc.position.x
@@ -1825,38 +1834,42 @@ function NPCEntity:cleanupStaleEntities()
 end
 
 -- =========================================================
--- Map Hotspot Functions (FS25 MapHotspot API)
+-- Map Hotspot Functions (FS25 PlaceableHotspot API)
 -- =========================================================
--- FS25 uses MapHotspot (not MapIcon) for map markers.
--- g_currentMission:addMapHotspot() / :removeMapHotspot()
+-- FS25 uses PlaceableHotspot (concrete subclass of MapHotspot) for map markers.
+-- MapHotspot is the abstract base with no icon — PlaceableHotspot provides the
+-- icon, name, and category support needed for visible markers.
+-- Pattern proven by FS25_Tardis, FS25_AutoDrive, FS25_AnimalHerdingLite.
 
 function NPCEntity:createMapHotspot(entity, npc)
     if not entity or entity.mapHotspot then return end
     if not g_currentMission or not g_currentMission.addMapHotspot then return end
-    if not MapHotspot then return end
+    if not PlaceableHotspot then return end
 
     local ok = pcall(function()
         local name = (npc and npc.name) or "NPC"
-        local hotspot = MapHotspot.new()
+        local hotspot = PlaceableHotspot.new()
 
-        -- Set display name and category
-        if hotspot.setName then
-            hotspot:setName(name)
-        end
-        if hotspot.setCategory then
-            -- CATEGORY_AI or CATEGORY_OTHER depending on FS25 version
-            local category = MapHotspot.CATEGORY_AI or MapHotspot.CATEGORY_OTHER or 1
-            hotspot:setCategory(category)
+        -- Create icon overlay using the mod's icon.dds
+        local width, height = getNormalizedScreenValues(48, 48)
+        local modDir = self.npcSystem and self.npcSystem.modDirectory
+        if modDir then
+            local iconFile = Utils.getFilename("icon.dds", modDir)
+            hotspot.icon = Overlay.new(iconFile, 0, 0, width, height)
         end
 
-        -- Set initial position
-        if hotspot.setWorldPosition then
-            hotspot:setWorldPosition(entity.position.x, entity.position.z)
-        end
+        -- Set type (provides fallback built-in icon if custom icon fails)
+        hotspot.placeableType = PlaceableHotspot.TYPE.EXCLAMATION_MARK
 
-        -- Link to scene node for automatic position tracking (if available)
-        if hotspot.setLinkedNode and entity.node then
-            hotspot:setLinkedNode(entity.node)
+        -- Set display name (setName for hover tooltip)
+        hotspot:setName(name)
+
+        -- Set initial world position
+        hotspot:setWorldPosition(entity.position.x, entity.position.z)
+
+        -- Make visible to all players/farms
+        if hotspot.setOwnerFarmId then
+            hotspot:setOwnerFarmId(AccessHandler.EVERYONE or 0)
         end
 
         g_currentMission:addMapHotspot(hotspot)
@@ -1866,7 +1879,7 @@ function NPCEntity:createMapHotspot(entity, npc)
     if not ok then
         entity.mapHotspot = nil
         if self.npcSystem and self.npcSystem.settings and self.npcSystem.settings.debugMode then
-            print("[NPCEntity] MapHotspot creation failed for " .. tostring(npc and npc.name))
+            print("[NPCEntity] PlaceableHotspot creation failed for " .. tostring(npc and npc.name))
         end
     end
 end
@@ -1887,14 +1900,57 @@ end
 
 function NPCEntity:updateMapHotspot(entity, npc)
     if not entity or not entity.mapHotspot then return end
+    pcall(function()
+        entity.mapHotspot:setWorldPosition(entity.position.x, entity.position.z)
+    end)
+end
 
-    -- If hotspot is linked to a node, position updates automatically.
-    -- Otherwise, update manually.
-    if not entity.node and entity.mapHotspot.setWorldPosition then
-        pcall(function()
-            entity.mapHotspot:setWorldPosition(entity.position.x, entity.position.z)
-        end)
+--- Draw NPC name labels on the IngameMap above each hotspot icon.
+-- Called from IngameMap.drawFields hook so labels render in the map pipeline.
+-- Uses the same world-to-screen transform as IngameMap:drawHotspot.
+-- @param map  IngameMap instance (self from the hooked drawFields)
+function NPCEntity:drawMapLabels(map)
+    if not map or not map.layout then return end
+    if not self.npcEntities then return end
+
+    local _, textSize = getNormalizedScreenValues(0, 9)
+    local _, iconOffset = getNormalizedScreenValues(0, 14)
+
+    setTextBold(false)
+    setTextColor(1, 1, 1, 1)
+    setTextAlignment(RenderText.ALIGN_CENTER)
+
+    for npcId, entity in pairs(self.npcEntities) do
+        if entity.mapHotspot and entity.position then
+            -- Look up NPC name from activeNPCs
+            local name = nil
+            if self.npcSystem and self.npcSystem.activeNPCs then
+                for _, npc in ipairs(self.npcSystem.activeNPCs) do
+                    if npc and npc.id == npcId then
+                        name = npc.name
+                        break
+                    end
+                end
+            end
+
+            if name then
+                pcall(function()
+                    local objectX = (entity.position.x + map.worldCenterOffsetX) / map.worldSizeX
+                        * map.mapExtensionScaleFactor + map.mapExtensionOffsetX
+                    local objectZ = (entity.position.z + map.worldCenterOffsetZ) / map.worldSizeZ
+                        * map.mapExtensionScaleFactor + map.mapExtensionOffsetZ
+                    local screenX, screenY, _, visible = map.layout:getMapObjectPosition(
+                        objectX, objectZ, 0.01, 0.01, 0, false)
+                    if visible then
+                        renderText(screenX, screenY + iconOffset, textSize, name)
+                    end
+                end)
+            end
+        end
     end
+
+    -- Reset text alignment to default
+    setTextAlignment(RenderText.ALIGN_LEFT)
 end
 
 -- =========================================================
