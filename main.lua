@@ -46,7 +46,7 @@
 -- =========================================================
 
 -- Add version tracking
-local MOD_VERSION = "1.2.2.3"
+local MOD_VERSION = "1.2.2.4"
 local MOD_NAME = "FS25_NPCFavor"
 
 local modDirectory = g_currentModDirectory
