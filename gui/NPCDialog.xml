@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!--
+    =========================================================
+    TODO / FUTURE VISION
+    =========================================================
+    DIALOG LAYOUT:
+    [x] NPC name (bold, centered) with personality subtitle
+    [x] Greeting message area
+    [x] Relationship status display
+    [x] Response area (hidden until action clicked)
+    [x] 5 action buttons with 3-layer pattern (Bitmap bg + Button hit + Text)
+    [x] Close button via standard dialogButtonBox
+    FUTURE ENHANCEMENTS:
+    [ ] NPC portrait/avatar image beside name
+    [ ] Animated response text (typewriter effect)
+    [ ] Favor progress bar in response area
+    [ ] Gift item selector with inventory icons
+    [ ] Scrollable conversation history log
+    [ ] Relationship meter visual bar (not just text)
+    [ ] Button disabled state visual (grayed out bg color)
+    [ ] Sound effects on button hover/click
+    =========================================================
+
+    FS25_NPCFavor - NPC Interaction Dialog
+    Standard FS25 MessageDialog with NPC info + clickable action buttons
+    3-layer button pattern (Bitmap bg + Button hit + Text) with Lua hover effects
+-->
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement profile="newLayer" />
+    <Bitmap profile="dialogFullscreenBg" id="dialogBg" />
+
+    <GuiElement profile="dialogBg" id="dialogElement" size="600px 530px">
+        <ThreePartBitmap profile="fs25_dialogBgMiddle" />
+        <ThreePartBitmap profile="fs25_dialogBgTop" />
+        <ThreePartBitmap profile="fs25_dialogBgBottom" />
+
+        <GuiElement profile="fs25_dialogContentContainer">
+
+            <!-- NPC Name (bold, centered) -->
+            <Text profile="npcNameText" id="npcNameText" position="0px -15px" text=""/>
+
+            <!-- Personality (colored, smaller) -->
+            <Text profile="npcPersonalityText" id="npcPersonalityText" position="0px -42px" text=""/>
+
+            <!-- Greeting message -->
+            <Text profile="npcGreetingText" id="greetingText" position="0px -68px" text=""/>
+
+            <!-- Relationship info -->
+            <Text profile="npcRelationshipText" id="relationshipText" position="0px -95px" text=""/>
+
+            <!-- ========== Response Area (hidden until action clicked) ========== -->
+            <Bitmap profile="npcResponseBg" id="responseBg" position="0px -120px"/>
+            <Text profile="npcResponseText" id="responseText" position="0px -128px" text=""/>
+
+            <!-- ========== Action Buttons (3-layer: Bitmap bg + Button hit + Text) ========== -->
+            <!-- onFocus/onLeave on Button elements drive hover color changes on Bitmap bg -->
+
+            <!-- Button 1: Talk (always enabled) -->
+            <Bitmap profile="npcActionBtnBg" id="btnTalkBg" position="0px -195px"/>
+            <Button profile="npcActionBtnHit" id="btnTalk" position="0px -195px" onClick="onClickTalk" onFocus="onBtnTalkFocus" onLeave="onBtnTalkLeave"/>
+            <Text profile="npcActionBtnText" id="btnTalkText" position="0px -200px" text="Talk"/>
+
+            <!-- Button 2: Ask about work (always enabled) -->
+            <Bitmap profile="npcActionBtnBg" id="btnWorkBg" position="0px -232px"/>
+            <Button profile="npcActionBtnHit" id="btnWork" position="0px -232px" onClick="onClickAskWork" onFocus="onBtnWorkFocus" onLeave="onBtnWorkLeave"/>
+            <Text profile="npcActionBtnText" id="btnWorkText" position="0px -237px" text="Ask about work"/>
+
+            <!-- Button 3: Ask for favor (disabled if rel < 20) -->
+            <Bitmap profile="npcActionBtnBg" id="btnFavorBg" position="0px -269px"/>
+            <Button profile="npcActionBtnHit" id="btnFavor" position="0px -269px" onClick="onClickFavor" onFocus="onBtnFavorFocus" onLeave="onBtnFavorLeave"/>
+            <Text profile="npcActionBtnText" id="btnFavorText" position="0px -274px" text="Ask for favor"/>
+
+            <!-- Button 4: Give gift (disabled if rel < 30) -->
+            <Bitmap profile="npcActionBtnBg" id="btnGiftBg" position="0px -306px"/>
+            <Button profile="npcActionBtnHit" id="btnGift" position="0px -306px" onClick="onClickGift" onFocus="onBtnGiftFocus" onLeave="onBtnGiftLeave"/>
+            <Text profile="npcActionBtnText" id="btnGiftText" position="0px -311px" text="Give gift"/>
+
+            <!-- Button 5: Relationship info (always enabled) -->
+            <Bitmap profile="npcActionBtnBg" id="btnRelBg" position="0px -343px"/>
+            <Button profile="npcActionBtnHit" id="btnRel" position="0px -343px" onClick="onClickRelationship" onFocus="onBtnRelFocus" onLeave="onBtnRelLeave"/>
+            <Text profile="npcActionBtnText" id="btnRelText" position="0px -348px" text="Relationship info"/>
+
+        </GuiElement>
+
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonBack" id="closeButton" text="Close" onClick="onClickClose"/>
+        </BoxLayout>
+
+    </GuiElement>
+
+    <GUIProfiles>
+        <!-- Provide local definition to suppress "Could not retrieve" warnings -->
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
+        <!-- ========== NPC NAME ========== -->
+        <Profile name="npcNameText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="500px 25px"/>
+            <textSize value="22px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ========== PERSONALITY ========== -->
+        <Profile name="npcPersonalityText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="400px 20px"/>
+            <textSize value="14px"/>
+            <textColor value="0.6 0.8 0.6 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ========== GREETING ========== -->
+        <Profile name="npcGreetingText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="520px 22px"/>
+            <textSize value="14px"/>
+            <textColor value="0.85 0.85 0.85 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ========== RELATIONSHIP TEXT ========== -->
+        <Profile name="npcRelationshipText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="500px 20px"/>
+            <textSize value="13px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ========== RESPONSE AREA BACKGROUND ========== -->
+        <Profile name="npcResponseBg" extends="baseReference" with="anchorTopCenter">
+            <size value="540px 55px"/>
+            <imageColor value="0.08 0.08 0.12 0.9"/>
+        </Profile>
+
+        <!-- ========== RESPONSE TEXT ========== -->
+        <Profile name="npcResponseText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="520px 45px"/>
+            <textSize value="12px"/>
+            <textColor value="0.9 0.95 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ========== ACTION BUTTON BACKGROUND ========== -->
+        <Profile name="npcActionBtnBg" extends="baseReference" with="anchorTopCenter">
+            <size value="350px 32px"/>
+            <imageColor value="0.15 0.15 0.18 1"/>
+        </Profile>
+
+        <!-- ========== ACTION BUTTON HIT TARGET (invisible, catches mouse) ========== -->
+        <Profile name="npcActionBtnHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="350px 32px"/>
+            <isFocusable value="true"/>
+        </Profile>
+
+        <!-- ========== ACTION BUTTON TEXT ========== -->
+        <Profile name="npcActionBtnText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="350px 22px"/>
+            <textSize value="14px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+    </GUIProfiles>
+</GUI>

@@ -1,0 +1,20 @@
+# Build artifacts
+*.zip
+nul
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Node (if using build tools)
+node_modules/
+
+# CLAUDE AI
+.claude
