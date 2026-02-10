@@ -10,8 +10,8 @@
 -- [ ] Localized time format strings (12h vs 24h based on language)
 --
 -- GAME TIME:
--- [x] Current game hour, minute, day, month, year accessors
--- [x] Formatted game time string output
+-- [x] Current game day accessor (getGameDay)
+-- [ ] Formatted game time string output
 -- [x] Time prediction (predictFutureTime, getTimeUntil)
 -- [ ] Game time speed multiplier awareness for accurate real-time estimates
 -- [ ] Alarm/timer system for scheduling NPC events at specific game times
@@ -26,7 +26,7 @@
 -- TIME OF DAY:
 -- [x] Morning, afternoon, evening, night classification
 -- [x] getTimeOfDay returns string label for current period
--- [x] Dawn/dusk transition periods for NPC schedule blending
+-- [ ] Dawn/dusk transition periods for NPC schedule blending
 -- [ ] Configurable time-of-day thresholds per NPC personality
 -- =========================================================
 
@@ -59,47 +59,9 @@ function TimeHelper.msToDHMS(ms)
 end
 
 
-function TimeHelper.getGameHour()
-    if g_currentMission and g_currentMission.environment then
-        -- Derive from dayTime (ms since midnight) for reliability
-        local dayTime = g_currentMission.environment.dayTime
-        if dayTime then
-            return math.floor(dayTime / 3600000)
-        end
-        return g_currentMission.environment.currentHour or 12
-    end
-    return 12
-end
-
-function TimeHelper.getGameMinute()
-    if g_currentMission and g_currentMission.environment then
-        -- Derive from dayTime (ms since midnight) for reliability
-        local dayTime = g_currentMission.environment.dayTime
-        if dayTime then
-            return math.floor((dayTime % 3600000) / 60000)
-        end
-        return g_currentMission.environment.currentMinute or 0
-    end
-    return 0
-end
-
 function TimeHelper.getGameDay()
     if g_currentMission and g_currentMission.environment then
         return g_currentMission.environment.currentDay or 1
-    end
-    return 1
-end
-
-function TimeHelper.getGameMonth()
-    if g_currentMission and g_currentMission.environment then
-        return g_currentMission.environment.currentMonth or 1
-    end
-    return 1
-end
-
-function TimeHelper.getGameYear()
-    if g_currentMission and g_currentMission.environment then
-        return g_currentMission.environment.currentYear or 1
     end
     return 1
 end
@@ -178,19 +140,5 @@ function TimeHelper.getTimeOfDay(hour)
     else
         return "night"
     end
-end
-
---- Check if it's dawn (sunrise transition period).
--- @param hour  Game hour (0-23)
--- @return boolean  True if during dawn (5:00-7:00)
-function TimeHelper.isDawn(hour)
-    return hour >= 5 and hour < 7
-end
-
---- Check if it's dusk (sunset transition period).
--- @param hour  Game hour (0-23)
--- @return boolean  True if during dusk (19:00-21:00)
-function TimeHelper.isDusk(hour)
-    return hour >= 19 and hour < 21
 end
 

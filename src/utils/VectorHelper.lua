@@ -5,7 +5,7 @@
 -- [x] 2D and 3D distance calculations
 -- [x] Scalar and vector linear interpolation (lerp)
 -- [x] Value clamping (scalar and vector)
--- [x] Dot product and cross product
+-- [ ] Dot product and cross product
 -- [x] Smoothstep / ease-in-out interpolation for smoother NPC movement
 -- [x] Bezier curve evaluation for curved NPC walking paths
 --
@@ -66,11 +66,6 @@ end
 
 function VectorHelper.clamp(value, min, max)
     return math.max(min, math.min(max, value))
-end
-
-
-function VectorHelper.dotProduct(x1, z1, x2, z2)
-    return x1 * x2 + z1 * z2
 end
 
 

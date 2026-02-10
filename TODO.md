@@ -1,125 +1,123 @@
-# NPC Favor – TODO / Roadmap
+# NPC Favor -- TODO / Roadmap
 
-This TODO list reflects the **current state of the mod** and the **updated vision** for NPC Favor. Items are grouped by priority and maturity rather than strict versioning. Some items are aspirational and depend on FS25 engine limitations.
+**Current version:** 1.2.2.4
+**Last updated:** 2026-02-10
 
----
-
-## ✅ Already Implemented / In Progress
-
-* NPC system initialized and loading correctly
-* NPCs visible in-game
-* Basic NPC identity persistence (ID-based)
-* Debug logging framework
-* Early structure for favor tracking
-* Map icon concept identified (implementation pending)
+This TODO reflects the **honest current state** of the mod as of v1.2.2.4. Items are grouped by status: what works, what's partially working, what's broken, and what's planned.
 
 ---
 
-## 🔜 Short-Term TODO (Foundation & Polish)
+## Done (Working in v1.2.2.4)
 
-### NPC Presence & UX
+### Core Systems
+- [x] NPC system initialization and lifecycle (spawn, update, save, load, delete)
+- [x] Needs-based AI with 4 internal needs (energy, social, hunger, workSatisfaction)
+- [x] 8-state AI state machine (idle, walking, working, driving, resting, socializing, traveling, gathering)
+- [x] 5 personality types (hardworking, lazy, social, grumpy, generous) affecting behavior
+- [x] Road spline pathfinding with cached paths (NPCPathfinder)
+- [x] NPCFieldWork module with boustrophedon row traversal
+- [x] Personality-specific daily schedules with weekend variation and seasonal adjustment
+- [x] Weather awareness (rain/storm interrupts field work, weather-aware dialog)
 
-* Add NPC map icons (toggleable)
-* Improve NPC visibility consistency (spawn/despawn edge cases)
-* Ensure NPCs do not feel intrusive or clutter the map
-* Add basic NPC info tooltip (name / role)
+### Relationships
+- [x] 7-tier player-NPC relationship system (Hostile through Best Friend, 0-100 scale)
+- [x] NPC-NPC social graph with personality compatibility matrix
+- [x] Relationship decay for inactive relationships (configurable)
+- [x] Grudge system for persistent negative feelings
+- [x] NPC-initiated gifts at high relationship levels
 
-### Favor System (Core)
+### Favors
+- [x] 7 favor types with time limits, progress tracking, and rewards
+- [x] Favor Management Dialog (F6) with view, cancel, goto, complete actions
+- [x] Favor frequency and difficulty settings
+- [x] Configurable max active favors and multiple favor toggle
 
-* Define favor data structure (type, status, timestamps)
-* Implement basic favor lifecycle:
+### Dialog & UI
+- [x] E-key interaction dialog with 5 action buttons (Talk, Work, Favor, Gift, Relationship Info)
+- [x] NPC List dialog (F7) with roster table and teleport-to-NPC buttons
+- [x] World-space speech bubbles for NPC-NPC socializing
+- [x] Floating name tags with dynamic Y-scaling by distance
+- [x] Floating relationship change text (+1, -2 popups)
+- [x] Active favor list HUD overlay
+- [x] Map hotspots using PlaceableHotspot (built-in exclamation mark icon)
+- [x] HUD suppression during pause, map, ESC menu, and dialogs
 
-  * Requested
-  * Accepted
-  * Completed
-  * Failed / Expired
-* Store favor history per NPC
-* Simple rewards or acknowledgements for completed favors
+### Settings & Persistence
+- [x] 42 settings persisted to XML per-savegame
+- [x] 13 settings exposed in ESC menu under "NPC Favor System" header
+- [x] Settings save via FSCareerMissionInfo.saveToXMLFile hook (UsedPlus pattern)
+- [x] Settings load via XMLFile.loadIfExists
+- [x] Multiplayer settings sync (NPCSettingsSyncEvent)
+- [x] NPC data save/load (positions, relationships, AI state, needs, favors)
 
-### Persistence
-
-* Save/load NPC state reliably across sessions
-* Save favor progress and history
-* Handle missing or removed NPCs gracefully
-
----
-
-## 🧠 Medium-Term TODO (Depth & Believability)
-
-### NPC Behavior
-
-* Assign NPC roles (farmer, shop-related, resident, etc.)
-* Soft daily routines (time-of-day driven)
-* Basic location awareness (home / work / idle)
-* Idle behaviors when not interacting with the player
-
-### "Home" Concept
-
-* Define home locations per NPC
-* NPCs start/end their day at home
-* Homes act as logical anchors, not interiors
-
-### Favor Depth
-
-* Contextual favor triggers (NPC stuck, missing delivery, etc.)
-* Time-sensitive favors
-* NPC reaction changes based on player reliability
-* Track patterns, not just total favors
-
----
-
-## 🚗 Vehicles & Movement (Experimental)
-
-* Assign vehicles to NPCs (optional / role-based)
-* NPCs travel to destinations using vehicles
-* Allow non-perfect simulation (teleport, despawn outside view)
-* Vehicle ownership persistence per NPC
-* Basic parking logic near destinations
+### Infrastructure
+- [x] 10-language localization (1,500+ i18n strings inline in modDesc.xml)
+- [x] Multiplayer event system (state sync, interaction routing, settings sync)
+- [x] Eager dialog loading from ZIP (works reliably from mod archives)
+- [x] Cross-platform build script with --deploy flag
+- [x] Console commands (npcHelp, npcStatus, npcList, npcGoto, npcDebug, npcFavors, npcProbe)
+- [x] Gender system with male/female name pools and clothing
+- [x] Animated character models via FS25 HumanGraphicsComponent
 
 ---
 
-## 🎭 Personality & Variation
+## Partially Working / Known Issues
 
-* Lightweight personality stats per NPC:
+### NPC Vehicles
+- [ ] Vehicle prop code exists but no vehicles spawn or render
+- [ ] `spawnNPCTractor`, `seatNPCInVehicle`, `unseatNPCFromVehicle` are implemented but i3d models can't be loaded from game pak archives at runtime
+- [ ] NPCs walk everywhere; driving state exists but is non-functional
+- [ ] Vehicle mode setting exists (hybrid/realistic/visual) but has no visible effect
 
-  * Patience
-  * Generosity
-  * Forgiveness
-* Influence how NPCs request and react to favors
-* Prevent all NPCs from feeling interchangeable
+### Social Behaviors
+- [ ] Group gatherings position NPCs correctly but generate no conversation content
+- [ ] Walking pairs form but produce no speech bubbles (only 1-on-1 socializing works)
+- [ ] Friday party, harvest gathering, morning market, Sunday rest events exist in code but are untested
 
----
+### Localization
+- [ ] Mood prefixes, backstories, and personality-flavored dialog are English-only
+- [ ] Core UI, settings, and relationship labels are fully localized in all 10 languages
 
-## 🌱 Long-Term / Aspirational
+### Favors
+- [ ] "Borrow tractor" favor has no interaction menu option (issue #14)
+- [ ] Favor progress tracking is implemented but some favor types lack completion detection
 
-* NPCs requesting favors without player initiation
-* NPCs refusing help based on past behavior
-* NPC-to-NPC interactions (indirect, simulated)
-* Reputation-based unlocks (discounts, access, trust)
-* Seasonal or weather-influenced NPC behavior
-* Hooks for other mods to register NPCs or favors
-
----
-
-## 🧹 Technical & Maintenance
-
-* Refactor code as systems stabilize
-* Improve logging levels (debug / info / warn)
-* Add config options for:
-
-  * NPC count
-  * Favor frequency
-  * Debug visibility
-* Performance checks with large NPC counts
+### Multiplayer
+- [ ] Multiplayer sync infrastructure is complete but multiplayer is untested
+- [ ] State sync, interaction routing, and settings sync events all implemented
 
 ---
 
-## 🚫 Explicitly Out of Scope (For Now)
+## Planned / Not Started
 
-* Full NPC life simulation
-* Interior NPC homes
-* Heavy dialogue or branching narratives
-* Relationship / dating mechanics
+### Short-Term
+- [ ] Custom map hotspot icon (current: built-in exclamation mark; custom icon.dds fails from ZIP)
+- [ ] Close GitHub issues that are fixed (#2, #12 fixed but still Open on GitHub)
+- [ ] Test multiplayer functionality end-to-end
+
+### Medium-Term
+- [ ] Make NPC vehicles functional (major engine limitation to solve)
+- [ ] Group conversation content for gatherings and walking pairs
+- [ ] Localize flavor text (backstories, mood dialog, personality responses) in all 10 languages
+- [ ] Favor completion detection for all 7 favor types
+- [ ] NPC memory system driving behavior (10 records per NPC exist but don't influence decisions yet)
+
+### Long-Term / Aspirational
+- [ ] NPCs requesting favors proactively (approaching the player)
+- [ ] NPCs refusing help based on past behavior patterns
+- [ ] Reputation-based unlocks (discounts at shops, access to special tasks)
+- [ ] Hooks for other mods to register custom NPCs or favor types
+- [ ] Southern hemisphere season support
+- [ ] Relative time formatting in UI ("2 hours ago", "yesterday")
+
+---
+
+## Explicitly Out of Scope
+
+- Full NPC life simulation (eating, sleeping animations, interior homes)
+- Interior NPC homes (homes are logical anchors, not enterable buildings)
+- Heavy dialogue trees or branching narratives
+- Romance / dating mechanics
 
 ---
 

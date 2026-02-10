@@ -254,7 +254,6 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.lastSaveTime = 0
     self.saveInterval = 30000
     self.savedNPCData = nil
-    self.lastTeleportTime = 0  -- Track last player teleport for UI stabilization
 
     -- Town reputation (0-100 scale, average of all NPC relationships weighted by interaction frequency)
     self.townReputation = 50
@@ -2411,12 +2410,6 @@ function NPCSystem:findNearbyBuildings(centerX, centerZ, radius)
 
     table.sort(buildings, function(a, b) return a.distance < b.distance end)
     return buildings
-end
-
-function NPCSystem:wasRecentlyTeleported()
-    local currentTime = self:getCurrentGameTime()
-    -- Consider "recent" as within last 0.5 game-time minutes (30 seconds real time)
-    return (currentTime - self.lastTeleportTime) < 0.5
 end
 
 --- Relocate only HOMELESS NPCs that are truly lost (no home, no field, drifted far).
