@@ -182,10 +182,8 @@ function NPCSettingsSyncEvent:applySettings()
             settings.debugMode = (self.value == true)
         end
 
-        -- Save on server only
-        if g_server ~= nil then
-            pcall(function() settings:save() end)
-        end
+        -- Settings persist via saveToXMLFile hook on next game save (UsedPlus pattern).
+        -- No immediate disk write from sync events.
 
     elseif self.syncType == NPCSettingsSyncEvent.TYPE_BULK then
         if self.bulkSettings then

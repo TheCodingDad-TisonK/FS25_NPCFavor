@@ -124,8 +124,12 @@ local function loadedMission(mission, node)
             DialogLoader.register("NPCListDialog", NPCListDialog, "gui/NPCListDialog.xml")
             DialogLoader.register("NPCFavorManagementDialog", NPCFavorManagementDialog, "gui/NPCFavorManagementDialog.xml")  -- NEW
 
-            -- Eagerly load the NPC interaction dialog (used on E-key press)
+            -- Eagerly load ALL dialogs while the mod's ZIP filesystem context
+            -- is active.  Lazy loading later fails with "Failed to open xml file"
+            -- because FS25 can only resolve mod-internal paths during mission load.
             DialogLoader.ensureLoaded("NPCDialog")
+            DialogLoader.ensureLoaded("NPCListDialog")
+            DialogLoader.ensureLoaded("NPCFavorManagementDialog")
             npcSystem.npcDialogInstance = DialogLoader.getDialog("NPCDialog")
         end
 
@@ -555,6 +559,10 @@ if FSCareerMissionInfo and FSCareerMissionInfo.saveToXMLFile then
         function(missionInfo)
             if npcSystem and npcSystem.isInitialized then
                 npcSystem:saveToXMLFile(missionInfo)
+                -- Settings persist to missionInfo.savegameDirectory (UsedPlus pattern)
+                if npcSystem.settings and npcSystem.settings.saveToXMLFile then
+                    pcall(function() npcSystem.settings:saveToXMLFile(missionInfo) end)
+                end
             end
         end
     )

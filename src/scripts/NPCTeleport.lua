@@ -97,11 +97,6 @@ function NPCTeleport.teleportToNPC(npcSystem, npc)
         end
     end
 
-    -- Track teleport time for UI stabilization
-    if npcSystem and teleported then
-        npcSystem.lastTeleportTime = npcSystem:getCurrentGameTime()
-    end
-
     -- Build status message with map coordinates
     local halfSize = (g_currentMission and g_currentMission.terrainSize or 2048) / 2
     local mapX = math.floor(x + halfSize)

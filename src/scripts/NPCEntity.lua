@@ -1891,19 +1891,18 @@ function NPCEntity:createMapHotspot(entity, npc)
     if not g_currentMission or not g_currentMission.addMapHotspot then return end
     if not PlaceableHotspot then return end
 
+    -- Respect showMapMarkers setting
+    if self.npcSystem and self.npcSystem.settings and self.npcSystem.settings.showMapMarkers == false then
+        return
+    end
+
     local ok = pcall(function()
         local name = (npc and npc.name) or "NPC"
         local hotspot = PlaceableHotspot.new()
 
-        -- Create icon overlay using the mod's icon.dds
-        local width, height = getNormalizedScreenValues(48, 48)
-        local modDir = self.npcSystem and self.npcSystem.modDirectory
-        if modDir then
-            local iconFile = Utils.getFilename("icon.dds", modDir)
-            hotspot.icon = Overlay.new(iconFile, 0, 0, width, height)
-        end
-
-        -- Set type (provides fallback built-in icon if custom icon fails)
+        -- Use built-in exclamation mark icon. Custom icon.dds via Overlay.new
+        -- fails when the mod runs from a ZIP (DirectStorage can't resolve the
+        -- path outside mission-load context). The built-in type icon works reliably.
         hotspot.placeableType = PlaceableHotspot.TYPE.EXCLAMATION_MARK
 
         -- Set display name (setName for hover tooltip)
@@ -1948,6 +1947,21 @@ function NPCEntity:updateMapHotspot(entity, npc)
     pcall(function()
         entity.mapHotspot:setWorldPosition(entity.position.x, entity.position.z)
     end)
+end
+
+--- Toggle all NPC map hotspots on or off (called when showMapMarkers setting changes).
+-- @param show  boolean — true to create hotspots, false to remove them
+function NPCEntity:toggleAllMapHotspots(show)
+    if not self.npcEntities then return end
+    local npcs = self.npcSystem and self.npcSystem.npcs
+    for id, entity in pairs(self.npcEntities) do
+        if show then
+            local npc = npcs and npcs[id]
+            self:createMapHotspot(entity, npc)
+        else
+            self:removeMapHotspot(entity)
+        end
+    end
 end
 
 --- Draw NPC name labels on the IngameMap above each hotspot icon.

@@ -138,12 +138,10 @@ function NPCFavorGUI:npcDebug(state)
     
     if state == "on" then
         g_NPCSystem.settings.debugMode = true
-        g_NPCSystem.settings:save()
-        return "Debug mode enabled"
+        return "Debug mode enabled (persists on next game save)"
     elseif state == "off" then
         g_NPCSystem.settings.debugMode = false
-        g_NPCSystem.settings:save()
-        return "Debug mode disabled"
+        return "Debug mode disabled (persists on next game save)"
     else
         return "Usage: npcDebug [on|off]"
     end
@@ -464,7 +462,6 @@ function NPCFavorGUI:npcVehicleMode(mode)
 
     local oldMode = settings.npcVehicleMode
     settings.npcVehicleMode = mode
-    settings:save()
 
     -- Notify the NPC system to switch vehicle modes
     if g_NPCSystem.switchVehicleMode then

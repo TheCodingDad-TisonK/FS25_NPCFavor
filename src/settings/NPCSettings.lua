@@ -37,9 +37,7 @@ function NPCSettings.new()
     return self
 end
 
-function NPCSettings:resetToDefaults(saveImmediately)
-    saveImmediately = saveImmediately ~= false
-
+function NPCSettings:resetToDefaults()
     -- Core
     self.enabled = true
     self.maxNPCs = 10
@@ -53,6 +51,7 @@ function NPCSettings:resetToDefaults(saveImmediately)
     self.showNotifications = true
     self.showFavorList = true
     self.showRelationshipBars = true
+    self.showMapMarkers = true
     self.showNPCPaths = false
     self.nameDisplayDistance = 50
     self.notificationDuration = 4000
@@ -111,9 +110,8 @@ function NPCSettings:resetToDefaults(saveImmediately)
     self.syncRelationships = true
     self.syncFavors = true
 
-    if saveImmediately then
-        self:save()
-    end
+    -- Settings persist via saveToXMLFile hook on next game save (UsedPlus pattern).
+    -- No immediate disk write — avoids "orphan" files outside official save process.
 end
 
 function NPCSettings:getSavegameXmlPath()
@@ -125,16 +123,20 @@ end
 
 function NPCSettings:load()
     local xmlPath = self:getSavegameXmlPath()
-    if not xmlPath or not (g_fileIO and g_fileIO:fileExists(xmlPath)) then
-        self:resetToDefaults(true)
+    if not xmlPath then
+        print("[NPC Settings] No savegame path available, using defaults")
         return
     end
 
-    local xml = XMLFile.load("npc_settings", xmlPath)
+    -- Use XMLFile.loadIfExists (proven FS25 pattern, works with savegame paths).
+    -- g_fileIO:fileExists is unreliable for savegame directories.
+    local xml = XMLFile.loadIfExists("npc_settings", xmlPath, "NPCSettings")
     if not xml then
-        self:resetToDefaults(true)
+        print("[NPC Settings] No settings file found (new game), using defaults")
         return
     end
+
+    print(string.format("[NPC Settings] Loading settings from %s", xmlPath))
 
     local function getBool(path, default) return xml:getBool("NPCSettings."..path, default) end
     local function getInt(path, default) return xml:getInt("NPCSettings."..path, default) end
@@ -154,6 +156,7 @@ function NPCSettings:load()
     self.showNotifications = getBool("showNotifications", self.showNotifications)
     self.showFavorList = getBool("showFavorList", self.showFavorList)
     self.showRelationshipBars = getBool("showRelationshipBars", self.showRelationshipBars)
+    self.showMapMarkers = getBool("showMapMarkers", self.showMapMarkers)
     self.showNPCPaths = getBool("showNPCPaths", self.showNPCPaths)
     self.nameDisplayDistance = getInt("nameDisplayDistance", self.nameDisplayDistance)
     self.notificationDuration = getInt("notificationDuration", self.notificationDuration)
@@ -214,15 +217,20 @@ function NPCSettings:load()
 
     xml:delete()
     self:validateSettings()
+
+    print(string.format("[NPC Settings] Loaded settings (enabled=%s, showNames=%s, debugMode=%s)",
+        tostring(self.enabled), tostring(self.showNames), tostring(self.debugMode)))
 end
 
-function NPCSettings:save()
-    local xmlPath = self:getSavegameXmlPath()
-    if not xmlPath then return end
+--- Save settings to XML file.
+-- Called from FSCareerMissionInfo.saveToXMLFile hook.
+-- Settings take effect immediately in memory; this persists them to disk.
+-- @param missionInfo  Mission info containing savegameDirectory
+function NPCSettings:saveToXMLFile(missionInfo)
+    local savegameDirectory = missionInfo and missionInfo.savegameDirectory
+    if not savegameDirectory then return end
 
-    if g_fileIO and g_fileIO.createFolder and not g_fileIO:fileExists(g_currentMission.missionInfo.savegameDirectory) then
-        g_fileIO:createFolder(g_currentMission.missionInfo.savegameDirectory)
-    end
+    local xmlPath = savegameDirectory .. "/npc_favor_settings.xml"
 
     local xml = XMLFile.create("npc_settings", xmlPath, "NPCSettings")
     if not xml then return end
@@ -245,6 +253,7 @@ function NPCSettings:save()
     setBool("showNotifications", self.showNotifications)
     setBool("showFavorList", self.showFavorList)
     setBool("showRelationshipBars", self.showRelationshipBars)
+    setBool("showMapMarkers", self.showMapMarkers)
     setBool("showNPCPaths", self.showNPCPaths)
     setInt("nameDisplayDistance", self.nameDisplayDistance)
     setInt("notificationDuration", self.notificationDuration)

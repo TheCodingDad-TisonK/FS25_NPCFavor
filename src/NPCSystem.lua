@@ -254,7 +254,6 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.lastSaveTime = 0
     self.saveInterval = 30000
     self.savedNPCData = nil
-    self.lastTeleportTime = 0  -- Track last player teleport for UI stabilization
 
     -- Town reputation (0-100 scale, average of all NPC relationships weighted by interaction frequency)
     self.townReputation = 50
@@ -2413,12 +2412,6 @@ function NPCSystem:findNearbyBuildings(centerX, centerZ, radius)
     return buildings
 end
 
-function NPCSystem:wasRecentlyTeleported()
-    local currentTime = self:getCurrentGameTime()
-    -- Consider "recent" as within last 0.5 game-time minutes (30 seconds real time)
-    return (currentTime - self.lastTeleportTime) < 0.5
-end
-
 --- Relocate only HOMELESS NPCs that are truly lost (no home, no field, drifted far).
 -- NPCs with assigned homes or fields live their lives at those locations — they are
 -- NOT teleported to follow the player. This creates a realistic spread-out world
@@ -3236,6 +3229,16 @@ function NPCSystem:_doSaveToXMLFile(missionInfo)
 
     xmlFile:save()
     xmlFile:delete()
+
+    -- Save settings to the same directory (tempsavegame during game save)
+    if self.settings and self.settings.saveToXMLFile then
+        local ok, settingsErr = pcall(function()
+            self.settings:saveToXMLFile(missionInfo)
+        end)
+        if not ok then
+            print(string.format("[NPC Favor] Settings save error (non-fatal): %s", tostring(settingsErr)))
+        end
+    end
 
     if self.settings.debugMode then
         print(string.format("[NPC Favor] Saved %d NPCs to %s", npcIndex, filePath))

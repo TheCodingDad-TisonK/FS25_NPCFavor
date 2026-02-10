@@ -1,6 +1,6 @@
 # NPC Favor -- Settings Reference
 
-**Mod version:** 1.2.0.0
+**Mod version:** 1.2.2.4
 **Settings file:** `<savegame>/npc_favor_settings.xml`
 **XML root tag:** `NPCSettings` (used by `NPCSettings.lua`)
 
@@ -27,6 +27,7 @@ All settings are persisted per-savegame and validated on load. Numeric values ar
 | Show Notifications | `showNotifications` | bool | `true` | -- | Show NPC notification messages on screen |
 | Show Favor List | `showFavorList` | bool | `true` | -- | Display the active favor list HUD element |
 | Show Relationship Bars | `showRelationshipBars` | bool | `true` | -- | Show relationship progress bars near NPCs |
+| Show Map Markers | `showMapMarkers` | bool | `true` | -- | Show NPC icons on the map. Toggling off removes all NPC hotspots immediately |
 | Show NPC Paths | `showNPCPaths` | bool | `false` | -- | Render NPC movement paths (visual debug aid) |
 | Name Display Distance | `nameDisplayDistance` | int | `50` | 10 -- 500 | Maximum distance in meters at which NPC names are visible |
 | Notification Duration | `notificationDuration` | int | `4000` | 1000 -- 10000 | Duration in milliseconds that notifications remain on screen |
@@ -110,16 +111,25 @@ All settings are persisted per-savegame and validated on load. Numeric values ar
 
 ## In-Game Settings UI
 
-The following settings are exposed in the FS25 general settings page via toggle/number widgets:
+The following 13 settings are exposed in the FS25 general settings page under the **NPC Favor System** header:
 
-- **Enable NPC System** (toggle)
-- **Show NPC Names** (toggle)
-- **Show Notifications** (toggle)
-- **Debug Mode** (toggle)
-- **Enable Favors** (toggle)
-- **Max NPC Count** (number, 1--16)
+| Setting | Widget | Notes |
+|---|---|---|
+| Enable NPC System | Toggle (Yes/No) | Master on/off for all NPCs |
+| Max NPC Count | Dropdown (1--16) | |
+| Show NPC Names | Toggle (Yes/No) | |
+| Show Notifications | Toggle (Yes/No) | |
+| Show Favor List | Toggle (Yes/No) | *Added in v1.2.2.4* |
+| Show Relationship Bars | Toggle (Yes/No) | *Added in v1.2.2.4* |
+| Show Map Markers | Toggle (Yes/No) | Immediately creates/removes map hotspots. *Added in v1.2.2.4* |
+| Enable Favors | Toggle (Yes/No) | |
+| Enable Gifts | Toggle (Yes/No) | *Added in v1.2.2.4* |
+| Allow Multiple Favors | Toggle (Yes/No) | *Added in v1.2.2.4* |
+| Max Active Favors | Dropdown (1, 2, 3, 5, 8, 10) | *Added in v1.2.2.4* |
+| Relationship Decay | Toggle (Yes/No) | *Added in v1.2.2.4* |
+| Debug Mode | Toggle (Yes/No) | |
 
-A **Reset NPC System** button (bound to `MENU_EXTRA_1`) resets all settings to their defaults.
+Settings update in-memory immediately and persist when the game is saved. They are written to `npc_favor_settings.xml` inside the savegame directory during the `FSCareerMissionInfo.saveToXMLFile` hook (matching the UsedPlus save pattern). In multiplayer, changes broadcast to all clients via `NPCSettingsSyncEvent`.
 
 All other settings must be edited directly in the `npc_favor_settings.xml` file within the savegame directory while the game is not running, or via console if applicable.
 

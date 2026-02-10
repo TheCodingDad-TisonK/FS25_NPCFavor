@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
     <author>TisonK</author>
-    <version>1.2.2.3</version>
+    <version>1.2.2.4</version>
     <modName>FS25_NPCFavor</modName>
     <title>
         <en>NPC Favor - Living Neighborhood</en>
@@ -260,6 +260,235 @@
             <ru>Показывать отладочную информацию и пути NPC</ru>
         </text>
         
+        <!-- Section Headers: Display, Gameplay, Debug -->
+        <text name="npc_display_section">
+            <en>Display</en>
+            <de>Anzeige</de>
+            <fr>Affichage</fr>
+            <pl>Wyświetlanie</pl>
+            <es>Pantalla</es>
+            <it>Visualizzazione</it>
+            <cz>Zobrazení</cz>
+            <br>Exibição</br>
+            <uk>Відображення</uk>
+            <ru>Отображение</ru>
+        </text>
+
+        <text name="npc_gameplay_section">
+            <en>Gameplay</en>
+            <de>Spielmechanik</de>
+            <fr>Jouabilité</fr>
+            <pl>Rozgrywka</pl>
+            <es>Jugabilidad</es>
+            <it>Giocabilità</it>
+            <cz>Hratelnost</cz>
+            <br>Jogabilidade</br>
+            <uk>Геймплей</uk>
+            <ru>Геймплей</ru>
+        </text>
+
+        <text name="npc_debug_section">
+            <en>Debug</en>
+            <de>Debug</de>
+            <fr>Débogage</fr>
+            <pl>Debugowanie</pl>
+            <es>Depuración</es>
+            <it>Debug</it>
+            <cz>Ladění</cz>
+            <br>Depuração</br>
+            <uk>Налагодження</uk>
+            <ru>Отладка</ru>
+        </text>
+
+        <!-- Show Favor List -->
+        <text name="npc_show_favor_list_short">
+            <en>Show Favor List</en>
+            <de>Gefallenliste anzeigen</de>
+            <fr>Afficher liste faveurs</fr>
+            <pl>Pokazuj listę przysług</pl>
+            <es>Mostrar lista favores</es>
+            <it>Mostra lista favori</it>
+            <cz>Zobrazit seznam laskavostí</cz>
+            <br>Mostrar lista favores</br>
+            <uk>Показувати список послуг</uk>
+            <ru>Показывать список услуг</ru>
+        </text>
+
+        <text name="npc_show_favor_list_long">
+            <en>Show the active favor list on the HUD</en>
+            <de>Aktive Gefallenliste auf dem HUD anzeigen</de>
+            <fr>Afficher la liste de faveurs actives sur le HUD</fr>
+            <pl>Pokaż listę aktywnych przysług na HUD</pl>
+            <es>Mostrar la lista de favores activos en el HUD</es>
+            <it>Mostra la lista favori attivi sul HUD</it>
+            <cz>Zobrazit seznam aktivních laskavostí na HUD</cz>
+            <br>Mostrar lista de favores ativos no HUD</br>
+            <uk>Показувати список активних послуг на HUD</uk>
+            <ru>Показывать список активных услуг на HUD</ru>
+        </text>
+
+        <!-- Show Relationship Bars -->
+        <text name="npc_show_rel_bars_short">
+            <en>Show Relationship Bars</en>
+            <de>Beziehungsbalken anzeigen</de>
+            <fr>Afficher barres relation</fr>
+            <pl>Pokazuj paski relacji</pl>
+            <es>Mostrar barras relación</es>
+            <it>Mostra barre relazione</it>
+            <cz>Zobrazit ukazatele vztahů</cz>
+            <br>Mostrar barras relação</br>
+            <uk>Показувати смужки відносин</uk>
+            <ru>Показывать полосы отношений</ru>
+        </text>
+
+        <text name="npc_show_rel_bars_long">
+            <en>Show relationship progress bars when talking to NPCs</en>
+            <de>Beziehungsfortschrittsbalken beim Gespräch mit NPCs anzeigen</de>
+            <fr>Afficher les barres de progression des relations lors des discussions avec les PNJ</fr>
+            <pl>Pokaż paski postępu relacji podczas rozmów z NPC</pl>
+            <es>Mostrar barras de progreso de relación al hablar con NPC</es>
+            <it>Mostra barre progresso relazione quando parli con NPC</it>
+            <cz>Zobrazit ukazatele průběhu vztahů při rozhovoru s NPC</cz>
+            <br>Mostrar barras de progresso de relação ao falar com NPC</br>
+            <uk>Показувати смужки прогресу відносин під час розмови з NPC</uk>
+            <ru>Показывать полосы прогресса отношений при разговоре с NPC</ru>
+        </text>
+
+        <!-- Show Map Markers -->
+        <text name="npc_show_map_markers_short">
+            <en>Show Map Markers</en>
+            <de>Kartenmarkierungen anzeigen</de>
+            <fr>Afficher marqueurs carte</fr>
+            <pl>Pokazuj znaczniki mapy</pl>
+            <es>Mostrar marcadores mapa</es>
+            <it>Mostra marcatori mappa</it>
+            <cz>Zobrazit značky na mapě</cz>
+            <br>Mostrar marcadores mapa</br>
+            <uk>Показувати маркери на карті</uk>
+            <ru>Показывать маркеры на карте</ru>
+        </text>
+
+        <text name="npc_show_map_markers_long">
+            <en>Show NPC location markers on the map</en>
+            <de>NPC-Standortmarkierungen auf der Karte anzeigen</de>
+            <fr>Afficher les marqueurs de position des PNJ sur la carte</fr>
+            <pl>Pokaż znaczniki lokalizacji NPC na mapie</pl>
+            <es>Mostrar marcadores de ubicación NPC en el mapa</es>
+            <it>Mostra marcatori posizione NPC sulla mappa</it>
+            <cz>Zobrazit značky polohy NPC na mapě</cz>
+            <br>Mostrar marcadores de localização NPC no mapa</br>
+            <uk>Показувати маркери розташування NPC на карті</uk>
+            <ru>Показывать маркеры местоположения NPC на карте</ru>
+        </text>
+
+        <!-- Enable Gifts -->
+        <text name="npc_enable_gifts_short">
+            <en>Enable Gifts</en>
+            <de>Geschenke aktivieren</de>
+            <fr>Activer cadeaux</fr>
+            <pl>Włącz prezenty</pl>
+            <es>Activar regalos</es>
+            <it>Attiva regali</it>
+            <cz>Povolit dárky</cz>
+            <br>Ativar presentes</br>
+            <uk>Увімкнути подарунки</uk>
+            <ru>Включить подарки</ru>
+        </text>
+
+        <text name="npc_enable_gifts_long">
+            <en>Allow giving gifts to NPCs to improve relationships</en>
+            <de>Geschenke an NPCs erlauben um Beziehungen zu verbessern</de>
+            <fr>Permettre d'offrir des cadeaux aux PNJ pour améliorer les relations</fr>
+            <pl>Pozwól na dawanie prezentów NPC aby poprawić relacje</pl>
+            <es>Permitir dar regalos a NPC para mejorar relaciones</es>
+            <it>Permettere di fare regali ai NPC per migliorare le relazioni</it>
+            <cz>Povolit dávání dárků NPC pro zlepšení vztahů</cz>
+            <br>Permitir dar presentes a NPC para melhorar relações</br>
+            <uk>Дозволити дарувати подарунки NPC для покращення відносин</uk>
+            <ru>Позволить дарить подарки NPC для улучшения отношений</ru>
+        </text>
+
+        <!-- Allow Multiple Favors -->
+        <text name="npc_allow_multi_favors_short">
+            <en>Allow Multiple Favors</en>
+            <de>Mehrere Gefallen erlauben</de>
+            <fr>Autoriser faveurs multiples</fr>
+            <pl>Pozwól na wiele przysług</pl>
+            <es>Permitir favores múltiples</es>
+            <it>Consenti favori multipli</it>
+            <cz>Povolit více laskavostí</cz>
+            <br>Permitir favores múltiplos</br>
+            <uk>Дозволити кілька послуг</uk>
+            <ru>Разрешить несколько услуг</ru>
+        </text>
+
+        <text name="npc_allow_multi_favors_long">
+            <en>Allow accepting multiple favors at the same time</en>
+            <de>Mehrere Gefallen gleichzeitig annehmen erlauben</de>
+            <fr>Permettre d'accepter plusieurs faveurs en même temps</fr>
+            <pl>Pozwól na przyjmowanie wielu przysług jednocześnie</pl>
+            <es>Permitir aceptar múltiples favores al mismo tiempo</es>
+            <it>Permettere di accettare più favori contemporaneamente</it>
+            <cz>Povolit přijetí více laskavostí současně</cz>
+            <br>Permitir aceitar múltiplos favores ao mesmo tempo</br>
+            <uk>Дозволити приймати кілька послуг одночасно</uk>
+            <ru>Разрешить принимать несколько услуг одновременно</ru>
+        </text>
+
+        <!-- Max Active Favors -->
+        <text name="npc_max_active_favors_short">
+            <en>Max Active Favors</en>
+            <de>Max. aktive Gefallen</de>
+            <fr>Max faveurs actives</fr>
+            <pl>Maks. aktywnych przysług</pl>
+            <es>Máx. favores activos</es>
+            <it>Max favori attivi</it>
+            <cz>Max. aktivních laskavostí</cz>
+            <br>Máx. favores ativos</br>
+            <uk>Макс. активних послуг</uk>
+            <ru>Макс. активных услуг</ru>
+        </text>
+
+        <text name="npc_max_active_favors_long">
+            <en>Maximum number of favors you can have active at once</en>
+            <de>Maximale Anzahl gleichzeitig aktiver Gefallen</de>
+            <fr>Nombre maximum de faveurs actives simultanément</fr>
+            <pl>Maksymalna liczba jednoczesnych aktywnych przysług</pl>
+            <es>Número máximo de favores activos simultáneamente</es>
+            <it>Numero massimo di favori attivi contemporaneamente</it>
+            <cz>Maximální počet současně aktivních laskavostí</cz>
+            <br>Número máximo de favores ativos simultaneamente</br>
+            <uk>Максимальна кількість одночасно активних послуг</uk>
+            <ru>Максимальное количество одновременно активных услуг</ru>
+        </text>
+
+        <!-- Relationship Decay -->
+        <text name="npc_rel_decay_short">
+            <en>Relationship Decay</en>
+            <de>Beziehungsverfall</de>
+            <fr>Déclin relation</fr>
+            <pl>Zanik relacji</pl>
+            <es>Deterioro relación</es>
+            <it>Decadimento relazione</it>
+            <cz>Úpadek vztahů</cz>
+            <br>Deterioração relação</br>
+            <uk>Занепад відносин</uk>
+            <ru>Угасание отношений</ru>
+        </text>
+
+        <text name="npc_rel_decay_long">
+            <en>Relationships slowly decrease over time if not maintained</en>
+            <de>Beziehungen nehmen langsam ab wenn sie nicht gepflegt werden</de>
+            <fr>Les relations diminuent lentement si elles ne sont pas entretenues</fr>
+            <pl>Relacje powoli słabną jeśli nie są podtrzymywane</pl>
+            <es>Las relaciones disminuyen lentamente si no se mantienen</es>
+            <it>Le relazioni diminuiscono lentamente se non mantenute</it>
+            <cz>Vztahy se pomalu zhoršují pokud nejsou udržovány</cz>
+            <br>Relações diminuem lentamente se não forem mantidas</br>
+            <uk>Відносини повільно погіршуються якщо їх не підтримувати</uk>
+            <ru>Отношения медленно ухудшаются если их не поддерживать</ru>
+        </text>
+
         <text name="npc_reset">
             <en>Reset NPC System</en>
             <de>NPC-System zurücksetzen</de>
@@ -1621,18 +1850,7 @@
             <ru>Просмотр</ru>
         </text>
 
-        <text name="button_cancel">
-            <en>Cancel</en>
-            <de>Abbrechen</de>
-            <fr>Annuler</fr>
-            <pl>Anuluj</pl>
-            <es>Cancelar</es>
-            <it>Annulla</it>
-            <cz>Zrušit</cz>
-            <br>Cancelar</br>
-            <uk>Скасувати</uk>
-            <ru>Отменить</ru>
-        </text>
+        <!-- button_cancel provided by base game -->
 
         <text name="button_goto">
             <en>Go To</en>
@@ -1660,31 +1878,7 @@
             <ru>Завершить</ru>
         </text>
 
-        <text name="button_refresh">
-            <en>Refresh</en>
-            <de>Aktualisieren</de>
-            <fr>Actualiser</fr>
-            <pl>Odśwież</pl>
-            <es>Actualizar</es>
-            <it>Aggiorna</it>
-            <cz>Obnovit</cz>
-            <br>Atualizar</br>
-            <uk>Оновити</uk>
-            <ru>Обновить</ru>
-        </text>
-
-        <text name="button_close">
-            <en>Close</en>
-            <de>Schließen</de>
-            <fr>Fermer</fr>
-            <pl>Zamknij</pl>
-            <es>Cerrar</es>
-            <it>Chiudi</it>
-            <cz>Zavřít</cz>
-            <br>Fechar</br>
-            <uk>Закрити</uk>
-            <ru>Закрыть</ru>
-        </text>
+        <!-- button_refresh and button_close provided by base game -->
 
         <!-- Input action labels -->
         <text name="input_FAVOR_MENU">
