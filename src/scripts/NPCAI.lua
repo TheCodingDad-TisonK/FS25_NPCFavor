@@ -1398,14 +1398,43 @@ function NPCAI:updateWalkingState(npc, dt)
     end
 end
 
---- Initialize field work traversal: generate waypoints across the assigned field.
+--- Initialize field work traversal using NPCFieldWork module.
+-- Delegates to NPCFieldWork:getWorkPattern() for boustrophedon rows,
+-- personality-driven patterns, and multi-worker coordination.
+-- Falls back to legacy implementation if NPCFieldWork unavailable.
+-- @param npc  NPC data table with assignedField
+function NPCAI:initFieldWork(npc)
+    if not npc.assignedField or not npc.assignedField.center then return end
+
+    -- Try new NPCFieldWork module first
+    local fieldWork = self.npcSystem and self.npcSystem.fieldWork
+    if fieldWork then
+        local waypoints, slot = fieldWork:getWorkPattern(npc, npc.assignedField)
+        if waypoints and #waypoints > 0 then
+            npc.fieldWorkWaypoints = waypoints
+            npc.fieldWorkPath = waypoints  -- backward compat for updateWorkingState
+            npc.fieldWorkIndex = 1
+            npc.workTimer = 0
+            npc.fieldWorkSlot = slot
+            npc.fieldWorkPattern = "boustrophedon"
+            npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
+            npc.movementSpeed = 1.8  -- field work speed
+            return
+        end
+    end
+
+    -- Fallback to legacy
+    self:initFieldWorkLegacy(npc)
+end
+
+--- Legacy field work init (fallback).
 -- 4 work patterns selected by personality:
 --   1. Row traversal (hardworking default) — walk east-west rows
 --   2. Spiral inward (generous) — edges to center
 --   3. Perimeter walk (grumpy) — fence inspection
 --   4. Spot check (lazy/social) — random inspection points
 -- @param npc  NPC data table with assignedField
-function NPCAI:initFieldWork(npc)
+function NPCAI:initFieldWorkLegacy(npc)
     if not npc.assignedField or not npc.assignedField.center then return end
 
     local cx = npc.assignedField.center.x
@@ -1562,13 +1591,36 @@ function NPCAI:updateWorkingState(npc, dt)
         local nextAction = math.random()
         if nextAction < 0.3 then
             -- Take a break (idle near field) — tractor stays parked where it is
+            -- Release worker slot so another NPC can take the field
+            local fieldWork = self.npcSystem and self.npcSystem.fieldWork
+            if fieldWork and npc._fieldWorkFieldId then
+                local npcId = npc.uniqueId or npc.id or npc.name
+                fieldWork:releaseWorker(npc._fieldWorkFieldId, npcId)
+                npc._fieldWorkFieldId = nil
+            end
             npc.fieldWorkPath = nil
+            npc.fieldWorkWaypoints = nil
             npc.fieldWorkIndex = nil
+            npc.fieldWorkSlot = nil
             self:setState(npc, self.STATES.IDLE)
         else
             -- Continue working (start new row pattern from current position)
             self:initFieldWork(npc)
         end
+    end
+end
+
+--- Release field work worker slot for an NPC (helper for state transitions).
+-- Safe to call even if NPC wasn't working a field.
+-- @param npc  NPC data table
+function NPCAI:_releaseFieldWorkSlot(npc)
+    local fieldWork = self.npcSystem and self.npcSystem.fieldWork
+    if fieldWork and npc._fieldWorkFieldId then
+        local npcId = npc.uniqueId or npc.id or npc.name
+        fieldWork:releaseWorker(npc._fieldWorkFieldId, npcId)
+        npc._fieldWorkFieldId = nil
+        npc.fieldWorkWaypoints = nil
+        npc.fieldWorkSlot = nil
     end
 end
 
@@ -1967,6 +2019,9 @@ end
 -- on distance and profession. Transitions to RESTING if already close to home.
 -- @param npc  NPC data table (requires npc.homePosition)
 function NPCAI:goHome(npc)
+    -- Release field work slot if NPC was working a field
+    self:_releaseFieldWorkSlot(npc)
+
     if not npc.homePosition then
         self:setState(npc, self.STATES.IDLE)
         return
@@ -2637,11 +2692,27 @@ function NPCAI:startEventBehavior(npc, eventType, eventData)
         }
 
     elseif eventType == "harvest" then
-        -- Walk to field, then walk in rows
+        -- Walk to field, then walk in rows using NPCFieldWork if available
         npc.currentAction = "harvesting"
         local field = eventData.field
         if field and field.center then
-            self:walkFieldRows(npc, field, eventData.rowIndex or 0)
+            local fieldWork = self.npcSystem and self.npcSystem.fieldWork
+            if fieldWork then
+                local waypoints, slot = fieldWork:getWorkPattern(npc, field)
+                if waypoints and #waypoints > 0 then
+                    npc.fieldWorkWaypoints = waypoints
+                    npc.fieldWorkPath = waypoints
+                    npc.fieldWorkIndex = 1
+                    npc.fieldWorkSlot = slot
+                    npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
+                    npc.movementSpeed = 1.8
+                    self:setState(npc, self.STATES.WORKING)
+                else
+                    self:walkFieldRows(npc, field, eventData.rowIndex or 0)
+                end
+            else
+                self:walkFieldRows(npc, field, eventData.rowIndex or 0)
+            end
         else
             -- Fallback: just set idle
             self:setState(npc, self.STATES.IDLE)
@@ -2732,7 +2803,8 @@ function NPCAI:startEventBehavior(npc, eventType, eventData)
     end
 end
 
---- Generate a zigzag path across a field for harvest behavior.
+--- DEPRECATED: Use NPCFieldWork:getWorkPattern() instead.
+-- Generate a zigzag path across a field for harvest behavior.
 -- NPCs walk in parallel rows across the field. Each NPC gets a
 -- lateral offset based on their rowIndex to simulate parallel work.
 -- @param npc       NPC data table

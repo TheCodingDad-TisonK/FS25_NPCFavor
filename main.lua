@@ -76,6 +76,7 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCFavorSystem.lua")
     source(modDirectory .. "src/scripts/NPCEntity.lua")
     source(modDirectory .. "src/scripts/NPCAI.lua")
+    source(modDirectory .. "src/scripts/NPCFieldWork.lua")
     source(modDirectory .. "src/scripts/NPCScheduler.lua")
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
 

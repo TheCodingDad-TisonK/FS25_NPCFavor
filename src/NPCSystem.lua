@@ -224,6 +224,7 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.interactionUI = NPCInteractionUI.new(self)
     self.settingsIntegration = NPCSettingsIntegration.new(self)
 
+    self.fieldWork = NPCFieldWork.new()
     self.gui = NPCFavorGUI.new(self)
 
     self.dailyEvents = {}
