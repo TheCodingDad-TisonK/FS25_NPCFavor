@@ -4,7 +4,7 @@
 -- [x] 3D model loading via g_i3DManager (shared i3d, clone, delete)
 -- [x] Per-NPC color tinting via colorScale shader parameter
 -- [x] Debug node fallback when models are unavailable (text above head)
--- [ ] Map hotspots via MapHotspot API (code exists but hotspots do not appear in-game)
+-- [x] Map hotspots via PlaceableHotspot API (fixed: was using abstract MapHotspot base class)
 -- [x] LOD-based batch updates (closer NPCs update more frequently)
 -- [x] Visibility culling based on player distance (maxVisibleDistance)
 -- [x] Deterministic appearance generation (scale, color) via appearanceSeed
@@ -80,7 +80,7 @@
 --   - 3D model loading via g_i3DManager (shared i3d, clone, delete)
 --   - Per-NPC color tinting via colorScale shader parameter
 --   - Debug node fallback when models are unavailable
---   - Map hotspots via FS25 MapHotspot API
+--   - Map hotspots via FS25 PlaceableHotspot API
 --   - LOD-based batch updates (closer NPCs update more frequently)
 --   - Visibility culling based on player distance
 --
@@ -406,7 +406,7 @@ NPCEntity.MALE_OUTFITS = {
         top = {name = "denimJacket", color = 1}, footwear = {name = "workBoots1", color = 1},
         hairStyle = {name = "hair06", color = 18}, beard = {name = "stubble_head01", color = 18}
     },
-    { -- Male 01C: t-shirt casual (medium skin)
+    { -- Male 01B: t-shirt casual (medium skin)
         face = {name = "head01", color = 2}, bottom = {name = "cargo", color = 2},
         top = {name = "tShirt01", color = 27}, footwear = {name = "eltenMaddoxLowYellow", color = 1},
         hairStyle = {name = "hair08", color = 5}, beard = {name = "horseshoe_head01", color = 5}
@@ -421,31 +421,56 @@ NPCEntity.MALE_OUTFITS = {
         footwear = {name = "workBoots1", color = 1},
         hairStyle = {name = "hair13", color = 24}, beard = {name = "walrusXL_head02", color = 24}
     },
-    { -- Male 02C: collared shirt office (dark skin)
+    { -- Male 02C: collared shirt smart-casual (dark skin)
         face = {name = "head02", color = 4}, bottom = {name = "chinos", color = 4},
         top = {name = "collaredShirt", color = 1}, glasses = {name = "reading", color = 1},
         footwear = {name = "chelsea02", color = 1},
         hairStyle = {name = "hair12", color = 16}, beard = {name = "trimmedBeard_head02", color = 16}
     },
-    { -- Male 04: vest rugged (tanned skin)
+    { -- Male 04A: vest rugged (tanned skin)
         face = {name = "head04", color = 2}, bottom = {name = "leather", color = 4},
         top = {name = "topVest", color = 1}, footwear = {name = "workBoots2", color = 3},
         hairStyle = {name = "hair04", color = 18}
     },
-    { -- Male 05: pullover casual (medium skin)
+    { -- Male 05A: pullover casual (medium skin)
         face = {name = "head05", color = 3}, bottom = {name = "jeans", color = 9},
         top = {name = "zipNeckPullover", color = 68}, footwear = {name = "sneakers", color = 9},
         hairStyle = {name = "hair05", color = 16}, beard = {name = "goatee02_head05", color = 16}
+    },
+    { -- Male 01C: farm jacket work (light skin)
+        face = {name = "head01", color = 1}, bottom = {name = "jeans", color = 3},
+        top = {name = "topFarmJacketM", color = 1}, footwear = {name = "workBoots2", color = 1},
+        hairStyle = {name = "hair04", color = 24}, beard = {name = "stubble_head01", color = 24}
+    },
+    { -- Male 04B: cargo pants fieldhand (olive skin)
+        face = {name = "head04", color = 3}, bottom = {name = "cargo", color = 5},
+        top = {name = "tShirt01", color = 12}, footwear = {name = "workBoots1", color = 1},
+        hairStyle = {name = "hair06", color = 5}
+    },
+    { -- Male 05B: flannel rancher (medium skin)
+        face = {name = "head05", color = 2}, bottom = {name = "jeans", color = 1},
+        top = {name = "collaredShirt", color = 8}, footwear = {name = "workBoots2", color = 2},
+        hairStyle = {name = "hair08", color = 18}, beard = {name = "goatee02_head05", color = 18}
+    },
+    { -- Male 02D: jeans and pullover neighbor (light skin)
+        face = {name = "head02", color = 1}, bottom = {name = "jeans", color = 8},
+        top = {name = "zipNeckPullover", color = 22}, footwear = {name = "chelsea01", color = 1},
+        hairStyle = {name = "hair13", color = 12}, beard = {name = "trimmedBeard_head02", color = 12}
+    },
+    { -- Male 01D: work vest outdoors (tanned skin)
+        face = {name = "head01", color = 2}, bottom = {name = "cargo", color = 3},
+        top = {name = "topVest", color = 3}, footwear = {name = "eltenMaddoxLowYellow", color = 1},
+        hairStyle = {name = "hair05", color = 5}, beard = {name = "horseshoe_head01", color = 5}
     }
 }
 
 NPCEntity.FEMALE_OUTFITS = {
-    { -- Female 01B: glasses pullover (light skin)
+    { -- Female 01A: glasses pullover (light skin)
         face = {name = "head01", color = 1}, bottom = {name = "jeans", color = 8},
         top = {name = "zipNeckPullover", color = 22}, glasses = {name = "classic", color = 1},
         footwear = {name = "sneakers", color = 9}, hairStyle = {name = "hair12", color = 12}
     },
-    { -- Female 01C: farm jacket (medium skin)
+    { -- Female 01B: farm jacket (medium skin)
         face = {name = "head01", color = 2}, bottom = {name = "chinos", color = 2},
         top = {name = "topFarmJacketM", color = 2}, footwear = {name = "chelsea01", color = 1},
         hairStyle = {name = "hair03", color = 6}
@@ -455,7 +480,7 @@ NPCEntity.FEMALE_OUTFITS = {
         top = {name = "tankTop", color = 1}, footwear = {name = "sportSneakers", color = 8},
         hairStyle = {name = "hair16", color = 2}
     },
-    { -- Female 02B: windbreaker shorts (olive skin)
+    { -- Female 02B: windbreaker casual (olive skin)
         face = {name = "head02", color = 3}, bottom = {name = "jeanShorts", color = 5},
         top = {name = "windbreaker", color = 9}, footwear = {name = "laceUpSneaker", color = 1},
         hairStyle = {name = "hair10", color = 15}
@@ -469,6 +494,35 @@ NPCEntity.FEMALE_OUTFITS = {
         face = {name = "head06", color = 1}, bottom = {name = "chinos", color = 7},
         top = {name = "topShirtLongSleeve", color = 12}, footwear = {name = "sneakers", color = 68},
         hairStyle = {name = "hair13", color = 18}
+    },
+    { -- Female 01C: denim jacket fieldworker (light skin)
+        face = {name = "head01", color = 1}, bottom = {name = "jeans", color = 5},
+        top = {name = "denimJacket", color = 1}, footwear = {name = "workBoots1", color = 1},
+        hairStyle = {name = "hair06", color = 24}
+    },
+    { -- Female 02C: pullover smart (medium skin)
+        face = {name = "head02", color = 2}, bottom = {name = "jeans", color = 3},
+        top = {name = "zipNeckPullover", color = 68}, glasses = {name = "reading", color = 1},
+        footwear = {name = "chelsea01", color = 1}, hairStyle = {name = "hair03", color = 16}
+    },
+    { -- Female 04B: vest outdoors (olive skin)
+        face = {name = "head04", color = 3}, bottom = {name = "cargo", color = 2},
+        top = {name = "topVest", color = 1}, footwear = {name = "workBoots2", color = 3},
+        hairStyle = {name = "hair10", color = 5}
+    },
+    { -- Female 06B: collared shirt neighbor (tanned skin)
+        face = {name = "head06", color = 2}, bottom = {name = "chinos", color = 1},
+        top = {name = "collaredShirt", color = 5}, footwear = {name = "sneakers", color = 9},
+        hairStyle = {name = "hair16", color = 12}
+    },
+    { -- Female 01D: t-shirt casual ranch (medium skin)
+        face = {name = "head01", color = 2}, bottom = {name = "jeans", color = 1},
+        top = {name = "tShirt01", color = 22}, footwear = {name = "laceUpSneaker", color = 1},
+        hairStyle = {name = "hair12", color = 18}
+    },
+    { -- Female 02D: mechanic overalls (dark skin)
+        face = {name = "head02", color = 4}, onepiece = {name = "mechanic", color = 2},
+        footwear = {name = "workBoots1", color = 1}, hairStyle = {name = "hair16", color = 2}
     }
 }
 
@@ -650,268 +704,192 @@ function NPCEntity:loadAnimatedCharacterDirect(entity, npc)
                         end)
 
                         -- =====================================================
-                        -- DEEP DIAGNOSTIC: style.configs inner structure
+                        -- Helper: Apply an outfit table to a style using correct
+                        -- PlayerStyleConfig API (getItemNameIndex + selectedItemIndex)
                         -- =====================================================
-                        if entity.id <= 2 then
-                            print("[NPCEntity] ========== STYLE DUMP for entity #" .. entity.id .. " ==========")
-
-                            -- Dump top-level style keys (type only, not full contents)
-                            for k, v in pairs(style) do
-                                if type(v) == "table" then
-                                    local count = 0
-                                    for _ in pairs(v) do count = count + 1 end
-                                    print("  style." .. tostring(k) .. " = table(" .. count .. " entries)")
-                                else
-                                    print("  style." .. tostring(k) .. " = " .. tostring(v) .. " (" .. type(v) .. ")")
-                                end
+                        local function applyOutfitToStyle(targetStyle, outfit, entityId)
+                            if not outfit or not targetStyle.configs or type(targetStyle.configs) ~= "table" then
+                                return false
                             end
 
-                            -- Deep dump: style.configs["face"] inner structure
-                            if style.configs and type(style.configs) == "table" then
-                                local faceConfig = style.configs["face"]
-                                if faceConfig then
-                                    print("[NPCEntity] DEEP DUMP: style.configs['face'] structure:")
-                                    for ck, cv in pairs(faceConfig) do
-                                        if type(cv) == "table" then
-                                            local subCount = 0
-                                            for _ in pairs(cv) do subCount = subCount + 1 end
-                                            print("  face." .. tostring(ck) .. " = table(" .. subCount .. " entries)")
-                                            -- If it looks like a list of items, dump first 2
-                                            local idx = 0
-                                            for ik, iv in pairs(cv) do
-                                                if idx < 2 then
-                                                    if type(iv) == "table" then
-                                                        local itemStr = ""
-                                                        for iik, iiv in pairs(iv) do
-                                                            itemStr = itemStr .. tostring(iik) .. "=" .. tostring(iiv) .. " "
-                                                        end
-                                                        print("    face." .. tostring(ck) .. "[" .. tostring(ik) .. "] = {" .. itemStr .. "}")
-                                                    else
-                                                        print("    face." .. tostring(ck) .. "[" .. tostring(ik) .. "] = " .. tostring(iv) .. " (" .. type(iv) .. ")")
-                                                    end
-                                                end
-                                                idx = idx + 1
-                                            end
-                                        else
-                                            print("  face." .. tostring(ck) .. " = " .. tostring(cv) .. " (" .. type(cv) .. ")")
-                                        end
-                                    end
-                                else
-                                    print("[NPCEntity] DEEP DUMP: style.configs['face'] is nil!")
-                                end
-                            else
-                                print("[NPCEntity] DEEP DUMP: style.configs is nil or not a table!")
-                            end
+                            local slotsApplied = 0
+                            for slotName, slotData in pairs(outfit) do
+                                local config = targetStyle.configs[slotName]
+                                if config then
+                                    pcall(function()
+                                        local itemIdx = nil
 
-                            -- Dump what getPresetByName returns
-                            if style.getPresetByName then
-                                print("[NPCEntity] PRESET DUMP: style:getPresetByName('cropsFarmer'):")
-                                local okPreset, presetResult = pcall(function()
-                                    return style:getPresetByName("cropsFarmer")
-                                end)
-                                if okPreset and presetResult then
-                                    print("  preset type = " .. type(presetResult))
-                                    if type(presetResult) == "table" then
-                                        for pk, pv in pairs(presetResult) do
-                                            if type(pv) == "table" then
-                                                local subStr = ""
-                                                for spk, spv in pairs(pv) do
-                                                    subStr = subStr .. tostring(spk) .. "=" .. tostring(spv) .. " "
-                                                end
-                                                print("  preset." .. tostring(pk) .. " = {" .. subStr .. "}")
-                                            else
-                                                print("  preset." .. tostring(pk) .. " = " .. tostring(pv) .. " (" .. type(pv) .. ")")
+                                        -- Preferred: use getItemNameIndex API
+                                        if config.getItemNameIndex then
+                                            local okIdx, idx = pcall(function()
+                                                return config:getItemNameIndex(slotData.name)
+                                            end)
+                                            if okIdx and idx and idx > 0 then
+                                                itemIdx = idx
                                             end
                                         end
-                                        -- Check preset metatable
-                                        local pmt = getmetatable(presetResult)
-                                        if pmt then
-                                            print("  preset has metatable with keys:")
-                                            for pmk, pmv in pairs(pmt) do
-                                                print("    mt." .. tostring(pmk) .. " = " .. type(pmv))
-                                            end
-                                            if pmt.__index and type(pmt.__index) == "table" then
-                                                for pmk, pmv in pairs(pmt.__index) do
-                                                    print("    __index." .. tostring(pmk) .. " = " .. type(pmv))
+
+                                        -- Fallback: search itemsByName lookup table
+                                        if not itemIdx and config.itemsByName then
+                                            local item = config.itemsByName[slotData.name]
+                                            if item then
+                                                local okGI, gi = pcall(function()
+                                                    return config:getItemIndex(item)
+                                                end)
+                                                if okGI and gi and gi > 0 then
+                                                    itemIdx = gi
                                                 end
                                             end
                                         end
-                                    end
-                                elseif okPreset then
-                                    print("  preset returned nil")
-                                else
-                                    print("  preset call FAILED: " .. tostring(presetResult))
+
+                                        -- Last resort: iterate items array
+                                        if not itemIdx and config.items and type(config.items) == "table" then
+                                            for idx, item in pairs(config.items) do
+                                                if type(item) == "table" and (item.name == slotData.name or item.id == slotData.name) then
+                                                    itemIdx = idx
+                                                    break
+                                                end
+                                            end
+                                        end
+
+                                        -- Apply the found index
+                                        if itemIdx then
+                                            config.selectedItemIndex = itemIdx
+                                            if slotData.color then
+                                                config.selectedColorIndex = slotData.color
+                                            end
+                                            slotsApplied = slotsApplied + 1
+                                        end
+                                    end)
                                 end
-                            else
-                                print("[NPCEntity] PRESET DUMP: style.getPresetByName method not found!")
                             end
 
-                            print("[NPCEntity] ========== END STYLE DUMP ==========")
+                            if debug then
+                                print("[NPCEntity] applyOutfitToStyle: entity #" .. tostring(entityId)
+                                    .. " applied " .. slotsApplied .. "/" .. tostring(#outfit or "?") .. " slots")
+                            end
+                            return slotsApplied > 0
                         end
 
                         -- =====================================================
-                        -- APPROACH A: Apply a named preset from the game
-                        -- Presets reference playerM.xml meshes, so applyToStyle overrides
-                        -- female models with male meshes. Only apply presets to MALE NPCs.
-                        -- Female NPCs use their default appearance (the engine loads appropriate
-                        -- female clothing from playerF.xml automatically).
+                        -- Helper: Sanitize headgear/facegear to prevent helmets,
+                        -- bee veils, motorcycle gear, and double-hat stacking
+                        -- =====================================================
+                        local function sanitizeHeadgear(targetStyle)
+                            pcall(function()
+                                local hgConfig = targetStyle.configs and targetStyle.configs["headgear"]
+                                if hgConfig and hgConfig.items and hgConfig.selectedItemIndex then
+                                    local selected = hgConfig.items[hgConfig.selectedItemIndex]
+                                    if selected then
+                                        local name = (selected.name or ""):lower()
+                                        if name:find("helmet") or name:find("veil") or name:find("beekeeper")
+                                            or name:find("motorcycle") or name:find("riding") then
+                                            hgConfig.selectedItemIndex = 1  -- bare head
+                                            if debug then
+                                                print("[NPCEntity] sanitizeHeadgear: removed '" .. (selected.name or "?") .. "'")
+                                            end
+                                        end
+                                    end
+                                end
+
+                                -- Clear facegear (goggles, masks) to prevent double-hat appearance
+                                local fgConfig = targetStyle.configs and targetStyle.configs["facegear"]
+                                if fgConfig and fgConfig.selectedItemIndex and fgConfig.selectedItemIndex > 1 then
+                                    fgConfig.selectedItemIndex = 1
+                                end
+                            end)
+                        end
+
+                        -- =====================================================
+                        -- APPROACH A: Named presets for MALE NPCs
+                        -- Uses clone-and-modify pattern (game's own applyCustomWorkStyle approach):
+                        -- create temp style, copy config, apply preset, sanitize, then use.
+                        -- Only for male NPCs — presets reference playerM meshes.
                         -- =====================================================
                         local PRESET_POOL = {
                             "cropsFarmer", "mechanic", "forestry", "rancher",
-                            "livestockFarmer", "longHaulTrucker", "wetwork",
-                            "beekeeper", "horsebackRider", "DefaultClothes",
+                            "livestockFarmer", "DefaultClothes",
                         }
-                        -- Use entity.id directly for guaranteed variety (1,2,3... maps to different presets)
-                        local presetIndex = ((entity.id - 1) % #PRESET_POOL) + 1
-                        local presetName = PRESET_POOL[presetIndex]
                         local presetApplied = false
+                        -- The style that will ultimately be passed to loadFromStyleAsync
+                        local finalStyle = style
 
-                        -- Only apply presets to MALE NPCs — presets reference playerM meshes
-                        -- and override female models with male body parts.
-                        -- Female NPCs use their default playerF appearance (engine assigns
-                        -- appropriate feminine clothing automatically from playerF.xml).
                         if not isFemale and style.getPresetByName then
+                            -- Pick preset deterministically by entity ID
+                            local presetIndex = ((entity.id - 1) % #PRESET_POOL) + 1
+                            local presetName = PRESET_POOL[presetIndex]
+
                             local okP, preset = pcall(function()
                                 return style:getPresetByName(presetName)
                             end)
-                            if okP and preset then
-                                print("[NPCEntity] APPROACH A: Got preset '" .. presetName .. "' for MALE entity #" .. entity.id)
-                                local okApply = pcall(function()
-                                    if preset.applyToStyle then
-                                        preset:applyToStyle(style)
-                                        presetApplied = true
-                                        print("[NPCEntity] APPROACH A: preset:applyToStyle succeeded")
+                            if okP and preset and preset.applyToStyle then
+                                -- Clone-and-modify: work on a copy so we can sanitize before loading
+                                local tempStyle = PlayerStyle.new()
+                                pcall(function()
+                                    if tempStyle.copyConfigurationFrom then
+                                        tempStyle:copyConfigurationFrom(style)
+                                    elseif tempStyle.copyFrom then
+                                        tempStyle:copyFrom(style)
                                     end
                                 end)
-                                if not presetApplied then
-                                    pcall(function()
-                                        if style.copySelectionFrom then
-                                            style:copySelectionFrom(preset)
-                                            presetApplied = true
-                                            print("[NPCEntity] APPROACH A: copySelectionFrom succeeded")
-                                        end
-                                    end)
-                                end
-                                if not presetApplied then
-                                    print("[NPCEntity] APPROACH A: preset obtained but no apply method worked")
+
+                                local okApply = pcall(function()
+                                    preset:applyToStyle(tempStyle)
+                                end)
+
+                                if okApply then
+                                    -- Post-apply sanitization: remove helmets, veils, motorcycle gear
+                                    sanitizeHeadgear(tempStyle)
+                                    finalStyle = tempStyle
+                                    presetApplied = true
+                                    print("[NPCEntity] APPROACH A: preset '" .. presetName .. "' applied to MALE entity #" .. entity.id)
+                                else
+                                    print("[NPCEntity] APPROACH A: preset:applyToStyle failed for '" .. presetName .. "'")
                                 end
                             end
+
                         elseif isFemale then
-                            -- Female NPC: randomize config selections for variety.
-                            -- Can't use male presets (they load male meshes), so we directly
-                            -- randomize selectedItemIndex and selectedColorIndex on each config slot.
-                            if style.configs and type(style.configs) == "table" then
-                                local rng = entity.id * 7 + 3  -- deterministic seed per entity
-                                local slotsChanged = 0
-                                for slotName, config in pairs(style.configs) do
-                                    pcall(function()
-                                        if config.items and #config.items > 1 then
-                                            -- Randomize item selection
-                                            local itemIdx = (rng % #config.items) + 1
-                                            config.selectedItemIndex = itemIdx
-                                            rng = rng * 13 + 7  -- advance deterministic RNG
-                                            slotsChanged = slotsChanged + 1
-                                        end
-                                        -- Randomize color if items have color options
-                                        if config.items and config.selectedItemIndex then
-                                            local item = config.items[config.selectedItemIndex]
-                                            if item and item.possibleColors and #item.possibleColors > 0 then
-                                                config.selectedColorIndex = (rng % #item.possibleColors) + 1
-                                                rng = rng * 11 + 5
-                                            end
-                                        end
-                                    end)
-                                end
+                            -- =====================================================
+                            -- FEMALE NPCs: Apply curated outfit from FEMALE_OUTFITS
+                            -- Uses direct config manipulation with correct property names
+                            -- =====================================================
+                            local outfits = NPCEntity.FEMALE_OUTFITS
+                            local outfitIndex = ((entity.id - 1) % #outfits) + 1
+                            local outfit = outfits[outfitIndex]
+
+                            if applyOutfitToStyle(style, outfit, entity.id) then
+                                sanitizeHeadgear(style)
                                 presetApplied = true
-                                print("[NPCEntity] FEMALE entity #" .. entity.id .. " — randomized " .. slotsChanged .. " config slots")
+                                print("[NPCEntity] FEMALE entity #" .. entity.id .. " — applied curated outfit #" .. outfitIndex)
                             else
-                                presetApplied = true
-                                print("[NPCEntity] Skipping preset for FEMALE entity #" .. entity.id .. " — no configs to randomize")
+                                print("[NPCEntity] FEMALE entity #" .. entity.id .. " — curated outfit failed, using default")
+                                presetApplied = true  -- don't fall through to Approach B with random look
                             end
                         end
 
                         -- =====================================================
-                        -- APPROACH B: Modify configs directly (fallback)
+                        -- APPROACH B: Fallback outfit from tables (if preset failed)
+                        -- Uses correct selectedItemIndex/selectedColorIndex properties
+                        -- and getItemNameIndex() for proper item lookup
                         -- =====================================================
                         if not presetApplied then
                             local outfits = isFemale and NPCEntity.FEMALE_OUTFITS or NPCEntity.MALE_OUTFITS
-                            local outfitIndex = ((seed - 1) % #outfits) + 1
+                            local outfitIndex = ((entity.id - 1) % #outfits) + 1
                             local outfit = outfits[outfitIndex]
 
-                            if outfit and style.configs and type(style.configs) == "table" then
-                                print("[NPCEntity] APPROACH B: Modifying configs directly for entity #" .. entity.id
-                                    .. " outfit #" .. outfitIndex .. " (" .. (isFemale and "female" or "male") .. ")")
-
-                                for slotName, slotData in pairs(outfit) do
-                                    local config = style.configs[slotName]
-                                    if config then
-                                        -- Dump config structure for diagnostics (first 2 entities only)
-                                        if entity.id <= 2 then
-                                            print("[NPCEntity]   APPROACH B config." .. slotName .. " keys:")
-                                            for ck, cv in pairs(config) do
-                                                print("    config." .. slotName .. "." .. tostring(ck) .. " = " .. type(cv))
-                                            end
-                                        end
-
-                                        -- Try setting items/selection on the config
-                                        pcall(function()
-                                            if config.items and type(config.items) == "table" then
-                                                -- Find the item index by name
-                                                for idx, item in pairs(config.items) do
-                                                    if type(item) == "table" and (item.name == slotData.name or item.id == slotData.name) then
-                                                        if config.selectedIndex ~= nil then
-                                                            config.selectedIndex = idx
-                                                        end
-                                                        if config.selectedColor ~= nil then
-                                                            config.selectedColor = slotData.color
-                                                        end
-                                                        if entity.id <= 2 then
-                                                            print("[NPCEntity]   APPROACH B: matched item idx=" .. tostring(idx) .. " for " .. slotName .. "." .. slotData.name)
-                                                        end
-                                                        break
-                                                    end
-                                                end
-                                            end
-                                        end)
-
-                                        -- Also try: config:setSelection or config:setSelectedIndex
-                                        pcall(function()
-                                            if config.setSelection then
-                                                config:setSelection(slotData.name, slotData.color)
-                                                if entity.id <= 2 then
-                                                    print("[NPCEntity]   APPROACH B: config:setSelection worked for " .. slotName)
-                                                end
-                                            end
-                                        end)
-                                        pcall(function()
-                                            if config.setSelectedIndex then
-                                                -- Need to find index first
-                                                if config.items then
-                                                    for idx, item in pairs(config.items) do
-                                                        if type(item) == "table" and (item.name == slotData.name or item.id == slotData.name) then
-                                                            config:setSelectedIndex(idx)
-                                                            if entity.id <= 2 then
-                                                                print("[NPCEntity]   APPROACH B: config:setSelectedIndex worked for " .. slotName)
-                                                            end
-                                                            break
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end)
-                                    else
-                                        if entity.id <= 2 then
-                                            print("[NPCEntity]   APPROACH B: no config for slot '" .. slotName .. "'")
-                                        end
-                                    end
-                                end
+                            if applyOutfitToStyle(finalStyle, outfit, entity.id) then
+                                sanitizeHeadgear(finalStyle)
+                                print("[NPCEntity] APPROACH B: applied fallback outfit #" .. outfitIndex
+                                    .. " for entity #" .. entity.id .. " (" .. (isFemale and "female" or "male") .. ")")
                             else
-                                print("[NPCEntity] APPROACH B: skipped (outfit=" .. tostring(outfit ~= nil)
-                                    .. " configs=" .. tostring(style.configs ~= nil) .. ")")
+                                print("[NPCEntity] APPROACH B: fallback outfit failed for entity #" .. entity.id)
                             end
                         end
 
-                        humanModel:loadFromStyleAsync(style, function(target2, styleState, styleArgs)
+                        -- Store playerStyle on entity for vehicle seating and other systems
+                        entity.playerStyle = finalStyle
+
+                        humanModel:loadFromStyleAsync(finalStyle, function(target2, styleState, styleArgs)
                             print("[NPCEntity] DIRECT: loadFromStyleAsync callback, state=" .. tostring(styleState)
                                 .. " entity=#" .. tostring(entity.id))
 
@@ -1010,7 +988,7 @@ end
 function NPCEntity:updateAnimatedCharacter(entity, npc, dt)
     local aiState = npc.aiState or "idle"
     local speed = npc.movementSpeed or 0
-    local isWalking = (aiState == "walking" or aiState == "traveling" or aiState == "driving")
+    local isWalking = (aiState == "walking" or aiState == "traveling" or aiState == "driving" or aiState == "working")
 
     -- MODE 1: Direct track enable/disable (VehicleCharacter pattern)
     -- Uses enableAnimTrack/disableAnimTrack to toggle between idle (track 0) and walk (track 1).
@@ -1850,7 +1828,15 @@ function NPCEntity:createMapHotspot(entity, npc)
         local name = (npc and npc.name) or "NPC"
         local hotspot = PlaceableHotspot.new()
 
-        -- Use built-in exclamation mark icon (custom icon.dds can't load from ZIP)
+        -- Create icon overlay using the mod's icon.dds
+        local width, height = getNormalizedScreenValues(48, 48)
+        local modDir = self.npcSystem and self.npcSystem.modDirectory
+        if modDir then
+            local iconFile = Utils.getFilename("icon.dds", modDir)
+            hotspot.icon = Overlay.new(iconFile, 0, 0, width, height)
+        end
+
+        -- Set type (provides fallback built-in icon if custom icon fails)
         hotspot.placeableType = PlaceableHotspot.TYPE.EXCLAMATION_MARK
 
         -- Set display name (setName for hover tooltip)
