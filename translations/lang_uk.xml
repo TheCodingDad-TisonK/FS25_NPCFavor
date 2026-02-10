@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='utf-8'?>
+<l10n>
+	<texts>
+		<text name="npc_interact_hint" text="Натисніть [E] для розмови" />
+		<text name="npc_section" text="Система послуг NPC" />
+		<text name="npc_enabled_short" text="Увімкнути систему NPC" />
+		<text name="npc_enabled_long" text="Увімкнути або вимкнути систему живого сусідства NPC" />
+		<text name="npc_max_count_short" text="Макс. кількість NPC" />
+		<text name="npc_max_count_long" text="Максимальна кількість активних NPC у світі" />
+		<text name="npc_work_time_short" text="Години роботи NPC" />
+		<text name="npc_work_time_long" text="Час доби, коли NPC працюють на полях (24-годинний формат)" />
+		<text name="npc_favor_frequency_short" text="Частота послуг" />
+		<text name="npc_favor_frequency_long" text="Як часто NPC просять послуг (в ігрових днях)" />
+		<text name="npc_show_names_short" text="Показувати імена NPC" />
+		<text name="npc_show_names_long" text="Відображати імена NPC над їхніми головами" />
+		<text name="npc_show_notifications_short" text="Показувати сповіщення" />
+		<text name="npc_show_notifications_long" text="Показувати повідомлення NPC на екрані" />
+		<text name="npc_enable_favors_short" text="Увімкнути послуги" />
+		<text name="npc_enable_favors_long" text="Дозволити NPC просити гравця про послуги" />
+		<text name="npc_debug_short" text="Режим налагодження" />
+		<text name="npc_debug_long" text="Показувати налагоджувальну інформацію та шляхи NPC" />
+		<text name="npc_reset" text="Скинути систему NPC" />
+		<text name="npc_name_1" text="Старий МакДональд" />
+		<text name="npc_name_2" text="Фермер Джо" />
+		<text name="npc_name_3" text="Пані Хендерсон" />
+		<text name="npc_name_4" text="Молодий Пітер" />
+		<text name="npc_name_5" text="Анна Шмідт" />
+		<text name="npc_name_6" text="Ганс Бауер" />
+		<text name="input_NPC_INTERACT" text="Поговорити з сусідом" />
+		<text name="npc_dialog_hello" text="Привіт, сусіде!" />
+		<text name="npc_dialog_favor_ask" text="Чи могли б ви мені з чимось допомогти?" />
+		<text name="npc_dialog_favor_accepted" text="Щиро дякую! Я запам'ятаю це." />
+		<text name="npc_dialog_favor_declined" text="Можливо, іншим разом." />
+		<text name="npc_favor_borrow_tractor" text="Позичити мій трактор" />
+		<text name="npc_favor_help_harvest" text="Допомогти з жнивами" />
+		<text name="npc_favor_transport_goods" text="Транспортувати товари на ринок" />
+		<text name="npc_favor_fix_fence" text="Полагодити зламаний паркан" />
+		<text name="npc_favor_deliver_seeds" text="Доставити насіння на мою ферму" />
+		<text name="npc_notification_favor_request" text="%s просить послуги!" />
+		<text name="npc_notification_favor_completed" text="Ви допомогли %s. Відносини покращилися!" />
+		<text name="npc_notification_npc_working" text="%s зараз працює на своєму полі" />
+		<text name="npc_dialog_btn_talk" text="Говорити" />
+		<text name="npc_dialog_btn_work" text="Запитати про роботу" />
+		<text name="npc_dialog_btn_favor" text="Попросити послугу" />
+		<text name="npc_dialog_btn_favor_progress" text="Перевірити прогрес послуги" />
+		<text name="npc_dialog_btn_favor_locked" text="Попросити послугу (відн. 20+)" />
+		<text name="npc_dialog_btn_gift" text="Подарувати подарунок (500$)" />
+		<text name="npc_dialog_btn_gift_locked" text="Подарувати подарунок (відн. 30+)" />
+		<text name="npc_dialog_btn_relationship" text="Інфо про відносини" />
+		<text name="npc_dialog_btn_close" text="Закрити" />
+		<text name="npc_dialog_unknown_npc" text="Невідомий NPC" />
+		<text name="npc_dialog_relationship_fmt" text="Відносини: %d/100 (%s)" />
+		<text name="npc_dialog_hello_generic" text="Привіт!" />
+		<text name="npc_rel_hostile" text="Ворожий" />
+		<text name="npc_rel_unfriendly" text="Недружній" />
+		<text name="npc_rel_neutral" text="Нейтральний" />
+		<text name="npc_rel_acquaintance" text="Знайомий" />
+		<text name="npc_rel_friend" text="Друг" />
+		<text name="npc_rel_close_friend" text="Близький друг" />
+		<text name="npc_rel_best_friend" text="Найкращий друг" />
+		<text name="npc_rel_benefit_discount" text="%d%% знижки" />
+		<text name="npc_rel_benefit_favors" text="може просити послуги" />
+		<text name="npc_rel_benefit_borrow" text="позичати обладнання" />
+		<text name="npc_rel_benefit_help" text="може запропонувати допомогу" />
+		<text name="npc_rel_benefit_gifts" text="дарує подарунки" />
+		<text name="npc_rel_benefit_shared" text="спільні ресурси" />
+		<text name="npc_rel_benefit_none" text="немає" />
+		<text name="npc_rel_unlock_basic" text="базова взаємодія" />
+		<text name="npc_rel_unlock_favors" text="просити послуги, 5%% знижки" />
+		<text name="npc_rel_unlock_borrow" text="позичати обладнання, 10%% знижки" />
+		<text name="npc_rel_unlock_help" text="NPC пропонує допомогу, 15%% знижки" />
+		<text name="npc_rel_unlock_gifts" text="подарунки, спільні ресурси, 18%% знижки" />
+		<text name="npc_rel_unlock_full" text="всі переваги, 20%% знижки" />
+		<text name="npc_rel_next_fmt" text="Далі: %s на %d (+%d) - відкриває: %s" />
+		<text name="npc_rel_max_reached" text="Досягнуто рівень MAX!" />
+		<text name="npc_rel_trend_up" text="(зростає)" />
+		<text name="npc_rel_trend_down" text="(знижується)" />
+		<text name="npc_rel_no_info" text="Інформація про відносини недоступна." />
+		<text name="npc_dialog_favor_help_request" text="Чи могли б ви допомогти? Перевірте список послуг!" />
+		<text name="npc_dialog_favor_nothing" text="Мені зараз нічого не потрібно, але дякую за питання!" />
+		<text name="npc_dialog_favor_active_fmt" text="Активна: %s | Прогрес: %d%% | Час: %s | Нагорода: +%d відн., %d$" />
+		<text name="npc_dialog_time_minutes" text="%.0f хвилин" />
+		<text name="npc_dialog_time_hours" text="%.1f годин" />
+		<text name="npc_dialog_gift_thanks" text="Дякую за подарунок! Це дуже щедро з вашого боку!" />
+		<text name="npc_dialog_gift_failed" text="Зараз не вдалося подарувати подарунок." />
+		<text name="npc_greeting_morning" text="Доброго ранку" />
+		<text name="npc_greeting_afternoon" text="Доброго дня" />
+		<text name="npc_greeting_evening" text="Доброго вечора" />
+		<text name="npc_greeting_hostile" text="%s. Чого ти хочеш?" />
+		<text name="npc_greeting_unfriendly" text="%s. Потрібно щось?" />
+		<text name="npc_greeting_friendly" text="%s, друже! Як справи?" />
+		<text name="npc_greeting_best_friend" text="%s, мій добрий друже! Радий тебе бачити!" />
+		<text name="npc_topic_weather" text="Погода останнім часом гарна, правда?" />
+		<text name="npc_topic_farm" text="Як справи на фермі?" />
+		<text name="npc_topic_crops" text="Бачив гарний врожай цього сезону?" />
+		<text name="npc_topic_family" text="Як справи в родині?" />
+		<text name="npc_topic_weekend" text="Є плани на вихідні?" />
+		<text name="npc_topic_market" text="Ціни на ринку цього сезону непогані." />
+		<text name="npc_topic_friend" text="Радий бачити тебе, друже! Як справи?" />
+		<text name="npc_topic_harvest_memory" text="Пам'ятаєш, як ми допомагали одне одному з жнивами?" />
+		<text name="npc_topic_best_neighbor" text="Ти один з найкращих сусідів, яких я мав!" />
+		<text name="npc_topic_fields_good" text="Поля цього року виглядають добре." />
+		<text name="npc_topic_harvest_busy" text="Сезон жнив завжди напружений, але вдячний." />
+		<text name="npc_topic_other_neighbors" text="Розмовляв з іншими сусідами останнім часом?" />
+		<text name="npc_topic_gathering" text="Треба якось зібратися сусідами!" />
+		<text name="npc_topic_quiet_day" text="Спокійний день сьогодні. Мені так подобається." />
+		<text name="npc_work_nothing" text="Зараз не дуже зайнятий." />
+		<text name="npc_work_idle" text="Зараз роблю перерву." />
+		<text name="npc_work_walking" text="Просто розминаюся трохи." />
+		<text name="npc_work_working" text="Працюю на полі. Тяжка робота, але хтось же мусить!" />
+		<text name="npc_work_driving" text="Роблю доставки своїм транспортом." />
+		<text name="npc_work_resting" text="Відпочиваю трохи." />
+		<text name="npc_work_socializing" text="Балакаю з сусідом." />
+		<text name="npc_work_traveling" text="Їду кудись важливе." />
+		<text name="npc_work_busy" text="Я зайнятий." />
+		<text name="npc_hud_active_favors" text="Активні послуги:" />
+		<text name="npc_hud_and_more" text="...і ще %d" />
+		<text name="npc_interact_talk_to" text="Поговорити з %s" />
+	</texts>
+</l10n>

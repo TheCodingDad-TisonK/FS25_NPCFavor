@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='utf-8'?>
+<l10n>
+	<texts>
+		<text name="npc_interact_hint" text="Stiskněte [E] pro rozhovor" />
+		<text name="npc_section" text="Systém NPC Laskavostí" />
+		<text name="npc_enabled_short" text="Povolit systém NPC" />
+		<text name="npc_enabled_long" text="Povolit nebo zakázat systém živého sousedství NPC" />
+		<text name="npc_max_count_short" text="Max. počet NPC" />
+		<text name="npc_max_count_long" text="Maximální počet aktivních NPC ve světě" />
+		<text name="npc_work_time_short" text="Pracovní doba NPC" />
+		<text name="npc_work_time_long" text="Denní doba, kdy NPC pracují na svých polích (24h formát)" />
+		<text name="npc_favor_frequency_short" text="Četnost laskavostí" />
+		<text name="npc_favor_frequency_long" text="Jak často NPC žádají o laskavosti (ve herních dnech)" />
+		<text name="npc_show_names_short" text="Zobrazit jména NPC" />
+		<text name="npc_show_names_long" text="Zobrazovat jména NPC nad jejich hlavami" />
+		<text name="npc_show_notifications_short" text="Zobrazit oznámení" />
+		<text name="npc_show_notifications_long" text="Zobrazovat oznámení NPC na obrazovce" />
+		<text name="npc_enable_favors_short" text="Povolit laskavosti" />
+		<text name="npc_enable_favors_long" text="Povolit NPC žádat hráče o laskavosti" />
+		<text name="npc_debug_short" text="Režim ladění" />
+		<text name="npc_debug_long" text="Zobrazovat ladící informace a cesty NPC" />
+		<text name="npc_reset" text="Resetovat systém NPC" />
+		<text name="npc_name_1" text="Starý MacDonald" />
+		<text name="npc_name_2" text="Farmář Joe" />
+		<text name="npc_name_3" text="Paní Hendersonová" />
+		<text name="npc_name_4" text="Mladý Petr" />
+		<text name="npc_name_5" text="Anna Schmidtová" />
+		<text name="npc_name_6" text="Hans Bauer" />
+		<text name="input_NPC_INTERACT" text="Promluvit se sousedem" />
+		<text name="npc_dialog_hello" text="Ahoj, sousede!" />
+		<text name="npc_dialog_favor_ask" text="Mohl byste mi s něčím pomoci?" />
+		<text name="npc_dialog_favor_accepted" text="Mnohokrát děkuji! Zapamatuji si to." />
+		<text name="npc_dialog_favor_declined" text="Možná někdy jindy." />
+		<text name="npc_favor_borrow_tractor" text="Půjčit si můj traktor" />
+		<text name="npc_favor_help_harvest" text="Pomoc se sklizní" />
+		<text name="npc_favor_transport_goods" text="Přepravit zboží na trh" />
+		<text name="npc_favor_fix_fence" text="Opravit rozbitý plot" />
+		<text name="npc_favor_deliver_seeds" text="Dodat semena na mou farmu" />
+		<text name="npc_notification_favor_request" text="%s žádá o laskavost!" />
+		<text name="npc_notification_favor_completed" text="Pomohl jste %s. Vztah vylepšen!" />
+		<text name="npc_notification_npc_working" text="%s nyní pracuje na svém poli" />
+		<text name="npc_dialog_btn_talk" text="Mluvit" />
+		<text name="npc_dialog_btn_work" text="Zeptat se na práci" />
+		<text name="npc_dialog_btn_favor" text="Požádat o laskavost" />
+		<text name="npc_dialog_btn_favor_progress" text="Zkontrolovat postup laskavosti" />
+		<text name="npc_dialog_btn_favor_locked" text="Požádat o laskavost (vztah 20+)" />
+		<text name="npc_dialog_btn_gift" text="Dát dárek (500$)" />
+		<text name="npc_dialog_btn_gift_locked" text="Dát dárek (vztah 30+)" />
+		<text name="npc_dialog_btn_relationship" text="Info o vztahu" />
+		<text name="npc_dialog_btn_close" text="Zavřít" />
+		<text name="npc_dialog_unknown_npc" text="Neznámý NPC" />
+		<text name="npc_dialog_relationship_fmt" text="Vztah: %d/100 (%s)" />
+		<text name="npc_dialog_hello_generic" text="Ahoj!" />
+		<text name="npc_rel_hostile" text="Nepřátelský" />
+		<text name="npc_rel_unfriendly" text="Nepříjemný" />
+		<text name="npc_rel_neutral" text="Neutrální" />
+		<text name="npc_rel_acquaintance" text="Známý" />
+		<text name="npc_rel_friend" text="Přítel" />
+		<text name="npc_rel_close_friend" text="Blízký přítel" />
+		<text name="npc_rel_best_friend" text="Nejlepší přítel" />
+		<text name="npc_rel_benefit_discount" text="%d%% sleva" />
+		<text name="npc_rel_benefit_favors" text="může žádat o laskavosti" />
+		<text name="npc_rel_benefit_borrow" text="půjčit si vybavení" />
+		<text name="npc_rel_benefit_help" text="může nabídnout pomoc" />
+		<text name="npc_rel_benefit_gifts" text="dává dárky" />
+		<text name="npc_rel_benefit_shared" text="sdílené zdroje" />
+		<text name="npc_rel_benefit_none" text="žádné" />
+		<text name="npc_rel_unlock_basic" text="základní interakce" />
+		<text name="npc_rel_unlock_favors" text="žádat laskavosti, 5%% sleva" />
+		<text name="npc_rel_unlock_borrow" text="půjčit vybavení, 10%% sleva" />
+		<text name="npc_rel_unlock_help" text="NPC nabízí pomoc, 15%% sleva" />
+		<text name="npc_rel_unlock_gifts" text="dárky, sdílené zdroje, 18%% sleva" />
+		<text name="npc_rel_unlock_full" text="všechny výhody, 20%% sleva" />
+		<text name="npc_rel_next_fmt" text="Další: %s na %d (+%d) - odemkne: %s" />
+		<text name="npc_rel_max_reached" text="Dosažena úroveň MAX!" />
+		<text name="npc_rel_trend_up" text="(stoupající)" />
+		<text name="npc_rel_trend_down" text="(klesající)" />
+		<text name="npc_rel_no_info" text="Žádné informace o vztahu nejsou k dispozici." />
+		<text name="npc_dialog_favor_help_request" text="Mohl byste mi pomoci? Podívejte se na seznam laskavostí!" />
+		<text name="npc_dialog_favor_nothing" text="Teď nic nepotřebuji, ale díky za optání!" />
+		<text name="npc_dialog_favor_active_fmt" text="Aktivní: %s | Postup: %d%% | Čas: %s | Odměna: +%d vztah, %d$" />
+		<text name="npc_dialog_time_minutes" text="%.0f minut" />
+		<text name="npc_dialog_time_hours" text="%.1f hodin" />
+		<text name="npc_dialog_gift_thanks" text="Děkuji za dárek! To je od vás velmi štědré!" />
+		<text name="npc_dialog_gift_failed" text="Teď nelze dát dárek." />
+		<text name="npc_greeting_morning" text="Dobré ráno" />
+		<text name="npc_greeting_afternoon" text="Dobré odpoledne" />
+		<text name="npc_greeting_evening" text="Dobrý večer" />
+		<text name="npc_greeting_hostile" text="%s. Co chcete?" />
+		<text name="npc_greeting_unfriendly" text="%s. Potřebujete něco?" />
+		<text name="npc_greeting_friendly" text="%s, příteli! Jak se máte?" />
+		<text name="npc_greeting_best_friend" text="%s, můj dobrý příteli! Rád vás vidím!" />
+		<text name="npc_topic_weather" text="Počasí bylo v poslední době hezké, že?" />
+		<text name="npc_topic_farm" text="Jak se daří vaší farmě?" />
+		<text name="npc_topic_crops" text="Viděl jste letos nějaké dobré úrody?" />
+		<text name="npc_topic_family" text="Jak se daří rodině?" />
+		<text name="npc_topic_weekend" text="Máte nějaké plány na víkend?" />
+		<text name="npc_topic_market" text="Tržní ceny byly letos dobré." />
+		<text name="npc_topic_friend" text="Rád vás vidím, příteli! Jak se máte?" />
+		<text name="npc_topic_harvest_memory" text="Pamatujete, jak jsme si pomáhali se sklizní?" />
+		<text name="npc_topic_best_neighbor" text="Jste jeden z nejlepších sousedů, jaké jsem měl!" />
+		<text name="npc_topic_fields_good" text="Pole letos vypadají dobře." />
+		<text name="npc_topic_harvest_busy" text="Sklizňové období je vždy rušné, ale odměňující." />
+		<text name="npc_topic_other_neighbors" text="Mluvil jste v poslední době s ostatními sousedy?" />
+		<text name="npc_topic_gathering" text="Měli bychom někdy uspořádat sousedské setkání!" />
+		<text name="npc_topic_quiet_day" text="Dnes je klidný den. Tak to mám rád." />
+		<text name="npc_work_nothing" text="Teď moc nedělám." />
+		<text name="npc_work_idle" text="Právě si dávám pauzu." />
+		<text name="npc_work_walking" text="Jen se trochu protahuji." />
+		<text name="npc_work_working" text="Pracuji na poli. Je to těžká práce, ale někdo to dělat musí!" />
+		<text name="npc_work_driving" text="Dělám nějaké dodávky se svým vozidlem." />
+		<text name="npc_work_resting" text="Chvíli si odpočívám." />
+		<text name="npc_work_socializing" text="Povídám si se sousedem." />
+		<text name="npc_work_traveling" text="Jedu někam důležitého." />
+		<text name="npc_work_busy" text="Mám plno práce." />
+		<text name="npc_hud_active_favors" text="Aktivní laskavosti:" />
+		<text name="npc_hud_and_more" text="...a %d dalších" />
+		<text name="npc_interact_talk_to" text="Promluvit s %s" />
+	</texts>
+</l10n>

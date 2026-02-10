@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='utf-8'?>
+<l10n>
+	<texts>
+		<text name="npc_interact_hint" text="Appuyez sur [E] pour parler" />
+		<text name="npc_section" text="Système de Faveur PNJ" />
+		<text name="npc_enabled_short" text="Activer système PNJ" />
+		<text name="npc_enabled_long" text="Activer ou désactiver le système de quartier PNJ vivant" />
+		<text name="npc_max_count_short" text="Nombre max PNJ" />
+		<text name="npc_max_count_long" text="Nombre maximum de PNJ actifs dans le monde" />
+		<text name="npc_work_time_short" text="Heures de travail PNJ" />
+		<text name="npc_work_time_long" text="Heure de la journée où les PNJ travaillent sur leurs champs (format 24h)" />
+		<text name="npc_favor_frequency_short" text="Fréquence faveurs" />
+		<text name="npc_favor_frequency_long" text="Fréquence à laquelle les PNJ demandent des faveurs (en jours de jeu)" />
+		<text name="npc_show_names_short" text="Afficher noms PNJ" />
+		<text name="npc_show_names_long" text="Afficher les noms des PNJ au-dessus de leur tête" />
+		<text name="npc_show_notifications_short" text="Afficher notifications" />
+		<text name="npc_show_notifications_long" text="Afficher les messages de notification PNJ à l'écran" />
+		<text name="npc_enable_favors_short" text="Activer faveurs" />
+		<text name="npc_enable_favors_long" text="Permettre aux PNJ de demander des faveurs au joueur" />
+		<text name="npc_debug_short" text="Mode debug" />
+		<text name="npc_debug_long" text="Afficher les informations de débogage et les chemins PNJ" />
+		<text name="npc_reset" text="Réinitialiser système PNJ" />
+		<text name="npc_name_1" text="Vieux MacDonald" />
+		<text name="npc_name_2" text="Fermier Joe" />
+		<text name="npc_name_3" text="Mme Henderson" />
+		<text name="npc_name_4" text="Jeune Pierre" />
+		<text name="npc_name_5" text="Anna Schmidt" />
+		<text name="npc_name_6" text="Hans Bauer" />
+		<text name="input_NPC_INTERACT" text="Parler au voisin" />
+		<text name="npc_dialog_hello" text="Bonjour, voisin !" />
+		<text name="npc_dialog_favor_ask" text="Pourriez-vous m'aider avec quelque chose ?" />
+		<text name="npc_dialog_favor_accepted" text="Merci beaucoup ! Je m'en souviendrai." />
+		<text name="npc_dialog_favor_declined" text="Peut-être une autre fois alors." />
+		<text name="npc_favor_borrow_tractor" text="Emprunter mon tracteur" />
+		<text name="npc_favor_help_harvest" text="Aider à la récolte" />
+		<text name="npc_favor_transport_goods" text="Transporter des marchandises au marché" />
+		<text name="npc_favor_fix_fence" text="Réparer la clôture cassée" />
+		<text name="npc_favor_deliver_seeds" text="Livrer des graines à ma ferme" />
+		<text name="npc_notification_favor_request" text="%s demande une faveur !" />
+		<text name="npc_notification_favor_completed" text="Vous avez aidé %s. Relation améliorée !" />
+		<text name="npc_notification_npc_working" text="%s travaille maintenant sur son champ" />
+		<text name="npc_dialog_btn_talk" text="Parler" />
+		<text name="npc_dialog_btn_work" text="Demander du travail" />
+		<text name="npc_dialog_btn_favor" text="Demander une faveur" />
+		<text name="npc_dialog_btn_favor_progress" text="Vérifier l'avancement" />
+		<text name="npc_dialog_btn_favor_locked" text="Demander faveur (rel 20+ requise)" />
+		<text name="npc_dialog_btn_gift" text="Offrir un cadeau (500$)" />
+		<text name="npc_dialog_btn_gift_locked" text="Offrir cadeau (rel 30+ requise)" />
+		<text name="npc_dialog_btn_relationship" text="Info relation" />
+		<text name="npc_dialog_btn_close" text="Fermer" />
+		<text name="npc_dialog_unknown_npc" text="PNJ inconnu" />
+		<text name="npc_dialog_relationship_fmt" text="Relation : %d/100 (%s)" />
+		<text name="npc_dialog_hello_generic" text="Bonjour !" />
+		<text name="npc_rel_hostile" text="Hostile" />
+		<text name="npc_rel_unfriendly" text="Inamical" />
+		<text name="npc_rel_neutral" text="Neutre" />
+		<text name="npc_rel_acquaintance" text="Connaissance" />
+		<text name="npc_rel_friend" text="Ami" />
+		<text name="npc_rel_close_friend" text="Ami proche" />
+		<text name="npc_rel_best_friend" text="Meilleur ami" />
+		<text name="npc_rel_benefit_discount" text="%d%% de réduction" />
+		<text name="npc_rel_benefit_favors" text="peut demander des faveurs" />
+		<text name="npc_rel_benefit_borrow" text="emprunter du matériel" />
+		<text name="npc_rel_benefit_help" text="peut offrir de l'aide" />
+		<text name="npc_rel_benefit_gifts" text="offre des cadeaux" />
+		<text name="npc_rel_benefit_shared" text="ressources partagées" />
+		<text name="npc_rel_benefit_none" text="aucun" />
+		<text name="npc_rel_unlock_basic" text="interaction de base" />
+		<text name="npc_rel_unlock_favors" text="demander faveurs, 5%% réduction" />
+		<text name="npc_rel_unlock_borrow" text="emprunter matériel, 10%% réduction" />
+		<text name="npc_rel_unlock_help" text="PNJ offre aide, 15%% réduction" />
+		<text name="npc_rel_unlock_gifts" text="cadeaux, ressources partagées, 18%% réduction" />
+		<text name="npc_rel_unlock_full" text="tous les avantages, 20%% réduction" />
+		<text name="npc_rel_next_fmt" text="Suivant : %s à %d (+%d) - débloque : %s" />
+		<text name="npc_rel_max_reached" text="Niveau MAX atteint !" />
+		<text name="npc_rel_trend_up" text="(en hausse)" />
+		<text name="npc_rel_trend_down" text="(en baisse)" />
+		<text name="npc_rel_no_info" text="Aucune information de relation disponible." />
+		<text name="npc_dialog_favor_help_request" text="Pourriez-vous m'aider ? Consultez la liste des faveurs !" />
+		<text name="npc_dialog_favor_nothing" text="Je n'ai besoin de rien pour le moment, mais merci de demander !" />
+		<text name="npc_dialog_favor_active_fmt" text="Actif : %s | Progrès : %d%% | Temps : %s | Récompense : +%d rel, %d$" />
+		<text name="npc_dialog_time_minutes" text="%.0f minutes" />
+		<text name="npc_dialog_time_hours" text="%.1f heures" />
+		<text name="npc_dialog_gift_thanks" text="Merci pour le cadeau ! C'est très généreux de votre part !" />
+		<text name="npc_dialog_gift_failed" text="Impossible d'offrir un cadeau maintenant." />
+		<text name="npc_greeting_morning" text="Bonjour" />
+		<text name="npc_greeting_afternoon" text="Bon après-midi" />
+		<text name="npc_greeting_evening" text="Bonsoir" />
+		<text name="npc_greeting_hostile" text="%s. Qu'est-ce que vous voulez ?" />
+		<text name="npc_greeting_unfriendly" text="%s. Besoin de quelque chose ?" />
+		<text name="npc_greeting_friendly" text="%s, ami ! Comment allez-vous ?" />
+		<text name="npc_greeting_best_friend" text="%s, mon bon ami ! Ravi de vous voir !" />
+		<text name="npc_topic_weather" text="Le temps a été agréable ces derniers temps, non ?" />
+		<text name="npc_topic_farm" text="Comment va votre ferme ?" />
+		<text name="npc_topic_crops" text="Vous avez vu de bonnes récoltes cette saison ?" />
+		<text name="npc_topic_family" text="Comment va la famille ?" />
+		<text name="npc_topic_weekend" text="Vous avez des projets pour le week-end ?" />
+		<text name="npc_topic_market" text="Les prix du marché ont été bons cette saison." />
+		<text name="npc_topic_friend" text="Content de vous voir, ami ! Comment allez-vous ?" />
+		<text name="npc_topic_harvest_memory" text="Vous souvenez-vous quand on s'est entraidés pour la récolte ?" />
+		<text name="npc_topic_best_neighbor" text="Vous êtes l'un des meilleurs voisins que j'ai eus !" />
+		<text name="npc_topic_fields_good" text="Les champs ont belle allure cette année." />
+		<text name="npc_topic_harvest_busy" text="La saison des récoltes est toujours chargée mais gratifiante." />
+		<text name="npc_topic_other_neighbors" text="Avez-vous parlé aux autres voisins dernièrement ?" />
+		<text name="npc_topic_gathering" text="On devrait organiser une fête de quartier un jour !" />
+		<text name="npc_topic_quiet_day" text="Journée calme aujourd'hui. J'aime ça." />
+		<text name="npc_work_nothing" text="Je ne fais pas grand-chose en ce moment." />
+		<text name="npc_work_idle" text="Je fais une pause en ce moment." />
+		<text name="npc_work_walking" text="Je fais un peu d'exercice." />
+		<text name="npc_work_working" text="Je travaille au champ. C'est dur mais il faut bien le faire !" />
+		<text name="npc_work_driving" text="Je fais quelques livraisons avec mon véhicule." />
+		<text name="npc_work_resting" text="Je me repose un moment." />
+		<text name="npc_work_socializing" text="Je discute avec un voisin." />
+		<text name="npc_work_traveling" text="Je me rends quelque part d'important." />
+		<text name="npc_work_busy" text="Je suis bien occupé." />
+		<text name="npc_hud_active_favors" text="Faveurs actives :" />
+		<text name="npc_hud_and_more" text="...et %d de plus" />
+		<text name="npc_interact_talk_to" text="Parler à %s" />
+	</texts>
+</l10n>
