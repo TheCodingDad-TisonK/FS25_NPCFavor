@@ -4,6 +4,89 @@ All notable changes to the FS25_NPCFavor mod are documented below, organized by 
 
 ---
 
+## v1.2.2.4 -- Settings Persistence & ESC Menu Expansion
+
+**Commit:** `3e8691e` (2026-02-09)
+**Authors:** XelaNull, Claude & Samantha (Claude Code)
+**Issues Fixed:** #15 (Settings reset when exiting savegame)
+
+### Settings Persistence (fixes #15)
+- **Save path fix**: `NPCSettings:saveToXMLFile(missionInfo)` now writes to `missionInfo.savegameDirectory` (tempsavegame during save), matching the UsedPlus pattern. Previously wrote directly to `savegame5/` which got overwritten when the game swapped tempsavegame → savegame5.
+- **Load fix**: Replaced unreliable `g_fileIO:fileExists()` with `XMLFile.loadIfExists` (proven FS25 API). Previously silently fell back to defaults every load.
+- **No orphan writes**: ESC menu, console commands, and sync events now update settings in-memory only. Disk persistence happens exclusively via the `FSCareerMissionInfo.saveToXMLFile` hook (UsedPlus pattern).
+- **Diagnostic logging**: Settings load/save now prints messages to game log to help debug persistence issues.
+
+### Expanded ESC Menu Settings (6 → 13 controls)
+- 7 new controls: Show Favor List, Show Relationship Bars, Show Map Markers, Enable Gifts, Allow Multiple Favors, Max Active Favors (dropdown: 1/2/3/5/8/10), Relationship Decay
+- All 13 controls grouped under single "NPC Favor System" section header for easy identification in multi-mod setups
+- New `showMapMarkers` setting with instant toggle via `NPCEntity:toggleAllMapHotspots()`
+- 170 new i18n strings (17 entries × 10 languages)
+
+### Dialog & Icon ZIP Fixes
+- Eagerly load all 3 dialogs (NPCDialog, NPCListDialog, NPCFavorManagementDialog) during `loadMission00Finished` while the mod's ZIP filesystem context is active. Previously lazy loading failed on second session with "Failed to open xml file".
+- Removed custom icon.dds overlay from map hotspots (DirectStorage can't resolve ZIP paths outside mission-load context); uses reliable built-in `PlaceableHotspot.TYPE.EXCLAMATION_MARK` icon instead.
+- Removed duplicate l10n entries (`button_cancel`, `button_refresh`, `button_close`) that shadowed base game definitions and spammed warnings on every load.
+
+---
+
+## v1.2.2.3 -- HUD Polish & Female NPC Clothing Fix
+
+**Commit:** `d545e17` (2026-02-09)
+**Authors:** XelaNull, Claude (Claude Code)
+
+### HUD Overlay & Name Tags
+- Suppress NPC HUD rendering during pause, full-screen map, ESC menu, and dialogs
+- Dynamic name tag Y scaling based on distance (1.8m close → 2.6m at 15m)
+- Lower speech bubble Y offset (2.8 → 2.3) and interaction hint (2.5 → 2.0)
+
+### Female NPC Clothing & Camera Fix
+- Fix female NPCs getting male clothing by force-loading `playerF` XML config
+- Replace simple headgear offset with recursive node search for hat (-0.044m) and glasses (+0.012m) adjustments
+- Fix behind-camera projection in `projectWorldToScreen` with dot-product check
+- Clean up dialog boilerplate in NPCFavorManagementDialog, NPCListDialog, NPCFavorGUI
+- Add NPCTeleport module source loading
+
+---
+
+## v1.2.2.2 -- Map Hotspots, Field Work, NPC Clothing & Build System
+
+**Commits:** `44c1a7e` through `aee4b17` (2026-02-09)
+**Authors:** XelaNull, Claude (Claude Code)
+**Issues Fixed:** #12 (Map hotspot visibility)
+
+### Map Hotspots & NPC Name Labels (fixes #12)
+- Convert map hotspots from abstract `MapHotspot` (invisible) to `PlaceableHotspot` with icon overlay and fallback icon type
+- Remove hotspot when NPC sleeps, recreate on wakeup — fixes icons persisting at night
+- Add `drawMapLabels()` method rendering NPC names above map icons via `IngameMap.drawFields` hook
+
+### NPCFieldWork Module (new)
+- Realistic boustrophedon (serpentine) row traversal replacing simplistic rectangular patterns
+- Multi-worker coordination (max 2 per field with size-based caps)
+- Smooth Bezier headland turns
+- Personality-driven pattern selection (grumpy → perimeter, lazy → spot check)
+- Legacy `initFieldWork` preserved as fallback
+
+### NPC Clothing Overhaul
+- Curate PRESET_POOL: remove beekeeper, horsebackRider, longHaulTrucker, wetwork
+- Use clone-and-modify pattern for male presets (game's `applyCustomWorkStyle` approach)
+- Post-apply headgear sanitization (removes helmets, veils, motorcycle gear)
+- Fix property names: `selectedIndex` → `selectedItemIndex`, `selectedColor` → `selectedColorIndex`
+- Use `getItemNameIndex()` API for proper item lookup
+- Expand outfit tables: 7 → 12 male, 6 → 12 female (all farm-appropriate)
+- Add "working" to `isWalking` check to fix animation sliding during field work
+
+### Favor Management Dialog
+- Move `NPCFavorManagementDialog.lua` from `gui/` to `src/gui/` (consistent with other dialog files)
+- Rework dialog layout and button handling
+
+### Build System (new)
+- Cross-platform build script (`build.sh`) for Git Bash on Windows, native on macOS/Linux
+- Uses .NET `ZipFile` API on Windows to preserve directory structure
+- `--deploy` flag copies to FS25 mods folder with auto-detection
+- Excludes dev files (.git, .claude, CLAUDE.md, build.sh) from zip
+
+---
+
 ## v1.2.0.0 -- NPC AI Overhaul (in progress)
 
 **Branch:** `feature/living-neighborhood-system` (not yet merged)
