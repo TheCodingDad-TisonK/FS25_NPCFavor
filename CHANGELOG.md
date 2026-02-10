@@ -211,7 +211,7 @@ A comprehensive AI overhaul transforming mechanical schedule-following NPCs into
 - 25 TODO items marked as completed across 10 file headers
 
 ### Known Limitations
-- **NPC animation sliding** -- Some NPCs slide along the ground without their walk animation playing; root cause not yet identified
+- **NPC animation sliding** -- Some NPCs slide along the ground without their walk animation playing; root cause not yet identified *(fixed in v1.2.2.2)*
 - **Silent groups and walking pairs** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content; only 1-on-1 socializing produces speech bubbles
 - **Map hotspots** -- MapHotspot creation code exists but markers do not appear on the in-game map *(fixed in v1.2.2.2)*
 - **NPC vehicles/tractors** -- Code exists but i3d models cannot be loaded from game pak archives at runtime; NPCs walk everywhere
@@ -371,12 +371,12 @@ The original upload establishing the mod's architecture and vision:
 | 4 | erreur lua (renderOverlay in update callback) | squall39 | Closed | Fixed in v1.0.1.0 commit `2f79a7a` (moved rendering to draw callback) |
 | 5 | NPC on player backside after teleport | Dueesberch | Closed | Fixed in v1.2.2.0 (player rotates 180° to face NPC after teleport) |
 | 6 | Floating text after teleport | TisonK | Closed | Fixed in v1.2.2.0 (lastTeleportTime cooldown prevents HUD jank) |
-| 7 | Animations and Progress | | Open | NPC animation sliding -- root cause not yet identified |
+| 7 | Animations and Progress | | Closed | Fixed in v1.2.2.2 (added "working" to isWalking check for field work animation) |
 | 8 | Won't load due to ZIP packaging | Wreyth | Closed | Fixed in v1.2.2.2 (build.sh creates properly structured ZIP) |
 | 9 | Interaction with active favor | TisonK | Closed | Fixed in v1.2.2.0 (Favor Management Dialog with view/cancel/goto/complete) |
 | 10 | Keybinding the npcList UI | TisonK | Closed | Fixed in v1.2.2.0 (F7 keybind opens NPC roster) |
 | 11 | Couple of issues and a suggestion | | Open | |
-| 12 | NPC Map Hotspot Icons Not Appearing | | Open | Fixed in v1.2.2.2 (PlaceableHotspot with icon overlay) |
+| 12 | NPC Map Hotspot Icons Not Appearing | | Closed | Fixed in v1.2.2.2 (PlaceableHotspot with icon overlay) |
 | 14 | Borrow tractor favor has no interaction | | Open | |
 | 15 | Settings reset when exiting savegame | | Open | Fixed in v1.2.2.4 (UsedPlus save pattern, XMLFile.loadIfExists) |
 
