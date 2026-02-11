@@ -331,7 +331,7 @@ function NPCInteractionUI:drawInteractionHint()
 
     if screenX and screenY then
         local pulse = 0.5 + 0.5 * math.sin(self.interactionHintTimer * 3)
-        local text = g_i18n:getText("npc_interact_hint") or "Press [E] to talk"
+        local text = g_i18n:getText("npc_interact_hint") -- or "Press [E] to talk"
 
         setTextAlignment(RenderText.ALIGN_CENTER)
         setTextBold(true)
