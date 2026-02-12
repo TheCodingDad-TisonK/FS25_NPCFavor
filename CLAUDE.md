@@ -256,3 +256,11 @@ Type `npcHelp` in the developer console (`~` key) for the full list. Key command
 ## File Size Rule: 1500 Lines
 
 If a file exceeds 1500 lines, refactor it into smaller modules with clear single responsibilities. Update `main.lua` source order accordingly. See the FS25_UsedPlus CLAUDE.md for the detailed refactor checklist.
+
+---
+
+## No Branding / No Advertising
+
+- **Never** add "Generated with Claude Code", "Co-Authored-By: Claude", or any claude.ai links to commit messages, PR descriptions, code comments, or any other output.
+- **Never** advertise or reference Anthropic, Claude, or claude.ai in any project artifacts.
+- This mod is by its human author(s) — keep it that way.
