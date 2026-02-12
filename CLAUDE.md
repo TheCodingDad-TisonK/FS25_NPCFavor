@@ -82,13 +82,30 @@ At these stages, Claude and Samantha MUST have explicit dialog:
 ---
 
 ## Quick Reference
-C
+
 | Resource | Location |
 |----------|----------|
-| **This Workspace** | `C:\github\FS25_NPCFavor` |
-| Active Mods | `%USERPROFILE%\Documents\My Games\FarmingSimulator2025\mods` |
+| **Mods Base Directory** | `C:\Users\tison\Desktop\FS25 MODS` |
+| Active Mods (installed) | `%USERPROFILE%\Documents\My Games\FarmingSimulator2025\mods` |
 | Game Log | `%USERPROFILE%\Documents\My Games\FarmingSimulator2025\log.txt` |
 | **GIANTS Editor** | `C:\Program Files\GIANTS Software\GIANTS_Editor_10.0.11\editor.exe` |
+
+### Mod Projects
+
+All mods live under the **Mods Base Directory** above:
+
+| Mod Folder | Description |
+|------------|-------------|
+| `FS25_NPCFavor` | NPC neighbors with AI, relationships, favor quests *(this repo)* |
+| `FS25_IncomeMod` | Income system mod |
+| `FS25_TaxMod` | Tax system mod |
+| `FS25_WorkerCosts` | Worker cost management |
+| `FS25_SoilFertilizer` | Soil & fertilizer mechanics |
+| `FS25_FarmTablet` | In-game farm tablet UI |
+| `FS25_AutonomousDroneHarvester` | Autonomous drone harvesting |
+| `FS25_RandomWorldEvents` | Random world event system |
+| `FS25_RealisticAnimalNames` | Realistic animal naming |
+| `WorkshopApp.lua` | Workshop utility script |
 
 ---
 
