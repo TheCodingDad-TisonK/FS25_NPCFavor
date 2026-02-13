@@ -1919,22 +1919,13 @@ function NPCEntity:createMapHotspot(entity, npc)
         -- Guard: PlaceableHotspot.new() can succeed but leave overlay nil
         -- when created standalone (not tied to a real placeable). The game's
         -- draw loop accesses overlay.width, causing the :213 crash.
+        -- Do NOT create fallback Overlay objects — Overlay.new() with game
+        -- texture paths returns a zombie object (non-nil but broken) from
+        -- mod context, which still crashes during draw.
         if hotspot.overlay == nil then
-            -- Attempt 1: trigger lazy icon init if available
             if hotspot.getIcon then
                 pcall(function() hotspot:getIcon() end)
             end
-            -- Attempt 2: create fallback overlay from game icon atlas
-            if hotspot.overlay == nil and Overlay then
-                local okOverlay, overlay = pcall(function()
-                    local w, h = getNormalizedScreenValues(24, 24)
-                    return Overlay.new("dataS/menu/hud/ingameMap_hotspotIcons.png", 0, 0, w, h)
-                end)
-                if okOverlay and overlay then
-                    hotspot.overlay = overlay
-                end
-            end
-            -- Still nil — abandon this hotspot to prevent draw crash
             if hotspot.overlay == nil then
                 if hotspot.delete then pcall(function() hotspot:delete() end) end
                 if not NPCEntity.hotspotOverlayWarned then
