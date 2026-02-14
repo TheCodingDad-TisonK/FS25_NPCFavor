@@ -46,11 +46,11 @@
 -- =========================================================
 
 -- Add version tracking
-local MOD_VERSION = "1.2.2.6"
-local MOD_NAME = "FS25_NPCFavor"
-
 local modDirectory = g_currentModDirectory
 local modName = g_currentModName
+
+local modItem = g_modManager:getModByName(modName)
+local modVersion = modItem.version
 
 print("[NPC Favor] Starting mod initialization...")
 
@@ -168,8 +168,8 @@ local function loadedMission(mission, node)
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
             g_NPCFavorMod = {
-                version = MOD_VERSION,
-                name = MOD_NAME,
+                version = modVersion,
+                name = modName,
                 system = npcSystem
             }
             print("[NPC Favor] Late initialization successful")
@@ -201,15 +201,15 @@ local function load(mission)
     end
 
     if npcSystem == nil then
-        print("[NPC Favor] Initializing version " .. MOD_VERSION .. "...")
+        print("[NPC Favor] Initializing version " .. modVersion .. "...")
         print("[NPC Favor] Creating NPCSystem instance...")
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
 
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
             g_NPCFavorMod = {
-                version = MOD_VERSION,
-                name = MOD_NAME,
+                version = modVersion,
+                name = modName,
                 system = npcSystem
             }
 
@@ -654,7 +654,7 @@ if g_currentMission and g_currentMission.missionInfo then
 end
 
 print("========================================")
-print("     FS25 NPC Favor v" .. MOD_VERSION .. " LOADED     ")
+print("     FS25 NPC Favor v" .. modVersion .. " LOADED     ")
 print("     Living Neighborhood System         ")
 print("     Type 'npcHelp' in console          ")
 print("     for available commands             ")
