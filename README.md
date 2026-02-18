@@ -1,3 +1,9 @@
+# FS25 NPC Favor - Living Neighborhood Mod
+[![Downloads](https://img.shields.io/github/downloads/TheCodingDad-TisonK/FS25_NPCFavor/total?style=for-the-badge)
+[![FS25 Version](https://img.shields.io/badge/FS25-Compatible-green)](https://www.farming-simulator.com/)
+[![Version](https://img.shields.io/badge/Version-1.2.0.0-blue)](https://github.com/TheCodingDad-TisonK/FS25_NPCFavor/releases)
+[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](LICENSE)
+
 **From a follower:**
 > "Hello friend,
 > I just wanted to write to you that I came across your mod realistic worker cost and that I like it because I am a fan of fs and realism myself. I was thinking and wanted to share this idea with you, since I am not good at programming I thought I could share this idea > with you. The idea is to add a living neighborhood to fs, i.e. NPCs who live around come to life and work on their fields with their own machinery. That would be the first part, and the second would be that you could ask them for a favor or they would ask you for a  > favor, so that they would be physically present on the map. If you like the idea in any way, I would be happy if you would respond.
@@ -7,12 +13,6 @@ So i listened, and changed his idea into reality (we are not there.. yet)
 Its here, but we have to improve ALOT :)
 
 Thanks for reading; Now about the mod itself...
-
-# FS25 NPC Favor - Living Neighborhood Mod
-
-[![FS25 Version](https://img.shields.io/badge/FS25-Compatible-green)](https://www.farming-simulator.com/)
-[![Version](https://img.shields.io/badge/Version-1.2.0.0-blue)](https://github.com/TheCodingDad-TisonK/FS25_NPCFavor/releases)
-[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](LICENSE)
 
 **Breathe life into your farmland!** This mod adds a living, breathing community of NPC neighbors to Farming Simulator 25. They walk the roads, follow daily routines driven by their own internal needs, build relationships with each other and with you, and ask for help with favors. Each NPC has a personality, a home, and opinions about you that change over time.
 
