@@ -16,8 +16,6 @@ Thanks for reading; Now about the mod itself...
 
 The mod supports singleplayer and multiplayer (not yet tested) , saves all NPC data across sessions, and is fully localized in 10 languages.
 
----
-
 ## ✨ Features
 
 - **Animated NPC Neighbors** -- NPCs spawn at buildings around the map (shops, gas stations, production points, farms) as visible human figures with walk and idle animations.
