@@ -10,6 +10,8 @@
 
 Thanks for reading; Now about the mod itself...
 
+---
+
 **Breathe life into your farmland!** This mod adds a living, breathing community of NPC neighbors to Farming Simulator 25. They walk the roads, follow daily routines driven by their own internal needs, build relationships with each other and with you, and ask for help with favors. Each NPC has a personality, a home, and opinions about you that change over time.
 
 The mod supports singleplayer and multiplayer (not yet tested) , saves all NPC data across sessions, and is fully localized in 10 languages.
