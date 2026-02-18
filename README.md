@@ -1,8 +1,7 @@
 # FS25 NPC Favor - Living Neighborhood Mod
-[![Downloads](https://img.shields.io/badge/downloads/TheCodingDad-TisonK/FS25_NPCFavor/total?style=for-the-badge)
-[![FS25 Version](https://img.shields.io/badge/FS25-Compatible-green)](https://www.farming-simulator.com/)
-[![Version](https://img.shields.io/badge/Version-1.2.0.0-blue)](https://github.com/TheCodingDad-TisonK/FS25_NPCFavor/releases)
-[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](LICENSE)
+![Downloads](https://img.shields.io/github/downloads/TheCodingDad-TisonK/FS25_NPCFavor/total?style=for-the-badge)
+![Release](https://img.shields.io/github/v/release/TheCodingDad-TisonK/FS25_NPCFavor?style=for-the-badge)
+![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red?style=for-the-badge)
 
 **From a follower:**
 > "Hello friend,
