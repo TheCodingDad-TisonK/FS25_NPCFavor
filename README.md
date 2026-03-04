@@ -184,8 +184,8 @@ FS25_NPCFavor/
 
 ---
 
-> [!IMPORTANT]  
-> ## 🚧 Known Limitations
+> [!INFO]  
+> 🚧 **Known Limitations**
 > - **NPC vehicles** -- Vehicle prop code is in place but no vehicles spawn or render. NPCs walk everywhere.
 > - **Silent groups** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content. Only 1-on-1 socializing produces speech bubbles.
 > - **Flavor text localization** -- Mood prefixes, backstories, and personality-flavored dialog are English-only. Core UI and settings are fully localized.
