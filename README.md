@@ -9,7 +9,6 @@
 [![Status](https://img.shields.io/badge/status-Active%20Development-orange?style=for-the-badge&logo=hammer&logoColor=white)](#)
 
 
-**From a follower:**
 > "Hello friend,
 > I just wanted to write to you that I came across your mod realistic worker cost and that I like it because I am a fan of fs and realism myself. I was thinking and wanted to share this idea with you, since I am not good at programming I thought I could share this idea > with you. The idea is to add a living neighborhood to fs, i.e. NPCs who live around come to life and work on their fields with their own machinery. That would be the first part, and the second would be that you could ask them for a favor or they would ask you for a  > favor, so that they would be physically present on the map. If you like the idea in any way, I would be happy if you would respond.
 > Your new follower,"
