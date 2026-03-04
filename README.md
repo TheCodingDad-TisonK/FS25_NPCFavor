@@ -184,7 +184,7 @@ FS25_NPCFavor/
 
 ---
 
-> [!INFO]  
+> [!INFORMATION]  
 > 🚧 **Known Limitations**
 > - **NPC vehicles** -- Vehicle prop code is in place but no vehicles spawn or render. NPCs walk everywhere.
 > - **Silent groups** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content. Only 1-on-1 socializing produces speech bubbles.
