@@ -3,6 +3,9 @@
 ![Release](https://img.shields.io/github/v/release/TheCodingDad-TisonK/FS25_NPCFavor?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red?style=for-the-badge)
 
+> [!IMPORTANT]  
+> **Note:** This mod is in active development This is not (yet) the final version.
+
 **From a follower:**
 > "Hello friend,
 > I just wanted to write to you that I came across your mod realistic worker cost and that I like it because I am a fan of fs and realism myself. I was thinking and wanted to share this idea with you, since I am not good at programming I thought I could share this idea > with you. The idea is to add a living neighborhood to fs, i.e. NPCs who live around come to life and work on their fields with their own machinery. That would be the first part, and the second would be that you could ask them for a favor or they would ask you for a  > favor, so that they would be physically present on the map. If you like the idea in any way, I would be happy if you would respond.
@@ -15,9 +18,6 @@ Thanks for reading; Now about the mod itself...
 **Breathe life into your farmland!** This mod adds a living, breathing community of NPC neighbors to Farming Simulator 25. They walk the roads, follow daily routines driven by their own internal needs, build relationships with each other and with you, and ask for help with favors. Each NPC has a personality, a home, and opinions about you that change over time.
 
 The mod supports singleplayer and multiplayer (not yet tested) , saves all NPC data across sessions, and is fully localized in 10 languages.
-
-> [!WARNING]  
-> **Note:** This mod is in active development This is not (yet) the final version.
 
 ## ✨ Features
 
@@ -184,11 +184,11 @@ FS25_NPCFavor/
 
 ---
 
-## 🚧 Known Limitations
-
-- **NPC vehicles** -- Vehicle prop code is in place but no vehicles spawn or render. NPCs walk everywhere.
-- **Silent groups** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content. Only 1-on-1 socializing produces speech bubbles.
-- **Flavor text localization** -- Mood prefixes, backstories, and personality-flavored dialog are English-only. Core UI and settings are fully localized.
+> [!IMPORTANT]  
+> ## 🚧 Known Limitations
+> - **NPC vehicles** -- Vehicle prop code is in place but no vehicles spawn or render. NPCs walk everywhere.
+> - **Silent groups** -- Group gatherings and walking pairs position NPCs correctly but generate no conversation content. Only 1-on-1 socializing produces speech bubbles.
+> - **Flavor text localization** -- Mood prefixes, backstories, and personality-flavored dialog are English-only. Core UI and settings are fully localized.
 
 ---
 
