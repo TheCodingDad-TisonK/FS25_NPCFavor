@@ -8,7 +8,6 @@
 [![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red?style=for-the-badge&logo=shield&logoColor=white)](#license--credits)
 [![Status](https://img.shields.io/badge/status-Active%20Development-orange?style=for-the-badge&logo=hammer&logoColor=white)](#)
 
-<br>
 
 **From a follower:**
 > "Hello friend,
