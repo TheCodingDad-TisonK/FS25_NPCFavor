@@ -167,6 +167,7 @@ local function loadedMission(mission, node)
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
+            mission.npcFavorSystem = npcSystem  -- cross-mod bridge
             g_NPCFavorMod = {
                 version = modVersion,
                 name = modName,
@@ -207,6 +208,9 @@ local function load(mission)
 
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
+            -- Cross-mod bridge: g_currentMission is a true shared global visible to all mods.
+            -- getfenv(0) is per-mod scoped in FS25 and NOT shared between mods.
+            mission.npcFavorSystem = npcSystem
             g_NPCFavorMod = {
                 version = modVersion,
                 name = modName,
