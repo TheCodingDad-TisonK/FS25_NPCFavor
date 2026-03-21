@@ -413,7 +413,7 @@ function NPCFavorManagementDialog:applyBtnHover(rowNum, btnName, isHovered)
     local bgElem = self[prefix .. "bg"]
     if bgElem and bgElem.setImageColor then
         local c = isHovered and colors.BG_H or colors.BG
-        bgElem:setImageColor(c[1], c[2], c[3], c[4])
+        bgElem:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
 
     local txtElem = self[prefix .. "txt"]

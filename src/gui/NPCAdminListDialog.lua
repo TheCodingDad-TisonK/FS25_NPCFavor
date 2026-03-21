@@ -244,7 +244,7 @@ function NPCAdminListDialog:applyEditHover(rowNum, isHovered)
     local txtElem = self[prefix .. "edittxt"]
     if bgElem then
         local c = isHovered and self.EDIT_COLORS.BG_HOVER or self.EDIT_COLORS.BG_NORMAL
-        bgElem:setImageColor(c[1], c[2], c[3], c[4])
+        bgElem:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
     if txtElem then
         local c = isHovered and self.EDIT_COLORS.TXT_HOVER or self.EDIT_COLORS.TXT_NORMAL

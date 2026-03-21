@@ -169,7 +169,7 @@ function NPCAdminEditDialog:applyIncHover(suffix, isHovered)
     local txtElem = self["btnInc" .. suffix .. "Text"]
     if bgElem then
         local c = isHovered and self.COLORS.INC_BG_HOVER or self.COLORS.INC_BG_NORMAL
-        bgElem:setImageColor(c[1], c[2], c[3], c[4])
+        bgElem:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
     if txtElem then
         local c = isHovered and self.COLORS.INC_TXT_HOVER or self.COLORS.INC_TXT_NORMAL
@@ -182,7 +182,7 @@ function NPCAdminEditDialog:applyDecHover(suffix, isHovered)
     local txtElem = self["btnDec" .. suffix .. "Text"]
     if bgElem then
         local c = isHovered and self.COLORS.DEC_BG_HOVER or self.COLORS.DEC_BG_NORMAL
-        bgElem:setImageColor(c[1], c[2], c[3], c[4])
+        bgElem:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
     if txtElem then
         local c = isHovered and self.COLORS.DEC_TXT_HOVER or self.COLORS.DEC_TXT_NORMAL
