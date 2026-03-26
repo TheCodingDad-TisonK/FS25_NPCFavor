@@ -7,8 +7,8 @@
 --   - Spot check (lazy NPCs, 20% chance)
 -- Supports multi-worker coordination (max 2 per field) with
 -- alternating rows (foot) or field halving (vehicle).
--- Headland turns use VectorHelper.bezierQuadratic() for smooth
--- U-turn curves between rows.
+-- Headland transitions are simple straight walks between row
+-- endpoints (~3m apart) for clean, realistic movement.
 -- =========================================================
 
 NPCFieldWork = {}
@@ -60,16 +60,21 @@ end
 -- Large (>8000m²): 2
 -- @param fieldArea  Field area in m²
 -- @return number  1 or 2
-function NPCFieldWork:getMaxWorkers(fieldArea)
+function NPCFieldWork:getMaxWorkers(fieldArea, fieldId)
     fieldArea = fieldArea or 0
     if fieldArea < 2000 then
         return 1
     elseif fieldArea <= 8000 then
-        -- Medium field: 10% chance of allowing 2 workers
-        if math.random(100) <= 10 then
-            return 2
+        -- Medium field: 10% chance of allowing 2 workers (cached per field)
+        if fieldId then
+            local key = tostring(fieldId)
+            if self._maxWorkerCache == nil then self._maxWorkerCache = {} end
+            if self._maxWorkerCache[key] == nil then
+                self._maxWorkerCache[key] = (math.random(100) <= 10) and 2 or 1
+            end
+            return self._maxWorkerCache[key]
         end
-        return 1
+        return (math.random(100) <= 10) and 2 or 1
     else
         return 2
     end
@@ -100,7 +105,7 @@ function NPCFieldWork:assignWorker(fieldId, npcId, fieldArea)
     end
 
     -- Check capacity
-    local maxWorkers = self:getMaxWorkers(fieldArea)
+    local maxWorkers = self:getMaxWorkers(fieldArea, fieldId)
     if #workers >= maxWorkers then
         return nil  -- at capacity
     end
@@ -283,28 +288,9 @@ function NPCFieldWork:generateRowPattern(bounds, config)
         end
     end
 
-    -- Insert headland turns between row endpoints for smooth curves
-    if #waypoints >= 4 then
-        local smoothed = {}
-        for i = 1, #waypoints - 1, 2 do
-            -- Row start → row end
-            table.insert(smoothed, waypoints[i])
-            table.insert(smoothed, waypoints[i + 1])
-
-            -- Headland turn to next row (if there is one)
-            if i + 2 <= #waypoints then
-                local turnPts = self:createHeadlandTurn(
-                    waypoints[i + 1].x, waypoints[i + 1].z,
-                    waypoints[i + 2].x, waypoints[i + 2].z,
-                    spacing, bounds
-                )
-                for _, pt in ipairs(turnPts) do
-                    table.insert(smoothed, pt)
-                end
-            end
-        end
-        waypoints = smoothed
-    end
+    -- Headland turns removed: raw boustrophedon waypoints produce clean
+    -- straight rows.  Row ends connect directly to the next row start
+    -- (~3m apart), which looks like a natural tight turn at the headland.
 
     return waypoints
 end

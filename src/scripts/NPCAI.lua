@@ -115,19 +115,30 @@ function NPCAI.new(npcSystem)
         socialize_to_walk = 0.15,
     }
 
+    -- Movement mode speeds (m/s) — walk uses personality-based speed, run/sprint are fixed
+    -- Real-world ref: walk ~1.4 m/s, jog ~3.5 m/s, sprint ~5.5 m/s
+    -- Both run and sprint exceed the 2.5 m/s isRunning threshold in NPCEntity, so
+    -- the run animation activates automatically. absSpeed drives playback rate variation.
+    self.MOVE_SPEEDS = {
+        walk    = nil,   -- uses npc.movementSpeed (personality-based 0.7-1.6)
+        run     = 3.5,   -- triggers run animation (>2.5 threshold)
+        sprint  = 5.5,   -- fast run, urgent movement
+    }
+
     -- Personality-based daily schedule parameters.
     -- wake/sleep are hours (24h clock). lunchDuration in hours.
-    -- wake/sleep in 24h clock. Farmers should be up before sunrise (~6:00).
+    -- workEnd is 17.5 (17:30) for all — smart departure handles actual leave time
+    -- based on distance to home and commute speed.
     self.personalitySchedule = {
-        hardworking = { wake = 5,    workStart = 5.5, lunchDuration = 0.5, workEnd = 18, sleep = 21 },
-        lazy        = { wake = 7,    workStart = 8,   lunchDuration = 1.5, workEnd = 16, sleep = 23 },
-        social      = { wake = 5.5,  workStart = 6.5, lunchDuration = 1.5, workEnd = 17, sleep = 22 },
-        grumpy      = { wake = 5.5,  workStart = 6,   lunchDuration = 0.5, workEnd = 17, sleep = 21 },
-        generous    = { wake = 5.5,  workStart = 6.5, lunchDuration = 1,   workEnd = 17, sleep = 22 },
+        hardworking = { wake = 5,    workStart = 5.5, lunchDuration = 0.5, workEnd = 17.5, sleep = 21 },
+        lazy        = { wake = 7,    workStart = 8,   lunchDuration = 1.5, workEnd = 17.5, sleep = 23 },
+        social      = { wake = 5.5,  workStart = 6.5, lunchDuration = 1.5, workEnd = 17.5, sleep = 22 },
+        grumpy      = { wake = 5.5,  workStart = 6,   lunchDuration = 0.5, workEnd = 17.5, sleep = 21 },
+        generous    = { wake = 5.5,  workStart = 6.5, lunchDuration = 1,   workEnd = 17.5, sleep = 22 },
     }
 
     -- Default schedule for personalities not listed above
-    self.defaultSchedule = { wake = 5.5, workStart = 6.5, lunchDuration = 1, workEnd = 17, sleep = 22 }
+    self.defaultSchedule = { wake = 5.5, workStart = 6.5, lunchDuration = 1, workEnd = 17.5, sleep = 22 }
 
     return self
 end
@@ -143,6 +154,53 @@ end
 -- @return table  Schedule with keys: wake, workStart, lunchDuration, workEnd, sleep
 function NPCAI:getPersonalitySchedule(npc)
     return self.personalitySchedule[npc.personality] or self.defaultSchedule
+end
+
+--- Calculate when this NPC should leave work to arrive home by target time.
+-- Uses distance to home and evening movement speed to determine departure.
+-- @param npc  NPC data table
+-- @return number  Departure time as decimal hour (e.g., 16.75 = 4:45 PM)
+function NPCAI:calculateDepartureTime(npc)
+    local targetArrival = 17.5  -- 17:30 — sunset / end of day
+
+    if not npc.homePosition or not npc.position then
+        return targetArrival - 0.5  -- fallback: leave 30 min early
+    end
+
+    local dx = npc.homePosition.x - npc.position.x
+    local dz = npc.homePosition.z - npc.position.z
+    local distance = math.sqrt(dx * dx + dz * dz)
+
+    -- Choose evening commute speed based on personality
+    local commuteSpeed
+    if npc.personality == "lazy" then
+        commuteSpeed = self.MOVE_SPEEDS.run   -- 3.5 m/s (lazy jogs, doesn't sprint)
+    elseif npc.personality == "hardworking" then
+        commuteSpeed = self.MOVE_SPEEDS.run   -- 3.5 m/s (hardworking, steady jog)
+    else
+        -- 50/50 run or sprint for variety (seeded per NPC per day for consistency)
+        local dayHash = 0
+        if self.npcSystem.scheduler and self.npcSystem.scheduler.currentDay then
+            dayHash = self.npcSystem.scheduler.currentDay
+        end
+        local npcHash = (npc.id or 0) + dayHash
+        commuteSpeed = (npcHash % 2 == 0) and self.MOVE_SPEEDS.run or self.MOVE_SPEEDS.sprint
+    end
+
+    -- Store chosen speed for actual commute later
+    npc._eveningCommuteSpeed = commuteSpeed
+
+    -- Travel time in seconds, convert to hours
+    -- Add 20% buffer for pathfinding detours
+    local travelTimeSec = (distance / commuteSpeed) * 1.2
+    local travelTimeHours = travelTimeSec / 3600
+
+    -- Clamp: minimum 5 min, maximum 1.5 hours early
+    travelTimeHours = math.max(5/60, math.min(1.5, travelTimeHours))
+
+    local departureTime = targetArrival - travelTimeHours
+
+    return departureTime
 end
 
 --- Determine what the NPC should be doing right now based on their
@@ -289,12 +347,21 @@ function NPCAI:getScheduledActivity(npc, hour, minute)
         return "lunch", "socialize", "at lunch"
     end
 
-    if t >= lunchEnd and t < workEnd then
-        return "work_afternoon", "work", "working"
-    end
+    if t >= lunchEnd then
+        -- Smart departure: calculate when NPC should leave to arrive home by 17:30
+        local departureTime = self:calculateDepartureTime(npc)
 
-    if t >= workEnd and t < commuteHomeEnd then
-        return "commute_home", "go_home", "heading home"
+        -- Cap: never leave before workEnd minus 1 hour (personality minimum work time)
+        local earliestDeparture = math.max(workEnd - 1, departureTime)
+
+        if t < earliestDeparture then
+            return "work_afternoon", "work", "working"
+        end
+
+        -- Commute window: from departure until commuteHomeEnd (ensures no schedule gap)
+        if t < commuteHomeEnd then
+            return "commute_home", "go_home", "heading home"
+        end
     end
 
     if t >= commuteHomeEnd and t < eveningSocialEnd then
@@ -1413,7 +1480,7 @@ function NPCAI:initFieldWork(npc)
         if waypoints and #waypoints > 0 then
             npc.fieldWorkWaypoints = waypoints
             npc.fieldWorkPath = waypoints  -- backward compat for updateWorkingState
-            npc.fieldWorkIndex = 1
+            npc.fieldWorkIndex = self:_findNearestWaypointIndex(npc, waypoints)
             npc.workTimer = 0
             npc.fieldWorkSlot = slot
             npc.fieldWorkPattern = "boustrophedon"
@@ -1507,7 +1574,7 @@ function NPCAI:initFieldWorkLegacy(npc)
         end
     end
 
-    npc.fieldWorkIndex = 1
+    npc.fieldWorkIndex = self:_findNearestWaypointIndex(npc, npc.fieldWorkPath)
     npc.workTimer = 0
     npc.fieldWorkPattern = pattern
 
@@ -1538,12 +1605,23 @@ function NPCAI:updateWorkingState(npc, dt)
         end
     end
 
+    -- Pause field work movement during greeting (NPC stops to say hi)
+    if npc._greetingPause then
+        if not npc.greetingTimer or npc.greetingTimer <= 0 then
+            -- Greeting finished, resume work
+            npc._greetingPause = nil
+        else
+            -- Still greeting — don't move, just stand and face player
+            return
+        end
+    end
+
     -- Personality-based total work duration before taking a break
-    local workDuration = 120  -- 2 minutes of actual field traversal
+    local workDuration = 360  -- 6 minutes of field traversal
     if npc.personality == "hardworking" then
-        workDuration = 180
+        workDuration = 600  -- 10 minutes
     elseif npc.personality == "lazy" then
-        workDuration = 60
+        workDuration = 180  -- 3 minutes
     end
 
     -- Move along field work rows
@@ -1589,7 +1667,7 @@ function NPCAI:updateWorkingState(npc, dt)
         npc.workTimer = 0
 
         local nextAction = math.random()
-        if nextAction < 0.3 then
+        if nextAction < 0.15 then
             -- Take a break (idle near field) — tractor stays parked where it is
             -- Release worker slot so another NPC can take the field
             local fieldWork = self.npcSystem and self.npcSystem.fieldWork
@@ -1604,8 +1682,11 @@ function NPCAI:updateWorkingState(npc, dt)
             npc.fieldWorkSlot = nil
             self:setState(npc, self.STATES.IDLE)
         else
-            -- Continue working (start new row pattern from current position)
-            self:initFieldWork(npc)
+            -- Continue working: keep existing path (it loops naturally via index reset at end)
+            if not npc.fieldWorkPath or #npc.fieldWorkPath == 0 then
+                self:initFieldWork(npc)
+            end
+            -- workTimer already reset to 0 above
         end
     end
 end
@@ -1622,6 +1703,32 @@ function NPCAI:_releaseFieldWorkSlot(npc)
         npc.fieldWorkWaypoints = nil
         npc.fieldWorkSlot = nil
     end
+end
+
+--- Find the waypoint nearest to the NPC's current position.
+-- Used when starting/resuming field work so the NPC doesn't teleport to index 1.
+-- @param npc       NPC data table with .position {x, z}
+-- @param waypoints Array of {x, z} waypoints
+-- @return number   Best waypoint index (1-based)
+function NPCAI:_findNearestWaypointIndex(npc, waypoints)
+    if not waypoints or #waypoints == 0 then return 1 end
+    if not npc or not npc.position then return 1 end
+
+    -- Prefer row START waypoints (odd indices: 1, 3, 5...) so the NPC
+    -- begins at a row start and walks the full row length, rather than
+    -- starting mid-row or at a row end.
+    local bestIdx = 1
+    local bestDist = math.huge
+    for i = 1, #waypoints, 2 do
+        local dx = waypoints[i].x - npc.position.x
+        local dz = waypoints[i].z - npc.position.z
+        local d = dx * dx + dz * dz
+        if d < bestDist then
+            bestDist = d
+            bestIdx = i
+        end
+    end
+    return bestIdx
 end
 
 function NPCAI:updateDrivingState(npc, dt)
@@ -1835,6 +1942,8 @@ function NPCAI:setState(npc, state)
     if npc._originalSpeed and state ~= "walking" and state ~= "traveling" and state ~= "working" then
         npc.movementSpeed = npc._originalSpeed
         npc._originalSpeed = nil
+        npc._movementMode = nil        -- clear movement mode
+        npc._eveningCommuteSpeed = nil  -- clear cached commute speed
     end
 
     -- When leaving WORKING state: NPC steps out of tractor but tractor stays parked
@@ -1891,6 +2000,25 @@ function NPCAI:setState(npc, state)
     end
 end
 
+--- Set an NPC's movement mode (walk/run/sprint), adjusting speed accordingly.
+-- Walk restores the NPC's personality-based speed. Run and sprint use fixed
+-- speeds that trigger the run animation (>2.5 m/s threshold in NPCEntity).
+-- @param npc   NPC data table
+-- @param mode  "walk", "run", or "sprint"
+function NPCAI:setMovementMode(npc, mode)
+    npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
+    npc._movementMode = mode
+
+    if mode == "run" then
+        npc.movementSpeed = self.MOVE_SPEEDS.run
+    elseif mode == "sprint" then
+        npc.movementSpeed = self.MOVE_SPEEDS.sprint
+    else -- "walk"
+        npc.movementSpeed = npc._originalSpeed
+        npc._movementMode = "walk"
+    end
+end
+
 --- Send an NPC to their assigned field. If already there, transitions to
 -- WORKING state. Uses transport mode selection (walk/car/tractor) based
 -- on distance and profession for the commute.
@@ -1935,6 +2063,19 @@ function NPCAI:startWorking(npc)
             )
         end
     else
+        -- Morning exception: lazy NPCs running late jog to their field
+        if npc.personality == "lazy" then
+            local hour = 12
+            if self.npcSystem.scheduler and self.npcSystem.scheduler.getCurrentHour then
+                hour = self.npcSystem.scheduler:getCurrentHour()
+            end
+            local sched = self:getPersonalitySchedule(npc)
+            if hour >= sched.workStart + 0.5 then
+                self:setMovementMode(npc, "run")
+                npc.currentAction = "rushing to work"
+            end
+        end
+
         -- Use transport mode selection for the commute to the field
         self:startCommute(npc, targetX, targetZ, "startWorking")
     end
@@ -2034,10 +2175,36 @@ function NPCAI:goHome(npc)
     if distance < 10 then
         -- Already close to home
         self:setState(npc, self.STATES.RESTING)
-    else
-        -- Use transport mode selection for the commute home
-        self:startCommute(npc, npc.homePosition.x, npc.homePosition.z, "goHome")
+        return
     end
+
+    -- Determine commute speed based on time of day
+    local hour = 12
+    if self.npcSystem.scheduler and self.npcSystem.scheduler.getCurrentHour then
+        hour = self.npcSystem.scheduler:getCurrentHour()
+    end
+
+    -- Evening commute (after 15:00): run or sprint home
+    if hour >= 15 then
+        local commuteSpeed = npc._eveningCommuteSpeed  -- set by calculateDepartureTime
+        if not commuteSpeed then
+            -- Fallback: personality-based choice
+            if npc.personality == "lazy" then
+                commuteSpeed = self.MOVE_SPEEDS.run
+            else
+                commuteSpeed = (math.random() < 0.5) and self.MOVE_SPEEDS.run or self.MOVE_SPEEDS.sprint
+            end
+        end
+        npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
+        npc.movementSpeed = commuteSpeed
+        npc._movementMode = commuteSpeed >= self.MOVE_SPEEDS.sprint and "sprint" or "run"
+        npc.currentAction = "heading home"
+    end
+
+    -- Morning/midday commute: keep normal walk speed (no boost applied above)
+
+    -- Use transport mode selection for the commute home
+    self:startCommute(npc, npc.homePosition.x, npc.homePosition.z, "goHome")
 end
 
 --- Assign a vehicle to the NPC and transition to DRIVING state.
@@ -2702,7 +2869,7 @@ function NPCAI:startEventBehavior(npc, eventType, eventData)
                 if waypoints and #waypoints > 0 then
                     npc.fieldWorkWaypoints = waypoints
                     npc.fieldWorkPath = waypoints
-                    npc.fieldWorkIndex = 1
+                    npc.fieldWorkIndex = self:_findNearestWaypointIndex(npc, waypoints)
                     npc.fieldWorkSlot = slot
                     npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
                     npc.movementSpeed = 1.8
@@ -2972,6 +3139,13 @@ function NPCAI:checkPlayerGreeting(npc, playerPos, dt)
     npc.greetingTimer = 3.0
     npc.currentAction = "greeting"
 
+    -- Pause field work if NPC is working on foot (not in vehicle)
+    -- NPC will stop walking their rows, face the player, show greeting,
+    -- then resume work exactly where they left off after ~3 seconds.
+    if npc.aiState == self.STATES.WORKING and not npc.currentVehicle then
+        npc._greetingPause = true
+    end
+
     if self.npcSystem.recordEncounter then
         self.npcSystem:recordEncounter(npc, "talked", "greeting", nil, "positive")
     end
@@ -3203,7 +3377,8 @@ function NPCAI:startCommute(npc, targetX, targetZ, callback)
 
     if mode == "walk" then
         -- Walk there, with speed boost for commute distances
-        if distance > 100 then
+        -- Skip generic 2× boost if a movement mode is already set (e.g. evening run/sprint)
+        if distance > 100 and not npc._movementMode then
             -- Temporarily boost speed for long walks (brisk commute)
             npc._originalSpeed = npc._originalSpeed or npc.movementSpeed
             npc.movementSpeed = npc._originalSpeed * 2.0  -- brisk walk / jog

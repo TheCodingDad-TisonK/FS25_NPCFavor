@@ -56,6 +56,10 @@ NPCSettingsIntegration.maxNPCValues = {2, 4, 6, 8, 10, 12, 16}
 NPCSettingsIntegration.maxActiveFavorsOptions = {"1", "2", "3", "5", "8", "10"}
 NPCSettingsIntegration.maxActiveFavorsValues = {1, 2, 3, 5, 8, 10}
 
+-- HUD Scale dropdown values
+NPCSettingsIntegration.hudScaleOptions = {"0.75x", "1.0x", "1.25x", "1.5x"}
+NPCSettingsIntegration.hudScaleValues = {0.75, 1.0, 1.25, 1.5}
+
 -- Constructor (called from NPCSystem.new)
 function NPCSettingsIntegration.new(npcSystem)
     local self = setmetatable({}, NPCSettingsIntegration_mt)
@@ -143,6 +147,19 @@ function NPCSettingsIntegration:addSettingsElements(frame)
         frame, "onShowFavorListToggleChanged",
         g_i18n:getText("npc_show_favor_list_short") or "Show Favor List",
         g_i18n:getText("npc_show_favor_list_long") or "Show the active favor list on the HUD"
+    )
+
+    frame.npcfavor_hudLockedToggle = NPCSettingsIntegration:addBinaryOption(
+        frame, "onHudLockedToggleChanged",
+        g_i18n:getText("npc_hud_locked_short") or "Lock Favor HUD",
+        g_i18n:getText("npc_hud_locked_long") or "When locked, the favor list cannot be moved with F8"
+    )
+
+    frame.npcfavor_hudScale = NPCSettingsIntegration:addMultiTextOption(
+        frame, "onHudScaleChanged",
+        NPCSettingsIntegration.hudScaleOptions,
+        g_i18n:getText("npc_hud_scale_short") or "Favor HUD Scale",
+        g_i18n:getText("npc_hud_scale_long") or "Size of the active favors list on screen"
     )
 
     frame.npcfavor_showRelBarsToggle = NPCSettingsIntegration:addBinaryOption(
@@ -329,6 +346,15 @@ function NPCSettingsIntegration:updateSettingsUI(frame)
     if frame.npcfavor_showFavorListToggle then
         frame.npcfavor_showFavorListToggle:setIsChecked(settings.showFavorList == true, false, false)
     end
+    if frame.npcfavor_hudLockedToggle then
+        frame.npcfavor_hudLockedToggle:setIsChecked(settings.favorHudLocked == true, false, false)
+    end
+    if frame.npcfavor_hudScale then
+        local index = NPCSettingsIntegration:findValueIndex(
+            NPCSettingsIntegration.hudScaleValues, settings.favorHudScale
+        )
+        frame.npcfavor_hudScale:setState(index)
+    end
     if frame.npcfavor_showRelBarsToggle then
         frame.npcfavor_showRelBarsToggle:setIsChecked(settings.showRelationshipBars == true, false, false)
     end
@@ -424,6 +450,20 @@ end
 function NPCSettingsIntegration:onShowFavorListToggleChanged(state)
     local value = (state == BinaryOptionElement.STATE_RIGHT)
     applySetting("showFavorList", value)
+end
+
+function NPCSettingsIntegration:onHudLockedToggleChanged(state)
+    local value = (state == BinaryOptionElement.STATE_RIGHT)
+    applySetting("favorHudLocked", value, "Favor HUD " .. (value and "locked" or "unlocked"))
+end
+
+function NPCSettingsIntegration:onHudScaleChanged(state)
+    local value = NPCSettingsIntegration.hudScaleValues[state] or 1.0
+    applySetting("favorHudScale", value, "Favor HUD scale set to " .. value)
+    -- Apply to live HUD immediately
+    if g_NPCSystem and g_NPCSystem.favorHUD then
+        g_NPCSystem.favorHUD.scale = value
+    end
 end
 
 function NPCSettingsIntegration:onShowRelBarsToggleChanged(state)

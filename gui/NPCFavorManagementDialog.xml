@@ -2,6 +2,7 @@
 <!--
     FS25_NPCFavor - Favor Management Dialog
     Shows active favors with ability to view, cancel, go to NPC, and complete
+    Uses 3-layer button pattern: Bitmap bg + invisible Button hit + Text label
 -->
 <GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
     <GuiElement profile="newLayer" />
@@ -22,59 +23,124 @@
             <Bitmap profile="fmDivider" position="0px -54px"/>
 
             <!-- ===== FAVOR ROW 1 ===== -->
+            <Bitmap profile="fmRowBorder" id="favor1border" position="0px -68px" visible="false"/>
             <Bitmap profile="fmRowBg" id="favor1bg" position="0px -70px" visible="false"/>
-            <Text profile="fmNPCName" id="favor1npc" position="-420px -75px" text="" visible="false"/>
-            <Text profile="fmDesc" id="favor1desc" position="-420px -95px" text="" visible="false"/>
-            <Text profile="fmTime" id="favor1time" position="-420px -115px" text="" visible="false"/>
-            <Text profile="fmReward" id="favor1reward" position="-420px -130px" text="" visible="false"/>
-            <Button profile="fmButton" id="favor1view" position="300px -75px" text="View" onClick="onClickFavor1View" visible="false"/>
-            <Button profile="fmButtonRed" id="favor1cancel" position="385px -75px" text="Cancel" onClick="onClickFavor1Cancel" visible="false"/>
-            <Button profile="fmButton" id="favor1goto" position="300px -105px" text="Go To" onClick="onClickFavor1Goto" visible="false"/>
-            <Button profile="fmButtonGreen" id="favor1complete" position="385px -105px" text="Done" onClick="onClickFavor1Complete" visible="false"/>
+            <Text profile="fmNPCName" id="favor1npc" position="-110px -75px" text="" visible="false"/>
+            <Text profile="fmDesc" id="favor1desc" position="-110px -95px" text="" visible="false"/>
+            <Text profile="fmTime" id="favor1time" position="-265px -115px" text="" visible="false"/>
+            <Text profile="fmReward" id="favor1reward" position="-265px -130px" text="" visible="false"/>
+            <!-- View (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor1viewbg"       position="300px -75px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor1view"         position="300px -75px" onClick="onClickFavor1View" onFocus="onFocusFavor1View" onLeave="onLeaveFavor1View" visible="false"/>
+            <Text   profile="fmBlueText" id="favor1viewtxt"      position="300px -76px" text="View" visible="false"/>
+            <!-- Cancel (red) -->
+            <Bitmap profile="fmRedBg"    id="favor1cancelbg"     position="385px -75px" visible="false"/>
+            <Button profile="fmRedHit"   id="favor1cancel"       position="385px -75px" onClick="onClickFavor1Cancel" onFocus="onFocusFavor1Cancel" onLeave="onLeaveFavor1Cancel" visible="false"/>
+            <Text   profile="fmRedText"  id="favor1canceltxt"    position="385px -76px" text="Cancel" visible="false"/>
+            <!-- Go To (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor1gotobg"       position="300px -105px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor1goto"         position="300px -105px" onClick="onClickFavor1Goto" onFocus="onFocusFavor1Goto" onLeave="onLeaveFavor1Goto" visible="false"/>
+            <Text   profile="fmBlueText" id="favor1gototxt"      position="300px -106px" text="Go To" visible="false"/>
+            <!-- Complete (green) -->
+            <Bitmap profile="fmGreenBg"  id="favor1completebg"   position="385px -105px" visible="false"/>
+            <Button profile="fmGreenHit" id="favor1complete"     position="385px -105px" onClick="onClickFavor1Complete" onFocus="onFocusFavor1Complete" onLeave="onLeaveFavor1Complete" visible="false"/>
+            <Text   profile="fmGreenText" id="favor1completetxt" position="385px -106px" text="Done" visible="false"/>
 
             <!-- ===== FAVOR ROW 2 ===== -->
+            <Bitmap profile="fmRowBorder" id="favor2border" position="0px -153px" visible="false"/>
             <Bitmap profile="fmRowBg" id="favor2bg" position="0px -155px" visible="false"/>
-            <Text profile="fmNPCName" id="favor2npc" position="-420px -160px" text="" visible="false"/>
-            <Text profile="fmDesc" id="favor2desc" position="-420px -180px" text="" visible="false"/>
-            <Text profile="fmTime" id="favor2time" position="-420px -200px" text="" visible="false"/>
-            <Text profile="fmReward" id="favor2reward" position="-420px -215px" text="" visible="false"/>
-            <Button profile="fmButton" id="favor2view" position="300px -160px" text="View" onClick="onClickFavor2View" visible="false"/>
-            <Button profile="fmButtonRed" id="favor2cancel" position="385px -160px" text="Cancel" onClick="onClickFavor2Cancel" visible="false"/>
-            <Button profile="fmButton" id="favor2goto" position="300px -190px" text="Go To" onClick="onClickFavor2Goto" visible="false"/>
-            <Button profile="fmButtonGreen" id="favor2complete" position="385px -190px" text="Done" onClick="onClickFavor2Complete" visible="false"/>
+            <Text profile="fmNPCName" id="favor2npc" position="-110px -160px" text="" visible="false"/>
+            <Text profile="fmDesc" id="favor2desc" position="-110px -180px" text="" visible="false"/>
+            <Text profile="fmTime" id="favor2time" position="-265px -200px" text="" visible="false"/>
+            <Text profile="fmReward" id="favor2reward" position="-265px -215px" text="" visible="false"/>
+            <!-- View (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor2viewbg"       position="300px -160px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor2view"         position="300px -160px" onClick="onClickFavor2View" onFocus="onFocusFavor2View" onLeave="onLeaveFavor2View" visible="false"/>
+            <Text   profile="fmBlueText" id="favor2viewtxt"      position="300px -161px" text="View" visible="false"/>
+            <!-- Cancel (red) -->
+            <Bitmap profile="fmRedBg"    id="favor2cancelbg"     position="385px -160px" visible="false"/>
+            <Button profile="fmRedHit"   id="favor2cancel"       position="385px -160px" onClick="onClickFavor2Cancel" onFocus="onFocusFavor2Cancel" onLeave="onLeaveFavor2Cancel" visible="false"/>
+            <Text   profile="fmRedText"  id="favor2canceltxt"    position="385px -161px" text="Cancel" visible="false"/>
+            <!-- Go To (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor2gotobg"       position="300px -190px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor2goto"         position="300px -190px" onClick="onClickFavor2Goto" onFocus="onFocusFavor2Goto" onLeave="onLeaveFavor2Goto" visible="false"/>
+            <Text   profile="fmBlueText" id="favor2gototxt"      position="300px -191px" text="Go To" visible="false"/>
+            <!-- Complete (green) -->
+            <Bitmap profile="fmGreenBg"  id="favor2completebg"   position="385px -190px" visible="false"/>
+            <Button profile="fmGreenHit" id="favor2complete"     position="385px -190px" onClick="onClickFavor2Complete" onFocus="onFocusFavor2Complete" onLeave="onLeaveFavor2Complete" visible="false"/>
+            <Text   profile="fmGreenText" id="favor2completetxt" position="385px -191px" text="Done" visible="false"/>
 
             <!-- ===== FAVOR ROW 3 ===== -->
+            <Bitmap profile="fmRowBorder" id="favor3border" position="0px -238px" visible="false"/>
             <Bitmap profile="fmRowBg" id="favor3bg" position="0px -240px" visible="false"/>
-            <Text profile="fmNPCName" id="favor3npc" position="-420px -245px" text="" visible="false"/>
-            <Text profile="fmDesc" id="favor3desc" position="-420px -265px" text="" visible="false"/>
-            <Text profile="fmTime" id="favor3time" position="-420px -285px" text="" visible="false"/>
-            <Text profile="fmReward" id="favor3reward" position="-420px -300px" text="" visible="false"/>
-            <Button profile="fmButton" id="favor3view" position="300px -245px" text="View" onClick="onClickFavor3View" visible="false"/>
-            <Button profile="fmButtonRed" id="favor3cancel" position="385px -245px" text="Cancel" onClick="onClickFavor3Cancel" visible="false"/>
-            <Button profile="fmButton" id="favor3goto" position="300px -275px" text="Go To" onClick="onClickFavor3Goto" visible="false"/>
-            <Button profile="fmButtonGreen" id="favor3complete" position="385px -275px" text="Done" onClick="onClickFavor3Complete" visible="false"/>
+            <Text profile="fmNPCName" id="favor3npc" position="-110px -245px" text="" visible="false"/>
+            <Text profile="fmDesc" id="favor3desc" position="-110px -265px" text="" visible="false"/>
+            <Text profile="fmTime" id="favor3time" position="-265px -285px" text="" visible="false"/>
+            <Text profile="fmReward" id="favor3reward" position="-265px -300px" text="" visible="false"/>
+            <!-- View (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor3viewbg"       position="300px -245px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor3view"         position="300px -245px" onClick="onClickFavor3View" onFocus="onFocusFavor3View" onLeave="onLeaveFavor3View" visible="false"/>
+            <Text   profile="fmBlueText" id="favor3viewtxt"      position="300px -246px" text="View" visible="false"/>
+            <!-- Cancel (red) -->
+            <Bitmap profile="fmRedBg"    id="favor3cancelbg"     position="385px -245px" visible="false"/>
+            <Button profile="fmRedHit"   id="favor3cancel"       position="385px -245px" onClick="onClickFavor3Cancel" onFocus="onFocusFavor3Cancel" onLeave="onLeaveFavor3Cancel" visible="false"/>
+            <Text   profile="fmRedText"  id="favor3canceltxt"    position="385px -246px" text="Cancel" visible="false"/>
+            <!-- Go To (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor3gotobg"       position="300px -275px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor3goto"         position="300px -275px" onClick="onClickFavor3Goto" onFocus="onFocusFavor3Goto" onLeave="onLeaveFavor3Goto" visible="false"/>
+            <Text   profile="fmBlueText" id="favor3gototxt"      position="300px -276px" text="Go To" visible="false"/>
+            <!-- Complete (green) -->
+            <Bitmap profile="fmGreenBg"  id="favor3completebg"   position="385px -275px" visible="false"/>
+            <Button profile="fmGreenHit" id="favor3complete"     position="385px -275px" onClick="onClickFavor3Complete" onFocus="onFocusFavor3Complete" onLeave="onLeaveFavor3Complete" visible="false"/>
+            <Text   profile="fmGreenText" id="favor3completetxt" position="385px -276px" text="Done" visible="false"/>
 
             <!-- ===== FAVOR ROW 4 ===== -->
+            <Bitmap profile="fmRowBorder" id="favor4border" position="0px -323px" visible="false"/>
             <Bitmap profile="fmRowBg" id="favor4bg" position="0px -325px" visible="false"/>
-            <Text profile="fmNPCName" id="favor4npc" position="-420px -330px" text="" visible="false"/>
-            <Text profile="fmDesc" id="favor4desc" position="-420px -350px" text="" visible="false"/>
-            <Text profile="fmTime" id="favor4time" position="-420px -370px" text="" visible="false"/>
-            <Text profile="fmReward" id="favor4reward" position="-420px -385px" text="" visible="false"/>
-            <Button profile="fmButton" id="favor4view" position="300px -330px" text="View" onClick="onClickFavor4View" visible="false"/>
-            <Button profile="fmButtonRed" id="favor4cancel" position="385px -330px" text="Cancel" onClick="onClickFavor4Cancel" visible="false"/>
-            <Button profile="fmButton" id="favor4goto" position="300px -360px" text="Go To" onClick="onClickFavor4Goto" visible="false"/>
-            <Button profile="fmButtonGreen" id="favor4complete" position="385px -360px" text="Done" onClick="onClickFavor4Complete" visible="false"/>
+            <Text profile="fmNPCName" id="favor4npc" position="-110px -330px" text="" visible="false"/>
+            <Text profile="fmDesc" id="favor4desc" position="-110px -350px" text="" visible="false"/>
+            <Text profile="fmTime" id="favor4time" position="-265px -370px" text="" visible="false"/>
+            <Text profile="fmReward" id="favor4reward" position="-265px -385px" text="" visible="false"/>
+            <!-- View (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor4viewbg"       position="300px -330px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor4view"         position="300px -330px" onClick="onClickFavor4View" onFocus="onFocusFavor4View" onLeave="onLeaveFavor4View" visible="false"/>
+            <Text   profile="fmBlueText" id="favor4viewtxt"      position="300px -331px" text="View" visible="false"/>
+            <!-- Cancel (red) -->
+            <Bitmap profile="fmRedBg"    id="favor4cancelbg"     position="385px -330px" visible="false"/>
+            <Button profile="fmRedHit"   id="favor4cancel"       position="385px -330px" onClick="onClickFavor4Cancel" onFocus="onFocusFavor4Cancel" onLeave="onLeaveFavor4Cancel" visible="false"/>
+            <Text   profile="fmRedText"  id="favor4canceltxt"    position="385px -331px" text="Cancel" visible="false"/>
+            <!-- Go To (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor4gotobg"       position="300px -360px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor4goto"         position="300px -360px" onClick="onClickFavor4Goto" onFocus="onFocusFavor4Goto" onLeave="onLeaveFavor4Goto" visible="false"/>
+            <Text   profile="fmBlueText" id="favor4gototxt"      position="300px -361px" text="Go To" visible="false"/>
+            <!-- Complete (green) -->
+            <Bitmap profile="fmGreenBg"  id="favor4completebg"   position="385px -360px" visible="false"/>
+            <Button profile="fmGreenHit" id="favor4complete"     position="385px -360px" onClick="onClickFavor4Complete" onFocus="onFocusFavor4Complete" onLeave="onLeaveFavor4Complete" visible="false"/>
+            <Text   profile="fmGreenText" id="favor4completetxt" position="385px -361px" text="Done" visible="false"/>
 
             <!-- ===== FAVOR ROW 5 ===== -->
+            <Bitmap profile="fmRowBorder" id="favor5border" position="0px -408px" visible="false"/>
             <Bitmap profile="fmRowBg" id="favor5bg" position="0px -410px" visible="false"/>
-            <Text profile="fmNPCName" id="favor5npc" position="-420px -415px" text="" visible="false"/>
-            <Text profile="fmDesc" id="favor5desc" position="-420px -435px" text="" visible="false"/>
-            <Text profile="fmTime" id="favor5time" position="-420px -455px" text="" visible="false"/>
-            <Text profile="fmReward" id="favor5reward" position="-420px -470px" text="" visible="false"/>
-            <Button profile="fmButton" id="favor5view" position="300px -415px" text="View" onClick="onClickFavor5View" visible="false"/>
-            <Button profile="fmButtonRed" id="favor5cancel" position="385px -415px" text="Cancel" onClick="onClickFavor5Cancel" visible="false"/>
-            <Button profile="fmButton" id="favor5goto" position="300px -445px" text="Go To" onClick="onClickFavor5Goto" visible="false"/>
-            <Button profile="fmButtonGreen" id="favor5complete" position="385px -445px" text="Done" onClick="onClickFavor5Complete" visible="false"/>
+            <Text profile="fmNPCName" id="favor5npc" position="-110px -415px" text="" visible="false"/>
+            <Text profile="fmDesc" id="favor5desc" position="-110px -435px" text="" visible="false"/>
+            <Text profile="fmTime" id="favor5time" position="-265px -455px" text="" visible="false"/>
+            <Text profile="fmReward" id="favor5reward" position="-265px -470px" text="" visible="false"/>
+            <!-- View (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor5viewbg"       position="300px -415px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor5view"         position="300px -415px" onClick="onClickFavor5View" onFocus="onFocusFavor5View" onLeave="onLeaveFavor5View" visible="false"/>
+            <Text   profile="fmBlueText" id="favor5viewtxt"      position="300px -416px" text="View" visible="false"/>
+            <!-- Cancel (red) -->
+            <Bitmap profile="fmRedBg"    id="favor5cancelbg"     position="385px -415px" visible="false"/>
+            <Button profile="fmRedHit"   id="favor5cancel"       position="385px -415px" onClick="onClickFavor5Cancel" onFocus="onFocusFavor5Cancel" onLeave="onLeaveFavor5Cancel" visible="false"/>
+            <Text   profile="fmRedText"  id="favor5canceltxt"    position="385px -416px" text="Cancel" visible="false"/>
+            <!-- Go To (blue) -->
+            <Bitmap profile="fmBlueBg"   id="favor5gotobg"       position="300px -445px" visible="false"/>
+            <Button profile="fmBlueHit"  id="favor5goto"         position="300px -445px" onClick="onClickFavor5Goto" onFocus="onFocusFavor5Goto" onLeave="onLeaveFavor5Goto" visible="false"/>
+            <Text   profile="fmBlueText" id="favor5gototxt"      position="300px -446px" text="Go To" visible="false"/>
+            <!-- Complete (green) -->
+            <Bitmap profile="fmGreenBg"  id="favor5completebg"   position="385px -445px" visible="false"/>
+            <Button profile="fmGreenHit" id="favor5complete"     position="385px -445px" onClick="onClickFavor5Complete" onFocus="onFocusFavor5Complete" onLeave="onLeaveFavor5Complete" visible="false"/>
+            <Text   profile="fmGreenText" id="favor5completetxt" position="385px -446px" text="Done" visible="false"/>
 
             <!-- ===== FOOTER DIVIDER ===== -->
             <Bitmap profile="fmDivider" position="0px -495px"/>
@@ -82,16 +148,19 @@
             <!-- ===== FOOTER AREA ===== -->
             <Text profile="fmFooter" id="footerText" position="0px -510px" text="Cancel reduces relationship by 10"/>
 
-            <!-- ===== CLOSE BUTTON ===== -->
-            <GuiElement profile="fs25_dialogButtonBox">
-                <Button profile="buttonOK" id="closeButton" onClick="onClickClose" text="$l10n_button_close"/>
-            </GuiElement>
-
         </GuiElement>
+
+        <!-- ===== CLOSE BUTTON (sibling of content container) ===== -->
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonOK" id="closeButton" onClick="onClickClose" text="$l10n_button_close"/>
+        </BoxLayout>
     </GuiElement>
 
     <!-- ===== CUSTOM GUI PROFILES ===== -->
     <GUIProfiles>
+        <!-- Suppress "Could not retrieve" warnings -->
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
         <!-- ===== TITLE & SUBTITLE ===== -->
         <Profile name="fmTitle" extends="fs25_textDefault" with="anchorTopCenter">
             <size value="850px 22px"/>
@@ -110,7 +179,13 @@
         <!-- ===== DIVIDERS ===== -->
         <Profile name="fmDivider" extends="baseReference" with="anchorTopCenter">
             <size value="850px 1px"/>
-            <imageColor value="0.25 0.3 0.35 0.8"/>
+            <imageColor value="0.3 0.38 0.45 0.8"/>
+        </Profile>
+
+        <!-- ===== FAVOR ROW BORDER (slightly larger, renders behind row bg) ===== -->
+        <Profile name="fmRowBorder" extends="baseReference" with="anchorTopCenter">
+            <size value="854px 84px"/>
+            <imageColor value="0.22 0.28 0.38 0.45"/>
         </Profile>
 
         <!-- ===== FAVOR ROW BACKGROUND ===== -->
@@ -147,18 +222,55 @@
             <textAlignment value="left"/>
         </Profile>
 
-        <!-- ===== BUTTONS ===== -->
-        <Profile name="fmButton" extends="buttonOK">
+        <!-- ===== 3-LAYER BUTTON PROFILES: BLUE (View, Go To) ===== -->
+        <Profile name="fmBlueBg" extends="baseReference" with="anchorTopCenter">
             <size value="75px 22px"/>
             <imageColor value="0.12 0.2 0.35 0.95"/>
         </Profile>
-        <Profile name="fmButtonRed" extends="buttonCancel">
+        <Profile name="fmBlueHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="75px 22px"/>
+            <isFocusable value="true"/>
+        </Profile>
+        <Profile name="fmBlueText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="75px 20px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ===== 3-LAYER BUTTON PROFILES: RED (Cancel) ===== -->
+        <Profile name="fmRedBg" extends="baseReference" with="anchorTopCenter">
             <size value="75px 22px"/>
             <imageColor value="0.35 0.12 0.12 0.95"/>
         </Profile>
-        <Profile name="fmButtonGreen" extends="buttonOK">
+        <Profile name="fmRedHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="75px 22px"/>
+            <isFocusable value="true"/>
+        </Profile>
+        <Profile name="fmRedText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="75px 20px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="1 0.7 0.7 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- ===== 3-LAYER BUTTON PROFILES: GREEN (Complete) ===== -->
+        <Profile name="fmGreenBg" extends="baseReference" with="anchorTopCenter">
             <size value="75px 22px"/>
             <imageColor value="0.12 0.35 0.12 0.95"/>
+        </Profile>
+        <Profile name="fmGreenHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="75px 22px"/>
+            <isFocusable value="true"/>
+        </Profile>
+        <Profile name="fmGreenText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="75px 20px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 1 0.7 1"/>
+            <textAlignment value="center"/>
         </Profile>
 
         <!-- ===== FOOTER ===== -->

@@ -1,0 +1,160 @@
+═══════════════════════════════════════════════════════════════
+  🤝 CONTRIBUTING TO OUR FARMING SIMULATOR 25 MODS
+═══════════════════════════════════════════════════════════════
+
+Hey there! Thanks for your interest in contributing! 👋
+
+We welcome contributions to any of our FS25 mods (NPCFavor, IncomeMod, TaxMod, etc.), but to keep things smooth for everyone, please follow these guidelines.
+
+═══════════════════════════════════════════════════════════════
+📋 BEFORE YOU START
+═══════════════════════════════════════════════════════════════
+
+1. **Talk to us first!** 💬
+   - Got an idea? Open a GitHub issue or ping us in Discord BEFORE writing code
+   - This prevents wasted effort if we're already working on it or it doesn't fit the mod's vision
+   - We're friendly! We promise we won't bite
+
+2. **Read the docs** 📚
+   - Check README.md, CLAUDE.md, and docs/ folder in the mod repo
+   - Understand the architecture before diving in
+   - Many questions are already answered there
+
+3. **Check existing issues** 🔍
+   - Someone might already be working on your idea
+   - Look for "good first issue" or "help wanted" tags if you're new
+
+═══════════════════════════════════════════════════════════════
+🛠️ CODE STANDARDS
+═══════════════════════════════════════════════════════════════
+
+✅ **DO:**
+- Follow existing code style (indentation, naming conventions)
+- Comment complex logic (but don't over-comment obvious stuff)
+- Test your changes thoroughly (see TESTING_PROTOCOL.md if available)
+- Keep changes focused - one feature/fix per PR
+- Update documentation if you change behavior
+- Use meaningful commit messages ("Fix NPC pathfinding bug" not "stuff")
+
+❌ **DON'T:**
+- Submit massive PRs with 10 unrelated changes
+- Break existing functionality
+- Add dependencies without discussion
+- Ignore Lua 5.1 constraints (FS25 = Lua 5.1, no goto/continue)
+- Use os.time() or other sandbox-restricted functions
+- Skimp on testing
+
+═══════════════════════════════════════════════════════════════
+🔄 PULL REQUEST PROCESS
+═══════════════════════════════════════════════════════════════
+
+1. **Fork & Branch** 🌿
+   - Fork the repo, create a feature branch (not main!)
+   - Branch name: feature/your-feature or fix/bug-description
+
+2. **Write & Test** 🧪
+   - Make your changes
+   - Test in-game (both single-player AND multiplayer if relevant)
+   - Check log.txt for errors
+   - Run through relevant tests from TESTING_PROTOCOL.md (if available)
+
+3. **Commit & Push** 📤
+   - Commit messages should be clear and descriptive
+   - Push to YOUR fork, not the main repo
+
+4. **Open Pull Request** 🎯
+   - Target branch: development (NOT main!)
+   - PR title: Short, descriptive (e.g., "Add NPC gift preferences system")
+   - PR description should include:
+     * What does this PR do?
+     * Why is this change needed?
+     * How did you test it?
+     * Screenshots/videos if UI changes
+     * Related issue number (if any)
+
+5. **Code Review** 👀
+   - Maintainers will review and may request changes
+   - Be patient - we're volunteers with day jobs
+   - Address feedback promptly
+   - Don't take criticism personally - it's about code quality, not you!
+
+6. **Merge** 🎉
+   - Once approved, we'll merge to development
+   - Changes go to main branch after full testing cycle
+   - You'll be credited in CHANGELOG.md
+
+═══════════════════════════════════════════════════════════════
+🚫 WHAT NOT TO DO
+═══════════════════════════════════════════════════════════════
+
+⛔ **Surprise PRs** - No discussion, just "here's 500 lines of code I wrote"
+⛔ **Breaking changes** - Without prior agreement and migration plan
+⛔ **Scope creep** - PR for "fix button bug" that also rewrites entire dialog system
+⛔ **Untested code** - "It compiles, ship it!" (Spoiler: It will break in-game)
+⛔ **Force pushes** - To shared branches (your fork is fine)
+⛔ **Bypassing review** - Pushing directly to main/development
+⛔ **Ignoring feedback** - Arguing instead of collaborating
+
+═══════════════════════════════════════════════════════════════
+💬 COMMUNICATION
+═══════════════════════════════════════════════════════════════
+
+- **Discord**: Best for quick questions, design discussions
+- **GitHub Issues**: Best for bug reports, feature requests, tracking work
+- **Pull Requests**: Best for code review, technical discussion
+- **Be respectful**: We're all here to make cool mods, not fight
+
+═══════════════════════════════════════════════════════════════
+🎯 WHAT WE'RE LOOKING FOR
+═══════════════════════════════════════════════════════════════
+
+✨ **Bug fixes** - Always welcome! (Test thoroughly though)
+✨ **Performance improvements** - Especially with profiling data
+✨ **UI/UX enhancements** - Make things prettier and easier to use
+✨ **Translations** - Help us support more languages
+✨ **Documentation** - Improve docs, add examples, fix typos
+✨ **Testing** - Help test beta builds, report detailed bugs
+
+═══════════════════════════════════════════════════════════════
+📝 BUG REPORTS (Not Contributing Code? Still Helpful!)
+═══════════════════════════════════════════════════════════════
+
+Even if you're not coding, good bug reports are gold:
+
+**Bug**: [Short description]
+**Mod**: [Which mod? Version?]
+**Steps**:
+1. [What you did]
+2. [What happened]
+
+**Expected**: [What should happen]
+**Log excerpt**: [Paste from log.txt]
+**Mods loaded**: [Other mods? List them]
+**Multiplayer?**: Yes/No (Host/Client)
+
+═══════════════════════════════════════════════════════════════
+🏆 RECOGNITION
+═══════════════════════════════════════════════════════════════
+
+All contributors are credited in:
+- CHANGELOG.md (per version)
+- Git commit history
+- Special thanks section (for major contributions)
+
+We appreciate your time and effort! 🙏
+
+═══════════════════════════════════════════════════════════════
+❓ QUESTIONS?
+═══════════════════════════════════════════════════════════════
+
+- Ping @devs in Discord
+- Open a GitHub Discussion
+- Comment on a relevant issue
+
+We're happy to help new contributors get started!
+
+═══════════════════════════════════════════════════════════════
+🚜 LET'S BUILD COOL STUFF TOGETHER! 🚜
+═══════════════════════════════════════════════════════════════
+
+Thanks for making the FS25 modding community awesome. Now go forth and code! 🎉

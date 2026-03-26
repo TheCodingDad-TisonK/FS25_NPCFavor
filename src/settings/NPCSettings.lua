@@ -55,6 +55,10 @@ function NPCSettings:resetToDefaults()
     self.showNPCPaths = false
     self.nameDisplayDistance = 50
     self.notificationDuration = 4000
+    self.favorHudPosX = 0.02
+    self.favorHudPosY = 0.7
+    self.favorHudScale = 1.0
+    self.favorHudLocked = false
 
     -- Gameplay
     self.enableFavors = true
@@ -160,6 +164,10 @@ function NPCSettings:load()
     self.showNPCPaths = getBool("showNPCPaths", self.showNPCPaths)
     self.nameDisplayDistance = getInt("nameDisplayDistance", self.nameDisplayDistance)
     self.notificationDuration = getInt("notificationDuration", self.notificationDuration)
+    self.favorHudPosX = getFloat("favorHudPosX", self.favorHudPosX)
+    self.favorHudPosY = getFloat("favorHudPosY", self.favorHudPosY)
+    self.favorHudScale = getFloat("favorHudScale", self.favorHudScale)
+    self.favorHudLocked = getBool("favorHudLocked", self.favorHudLocked)
 
     -- Gameplay
     self.enableFavors = getBool("enableFavors", self.enableFavors)
@@ -257,6 +265,10 @@ function NPCSettings:saveToXMLFile(missionInfo)
     setBool("showNPCPaths", self.showNPCPaths)
     setInt("nameDisplayDistance", self.nameDisplayDistance)
     setInt("notificationDuration", self.notificationDuration)
+    setFloat("favorHudPosX", self.favorHudPosX)
+    setFloat("favorHudPosY", self.favorHudPosY)
+    setFloat("favorHudScale", self.favorHudScale)
+    setBool("favorHudLocked", self.favorHudLocked)
 
     -- Gameplay
     setBool("enableFavors", self.enableFavors)
@@ -326,6 +338,10 @@ function NPCSettings:validateSettings()
     self.nameDisplayDistance = math.max(10, math.min(500, self.nameDisplayDistance))
     self.npcRenderDistance = math.max(50, math.min(1000, self.npcRenderDistance))
     self.npcUpdateDistance = math.max(100, math.min(2000, self.npcUpdateDistance))
+    self.favorHudPosX = math.max(0, math.min(0.9, self.favorHudPosX))
+    self.favorHudPosY = math.max(0.1, math.min(1.0, self.favorHudPosY))
+    self.favorHudScale = math.max(0.5, math.min(2.0, self.favorHudScale))
+    self.favorHudLocked = not not self.favorHudLocked
     self.notificationDuration = math.max(1000, math.min(10000, self.notificationDuration))
     self.decayRate = math.max(0, math.min(10, self.decayRate))
 

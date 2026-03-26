@@ -415,6 +415,58 @@ function NPCRelationshipManager:updateRelationship(npcId, change, reason)
     return true
 end
 
+--- Admin-only: directly set relationship value, bypassing daily limits, mood, and grudges.
+-- Preserves: bounds clamping (0-100), history, level-change detection, behavior updates.
+-- @param npcId   NPC identifier
+-- @param delta   Amount to add (positive or negative)
+-- @return boolean success, number newValue
+function NPCRelationshipManager:setRelationshipDirect(npcId, delta)
+    local npc = self:getNPCById(npcId)
+    if not npc then
+        return false, 0
+    end
+
+    local oldValue = npc.relationship or 0
+    local oldLevel = self:getRelationshipLevel(oldValue)
+
+    -- Apply change with bounds clamping
+    local newValue = math.max(0, math.min(100, oldValue + delta))
+    npc.relationship = newValue
+
+    -- Record in history
+    local historyEntry = {
+        time = g_currentMission.time,
+        oldValue = oldValue,
+        newValue = newValue,
+        change = newValue - oldValue,
+        baseChange = delta,
+        reason = "admin_adjust",
+        moodModifier = 0,
+        location = {
+            x = npc.position.x,
+            y = npc.position.y,
+            z = npc.position.z
+        }
+    }
+    self:addRelationshipHistory(npcId, historyEntry)
+
+    -- Check for level change
+    local newLevel = self:getRelationshipLevel(newValue)
+    if oldLevel.name ~= newLevel.name then
+        self:onRelationshipLevelChange(npc, oldLevel, newLevel, historyEntry)
+    end
+
+    -- Update NPC behavior
+    self:updateNPCBehaviorForRelationship(npc, newLevel)
+
+    if self.npcSystem.settings.debugMode then
+        print(string.format("[NPC Favor] Admin adjust: %s %+d = %d (%s -> %s)",
+            npc.name, delta, newValue, oldLevel.name, newLevel.name))
+    end
+
+    return true, newValue
+end
+
 function NPCRelationshipManager:canApplyRelationshipChange(npcId, reason, change)
     local currentTime = g_currentMission.time
     local day = math.floor(currentTime / (24 * 60 * 60 * 1000))

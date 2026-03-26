@@ -997,7 +997,7 @@ function NPCEntity:loadAnimatedCharacterDirect(entity, npc)
                                     end
                                 end
 
-                                -- Adjust glasses nodes — raise by ~0.5 inch (0.012m)
+                                -- Adjust glasses nodes — raise by ~1 inch (0.025m)
                                 local glassNodes = findNodes(humanModel.rootNode, "glasses")
                                 if #glassNodes == 0 then
                                     glassNodes = findNodes(humanModel.rootNode, "facegear")
@@ -1005,10 +1005,10 @@ function NPCEntity:loadAnimatedCharacterDirect(entity, npc)
                                 for _, gl in ipairs(glassNodes) do
                                     local okT, gx, gy, gz = pcall(getTranslation, gl.node)
                                     if okT then
-                                        setTranslation(gl.node, gx, gy + 0.012, gz)
+                                        setTranslation(gl.node, gx, gy + 0.025, gz)
                                         if debug then
                                             print("[NPCEntity] Adjusted glasses node '" .. gl.name
-                                                .. "' Y: " .. tostring(gy) .. " -> " .. tostring(gy + 0.012))
+                                                .. "' Y: " .. tostring(gy) .. " -> " .. tostring(gy + 0.025))
                                         end
                                     end
                                 end
@@ -1914,6 +1914,26 @@ function NPCEntity:createMapHotspot(entity, npc)
         -- Make visible to all players/farms
         if hotspot.setOwnerFarmId then
             hotspot:setOwnerFarmId(AccessHandler.EVERYONE or 0)
+        end
+
+        -- Guard: PlaceableHotspot.new() can succeed but leave overlay nil
+        -- when created standalone (not tied to a real placeable). The game's
+        -- draw loop accesses overlay.width, causing the :213 crash.
+        -- Do NOT create fallback Overlay objects — Overlay.new() with game
+        -- texture paths returns a zombie object (non-nil but broken) from
+        -- mod context, which still crashes during draw.
+        if hotspot.overlay == nil then
+            if hotspot.getIcon then
+                pcall(function() hotspot:getIcon() end)
+            end
+            if hotspot.overlay == nil then
+                if hotspot.delete then pcall(function() hotspot:delete() end) end
+                if not NPCEntity.hotspotOverlayWarned then
+                    NPCEntity.hotspotOverlayWarned = true
+                    print("[NPCEntity] Warning: Map hotspot overlay could not be initialized. NPC map markers disabled.")
+                end
+                return
+            end
         end
 
         g_currentMission:addMapHotspot(hotspot)

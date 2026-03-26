@@ -222,6 +222,7 @@ function NPCSystem.new(mission, modDirectory, modName)
     self.relationshipManager = NPCRelationshipManager.new(self)
     self.favorSystem = NPCFavorSystem.new(self)
     self.interactionUI = NPCInteractionUI.new(self)
+    self.favorHUD = NPCFavorHUD.new(self)
     self.settingsIntegration = NPCSettingsIntegration.new(self)
 
     self.fieldWork = NPCFieldWork.new()
@@ -287,6 +288,11 @@ function NPCSystem:onMissionLoaded()
     -- Load saved settings from disk
     pcall(function() self.settings:load() end)
 
+    -- Apply saved HUD position/scale
+    if self.favorHUD then
+        self.favorHUD:loadFromSettings(self.settings)
+    end
+
     self.initializing = true
     
     if self.settings.debugMode then
@@ -336,8 +342,9 @@ function NPCSystem:onMissionLoaded()
                 -- Show notification
                 if self.settings.showNotifications then
                     if g_currentMission and g_currentMission.hud then
+                        local ver = (g_NPCFavorMod and g_NPCFavorMod.version) or "?"
                         g_currentMission.hud:showBlinkingWarning(
-                            "[NPC Favor] Mod loaded - Type 'npcHelp' for commands",
+                            "NPC Favor v" .. ver .. " loaded - Type 'npcHelp' for commands",
                             8000
                         )
                     end
@@ -2110,6 +2117,9 @@ function NPCSystem:update(dt)
         self.favorSystem:update(dt)            -- Favor timers + generation
         self.relationshipManager:update(dt)    -- Mood decay + behavior updates
         self.interactionUI:update(dt)          -- Timers + logic only (no rendering)
+        if self.favorHUD then
+            self.favorHUD:update(dt)           -- HUD edit mode auto-exit checks
+        end
 
         -- Check emergent events once per game hour
         local currentHour = self.scheduler:getCurrentHour()
@@ -2177,6 +2187,9 @@ function NPCSystem:update(dt)
     else
         -- CLIENT: Display only, state comes from server sync events
         self.interactionUI:update(dt)          -- Timers + logic only (no rendering)
+        if self.favorHUD then
+            self.favorHUD:update(dt)           -- HUD edit mode auto-exit checks
+        end
 
         -- NPC proximity checks use synced positions
         for _, npc in ipairs(self.activeNPCs) do
@@ -2193,9 +2206,14 @@ function NPCSystem:draw()
         return
     end
 
-    -- HUD rendering (interaction hints, favor list) — must be in draw callback
+    -- HUD rendering (interaction hints, speech bubbles, name tags)
     if self.interactionUI and self.interactionUI.draw then
         self.interactionUI:draw()
+    end
+
+    -- Moveable favor list HUD (replaces old interactionUI:drawFavorList)
+    if self.favorHUD and self.favorHUD.draw then
+        self.favorHUD:draw()
     end
 end
 
@@ -2528,11 +2546,13 @@ function NPCSystem:showNotification(title, message)
     if not self.settings.showNotifications then
         return
     end
-    
-    -- Use game notification system if available
-    if g_currentMission and g_currentMission.inGameMenu and g_currentMission.inGameMenu.messageCenter then
-        g_currentMission.inGameMenu.messageCenter:addMissionMessage(message, title, nil, nil, nil)
-    elseif self.settings.debugMode then
+
+    -- Route to HUD flash instead of game's messageCenter
+    if self.favorHUD then
+        self.favorHUD:flashFavor(message, {1, 0.9, 0.3, 1})
+    end
+
+    if self.settings.debugMode then
         print(string.format("[NPC Favor] %s: %s", title, message))
     end
 end
@@ -3208,7 +3228,13 @@ function NPCSystem:_doSaveToXMLFile(missionInfo)
                 xmlFile:setString(favorKey .. "#description", favor.description or "")
                 xmlFile:setFloat(favorKey .. "#timeRemaining", favor.timeRemaining or 0)
                 xmlFile:setInt(favorKey .. "#progress", favor.progress or 0)
-                xmlFile:setFloat(favorKey .. "#reward", favor.reward or 0)
+                if type(favor.reward) == "table" then
+                    xmlFile:setFloat(favorKey .. "#rewardRelationship", favor.reward.relationship or 0)
+                    xmlFile:setFloat(favorKey .. "#rewardMoney", favor.reward.money or 0)
+                    xmlFile:setFloat(favorKey .. "#rewardXp", favor.reward.xp or 0)
+                else
+                    xmlFile:setFloat(favorKey .. "#rewardMoney", tonumber(favor.reward) or 0)
+                end
                 favorIndex = favorIndex + 1
             end
         end
@@ -3377,7 +3403,11 @@ function NPCSystem:loadFromXMLFile(missionInfo)
                 description = xmlFile:getString(favorKey .. "#description", ""),
                 timeRemaining = xmlFile:getFloat(favorKey .. "#timeRemaining", 0),
                 progress = xmlFile:getInt(favorKey .. "#progress", 0),
-                reward = xmlFile:getFloat(favorKey .. "#reward", 0)
+                reward = {
+                    relationship = xmlFile:getFloat(favorKey .. "#rewardRelationship", 0),
+                    money = xmlFile:getFloat(favorKey .. "#rewardMoney", xmlFile:getFloat(favorKey .. "#reward", 0)),
+                    xp = xmlFile:getFloat(favorKey .. "#rewardXp", 0)
+                }
             }
             self.favorSystem:restoreFavor(favor)
         end)
@@ -3933,5 +3963,8 @@ function NPCSystem:delete()
     -- Clean up subsystems
     if self.interactionUI and self.interactionUI.delete then
         self.interactionUI:delete()
+    end
+    if self.favorHUD and self.favorHUD.delete then
+        self.favorHUD:delete()
     end
 end

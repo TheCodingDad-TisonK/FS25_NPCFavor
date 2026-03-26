@@ -140,5 +140,37 @@
 		<text name="button_complete" text="Завершить" />
 		<text name="input_FAVOR_MENU" text="Меню услуг" />
 		<text name="input_NPC_LIST" text="Список NPC" />
+			<text name="npc_schedule_plans" text="Мои планы:" />
+		<text name="input_HUD_EDIT_MODE" text="Переключить редактирование HUD" />
+		<text name="npc_hud_drag_hint" text="Перетащите для перемещения | Углы для масштабирования" />
+		<text name="npc_hud_locked_short" text="Заблокировать HUD услуг" />
+		<text name="npc_hud_locked_long" text="Когда заблокировано, список услуг нельзя перемещать или масштабировать" />
+		<text name="npc_hud_scale_short" text="Размер HUD услуг" />
+		<text name="npc_hud_scale_long" text="Размер списка активных услуг на экране" />
+		<text name="npc_admin_title" text="Админ-панель NPC" />
+		<text name="npc_admin_subtitle_fmt" text="%d активных NPC  |  Нажмите Редактировать для настройки" />
+		<text name="npc_admin_no_npcs" text="Нет активных NPC. NPC появятся после инициализации." />
+		<text name="npc_admin_footer" text="Нажмите Редактировать для настройки значений отношений" />
+		<text name="npc_admin_edit_title" text="Редактировать NPC: %s" />
+		<text name="npc_admin_relationship_label" text="Отношения:" />
+		<text name="npc_admin_increase" text="Увеличить отношения" />
+		<text name="npc_admin_decrease" text="Уменьшить отношения" />
+		<text name="npc_admin_adjusted" text="Настроено: %s%d (сейчас %d/100)" />
+		<text name="npc_admin_back" text="Назад" />
+		<text name="npc_admin_edit" text="Ред." />
+		<text name="npc_hud_compass_n" text="С" />
+		<text name="npc_hud_compass_ne" text="СВ" />
+		<text name="npc_hud_compass_e" text="В" />
+		<text name="npc_hud_compass_se" text="ЮВ" />
+		<text name="npc_hud_compass_s" text="Ю" />
+		<text name="npc_hud_compass_sw" text="ЮЗ" />
+		<text name="npc_hud_compass_w" text="З" />
+		<text name="npc_hud_compass_nw" text="СЗ" />
+		<text name="npc_hud_new_favor" text="Новое: %s просит помощи!" />
+		<text name="npc_hud_completed" text="Выполнено: %s" />
+		<text name="npc_hud_failed" text="Провалено: %s" />
+		<text name="npc_hud_cancelled" text="Отменено: %s" />
+		<text name="npc_hud_perfect" text="Идеально! %s бонус!" />
+		<text name="npc_admin_col_personality" text="Личность" />
 	</texts>
 </l10n>

@@ -140,5 +140,37 @@
 		<text name="button_complete" text="Complete" />
 		<text name="input_FAVOR_MENU" text="Favor Menu" />
 		<text name="input_NPC_LIST" text="NPC List" />
+			<text name="npc_schedule_plans" text="My plans:" />
+		<text name="input_HUD_EDIT_MODE" text="Toggle HUD Edit" />
+		<text name="npc_hud_drag_hint" text="Drag to move | Corners to resize" />
+		<text name="npc_hud_locked_short" text="Lock Favor HUD" />
+		<text name="npc_hud_locked_long" text="When locked, the favor list cannot be moved or resized" />
+		<text name="npc_hud_scale_short" text="Favor HUD Scale" />
+		<text name="npc_hud_scale_long" text="Size of the active favors list on screen" />
+		<text name="npc_admin_title" text="NPC Admin Panel" />
+		<text name="npc_admin_subtitle_fmt" text="%d active NPCs  |  Click Edit to adjust relationship" />
+		<text name="npc_admin_no_npcs" text="No active NPCs. NPCs will appear after initialization." />
+		<text name="npc_admin_footer" text="Click Edit to adjust NPC relationship values" />
+		<text name="npc_admin_edit_title" text="Edit NPC: %s" />
+		<text name="npc_admin_relationship_label" text="Relationship:" />
+		<text name="npc_admin_increase" text="Increase Relationship" />
+		<text name="npc_admin_decrease" text="Decrease Relationship" />
+		<text name="npc_admin_adjusted" text="Adjusted: %s%d (now %d/100)" />
+		<text name="npc_admin_back" text="Back" />
+		<text name="npc_admin_edit" text="Edit" />
+		<text name="npc_admin_col_personality" text="Personality" />
+		<text name="npc_hud_compass_n" text="N" />
+		<text name="npc_hud_compass_ne" text="NE" />
+		<text name="npc_hud_compass_e" text="E" />
+		<text name="npc_hud_compass_se" text="SE" />
+		<text name="npc_hud_compass_s" text="S" />
+		<text name="npc_hud_compass_sw" text="SW" />
+		<text name="npc_hud_compass_w" text="W" />
+		<text name="npc_hud_compass_nw" text="NW" />
+		<text name="npc_hud_new_favor" text="New: %s needs help!" />
+		<text name="npc_hud_completed" text="Done: %s" />
+		<text name="npc_hud_failed" text="Failed: %s" />
+		<text name="npc_hud_cancelled" text="Cancelled: %s" />
+		<text name="npc_hud_perfect" text="Perfect! %s bonus!" />
 	</texts>
 </l10n>

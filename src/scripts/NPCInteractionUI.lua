@@ -188,10 +188,8 @@ function NPCInteractionUI:draw()
     -- Floating relationship change text (+1, -2, etc.)
     self:drawFloatingTexts()
 
-    -- Corner HUD: active favors list
-    if self.npcSystem.settings.showFavorList then
-        self:drawFavorList()
-    end
+    -- NOTE: Favor list rendering moved to NPCFavorHUD (moveable HUD module).
+    -- drawFavorList() method is kept below as reference but no longer called here.
 end
 
 --- Draw speech bubbles above NPCs who have active greeting/conversation text.

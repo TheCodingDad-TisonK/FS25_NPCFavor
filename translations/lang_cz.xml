@@ -140,5 +140,37 @@
 		<text name="button_complete" text="Dokončit" />
 		<text name="input_FAVOR_MENU" text="Menu laskavostí" />
 		<text name="input_NPC_LIST" text="Seznam NPC" />
+			<text name="npc_schedule_plans" text="Moje plány:" />
+		<text name="input_HUD_EDIT_MODE" text="Přepnout úpravy HUD" />
+		<text name="npc_hud_drag_hint" text="Přetáhněte pro přesun | Rohy pro změnu velikosti" />
+		<text name="npc_hud_locked_short" text="Zamknout HUD laskavostí" />
+		<text name="npc_hud_locked_long" text="Když je zamknutý, seznam laskavostí nelze přesunout ani změnit velikost" />
+		<text name="npc_hud_scale_short" text="Velikost HUD laskavostí" />
+		<text name="npc_hud_scale_long" text="Velikost seznamu aktivních laskavostí na obrazovce" />
+		<text name="npc_admin_title" text="Admin panel NPC" />
+		<text name="npc_admin_subtitle_fmt" text="%d aktivních NPC  |  Klikněte Upravit pro úpravu" />
+		<text name="npc_admin_no_npcs" text="Žádné aktivní NPC. NPC se objeví po inicializaci." />
+		<text name="npc_admin_footer" text="Klikněte Upravit pro úpravu hodnot vztahu NPC" />
+		<text name="npc_admin_edit_title" text="Upravit NPC: %s" />
+		<text name="npc_admin_relationship_label" text="Vztah:" />
+		<text name="npc_admin_increase" text="Zvýšit vztah" />
+		<text name="npc_admin_decrease" text="Snížit vztah" />
+		<text name="npc_admin_adjusted" text="Upraveno: %s%d (nyní %d/100)" />
+		<text name="npc_admin_back" text="Zpět" />
+		<text name="npc_admin_edit" text="Upravit" />
+		<text name="npc_hud_compass_n" text="S" />
+		<text name="npc_hud_compass_ne" text="SV" />
+		<text name="npc_hud_compass_e" text="V" />
+		<text name="npc_hud_compass_se" text="JV" />
+		<text name="npc_hud_compass_s" text="J" />
+		<text name="npc_hud_compass_sw" text="JZ" />
+		<text name="npc_hud_compass_w" text="Z" />
+		<text name="npc_hud_compass_nw" text="SZ" />
+		<text name="npc_hud_new_favor" text="Nové: %s potřebuje pomoc!" />
+		<text name="npc_hud_completed" text="Hotovo: %s" />
+		<text name="npc_hud_failed" text="Selhalo: %s" />
+		<text name="npc_hud_cancelled" text="Zrušeno: %s" />
+		<text name="npc_hud_perfect" text="Perfektní! %s bonus!" />
+		<text name="npc_admin_col_personality" text="Osobnost" />
 	</texts>
 </l10n>

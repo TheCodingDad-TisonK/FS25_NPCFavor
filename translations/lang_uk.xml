@@ -140,5 +140,37 @@
 		<text name="button_complete" text="Завершити" />
 		<text name="input_FAVOR_MENU" text="Меню послуг" />
 		<text name="input_NPC_LIST" text="Список NPC" />
+			<text name="npc_schedule_plans" text="Мої плани:" />
+		<text name="input_HUD_EDIT_MODE" text="Перемкнути редагування HUD" />
+		<text name="npc_hud_drag_hint" text="Перетягніть для переміщення | Кути для масштабування" />
+		<text name="npc_hud_locked_short" text="Заблокувати HUD послуг" />
+		<text name="npc_hud_locked_long" text="Коли заблоковано, список послуг не можна переміщувати або масштабувати" />
+		<text name="npc_hud_scale_short" text="Розмір HUD послуг" />
+		<text name="npc_hud_scale_long" text="Розмір списку активних послуг на екрані" />
+		<text name="npc_admin_title" text="Адмін-панель NPC" />
+		<text name="npc_admin_subtitle_fmt" text="%d активних NPC  |  Натисніть Редагувати для налаштування" />
+		<text name="npc_admin_no_npcs" text="Немає активних NPC. NPC з'являться після ініціалізації." />
+		<text name="npc_admin_footer" text="Натисніть Редагувати для налаштування значень відносин" />
+		<text name="npc_admin_edit_title" text="Редагувати NPC: %s" />
+		<text name="npc_admin_relationship_label" text="Відносини:" />
+		<text name="npc_admin_increase" text="Збільшити відносини" />
+		<text name="npc_admin_decrease" text="Зменшити відносини" />
+		<text name="npc_admin_adjusted" text="Налаштовано: %s%d (тепер %d/100)" />
+		<text name="npc_admin_back" text="Назад" />
+		<text name="npc_admin_edit" text="Редаг." />
+		<text name="npc_hud_compass_n" text="Пн" />
+		<text name="npc_hud_compass_ne" text="ПнСх" />
+		<text name="npc_hud_compass_e" text="Сх" />
+		<text name="npc_hud_compass_se" text="ПдСх" />
+		<text name="npc_hud_compass_s" text="Пд" />
+		<text name="npc_hud_compass_sw" text="ПдЗх" />
+		<text name="npc_hud_compass_w" text="Зх" />
+		<text name="npc_hud_compass_nw" text="ПнЗх" />
+		<text name="npc_hud_new_favor" text="Нове: %s потребує допомоги!" />
+		<text name="npc_hud_completed" text="Виконано: %s" />
+		<text name="npc_hud_failed" text="Провалено: %s" />
+		<text name="npc_hud_cancelled" text="Скасовано: %s" />
+		<text name="npc_hud_perfect" text="Ідеально! %s бонус!" />
+		<text name="npc_admin_col_personality" text="Особистість" />
 	</texts>
 </l10n>

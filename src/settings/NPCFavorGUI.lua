@@ -52,6 +52,7 @@ function NPCFavorGUI:registerConsoleCommands()
     addConsoleCommand("npcProbe", "Probe animation system APIs", "npcProbe", self)
     addConsoleCommand("npcVehicleMode", "Switch vehicle mode (hybrid/realistic/visual)", "npcVehicleMode", self)
     addConsoleCommand("npcFavors", "Open favor management dialog", "npcFavors", self)
+    addConsoleCommand("npcAdmin", "Open NPC admin panel", "npcAdmin", self)
 
     print("[NPC Favor] Console commands registered successfully")
 end
@@ -114,6 +115,7 @@ npcReload           - Reload NPC settings
 npcGoto [number]    - Teleport to an NPC (no number = show list)
 npcProbe            - Probe animation system APIs
 npcFavors           - Open favor management dialog
+npcAdmin            - Open NPC admin panel (adjust relationships)
 npcVehicleMode [mode] - Switch vehicle mode (hybrid/realistic/visual)
 npcTest             - Test function
 
@@ -228,6 +230,19 @@ function NPCFavorGUI:npcFavors()
             i, npcName, favor.description or favor.type, favor.reward or 0)
     end
     return result
+end
+
+function NPCFavorGUI:npcAdmin()
+    if not g_NPCSystem then
+        return "NPC System not initialized"
+    end
+    if DialogLoader and DialogLoader.show then
+        local shown = DialogLoader.show("NPCAdminListDialog", "setNPCSystem", g_NPCSystem)
+        if shown then
+            return "NPC Admin panel opened"
+        end
+    end
+    return "Admin dialog not available"
 end
 
 function NPCFavorGUI:npcProbe()

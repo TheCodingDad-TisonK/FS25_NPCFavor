@@ -66,6 +66,18 @@ function TimeHelper.getGameDay()
     return 1
 end
 
+--- Returns absolute game time in milliseconds (currentDay * 86400000 + dayTime).
+-- Scales with game speed (1x, 5x, 120x etc) unlike g_currentMission.time which
+-- is real wall-clock ms. Use this for favor timers and any gameplay countdowns.
+function TimeHelper.getGameTimeMs()
+    if g_currentMission and g_currentMission.environment then
+        local env = g_currentMission.environment
+        local DAY_MS = 24 * 60 * 60 * 1000  -- 86,400,000
+        return (env.currentDay or 0) * DAY_MS + (env.dayTime or 0)
+    end
+    return 0
+end
+
 
 -- Time comparison
 function TimeHelper.isSameDay(time1, time2)

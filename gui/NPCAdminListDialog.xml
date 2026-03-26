@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!--
+    FS25_NPCFavor - NPC Admin List Dialog
+    Condensed NPC roster with per-row Edit buttons for relationship adjustment.
+    Columns: #, Name, Personality, Rel, Tier, [Edit]
+    12 data rows with alternating backgrounds.
+    3-layer Edit buttons (Bitmap bg + invisible Button hit + Text label)
+    with onFocus/onLeave hover effects.
+-->
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement profile="newLayer" />
+    <Bitmap profile="dialogFullscreenBg" id="dialogBg" />
+
+    <GuiElement profile="dialogBg" id="dialogElement" size="780px 500px">
+        <ThreePartBitmap profile="fs25_dialogBgMiddle" />
+        <ThreePartBitmap profile="fs25_dialogBgTop" />
+        <ThreePartBitmap profile="fs25_dialogBgBottom" />
+
+        <GuiElement profile="fs25_dialogContentContainer">
+
+            <!-- Title -->
+            <Text profile="naTitle" id="titleText" position="0px -12px" text="NPC Admin Panel"/>
+            <!-- Subtitle -->
+            <Text profile="naSubtitle" id="subtitleText" position="0px -36px" text=""/>
+
+            <!-- Header divider -->
+            <Bitmap profile="naDivider" position="0px -54px"/>
+
+            <!-- Column headers -->
+            <Text profile="naHdrNum"         position="-340px -58px" text="#"/>
+            <Text profile="naHdrName"        position="-250px -58px" text="Name"/>
+            <Text profile="naHdrPersonality" position="-95px -58px"  text="Personality"/>
+            <Text profile="naHdrRel"         position="30px -58px"   text="Rel"/>
+            <Text profile="naHdrTier"        position="130px -58px"  text="Tier"/>
+
+            <!-- Header underline -->
+            <Bitmap profile="naDivider" position="0px -73px"/>
+
+            <!-- ===== ROW 1 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r1bg" position="0px -76px"/>
+            <Text profile="naCellNum"  id="r1num"  position="-340px -77px" text=""/>
+            <Text profile="naCellName" id="r1name" position="-250px -77px" text=""/>
+            <Text profile="naCellPers" id="r1pers" position="-95px -77px"  text=""/>
+            <Text profile="naCellRel"  id="r1rel"  position="30px -77px"   text=""/>
+            <Text profile="naCellTier" id="r1tier" position="130px -77px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r1editbg"  position="285px -77px"/>
+            <Text   profile="naEditText" id="r1edittxt" position="285px -78px" text="Edit"/>
+            <Button profile="naEditHit"  id="r1edit"    position="285px -77px" onClick="onClickEdit1" onFocus="onEditFocus1" onLeave="onEditLeave1"/>
+
+            <!-- ===== ROW 2 ===== -->
+            <Bitmap profile="naRowBgEven" id="r2bg" position="0px -98px"/>
+            <Text profile="naCellNum"  id="r2num"  position="-340px -99px" text=""/>
+            <Text profile="naCellName" id="r2name" position="-250px -99px" text=""/>
+            <Text profile="naCellPers" id="r2pers" position="-95px -99px"  text=""/>
+            <Text profile="naCellRel"  id="r2rel"  position="30px -99px"   text=""/>
+            <Text profile="naCellTier" id="r2tier" position="130px -99px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r2editbg"  position="285px -99px"/>
+            <Text   profile="naEditText" id="r2edittxt" position="285px -100px" text="Edit"/>
+            <Button profile="naEditHit"  id="r2edit"    position="285px -99px" onClick="onClickEdit2" onFocus="onEditFocus2" onLeave="onEditLeave2"/>
+
+            <!-- ===== ROW 3 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r3bg" position="0px -120px"/>
+            <Text profile="naCellNum"  id="r3num"  position="-340px -121px" text=""/>
+            <Text profile="naCellName" id="r3name" position="-250px -121px" text=""/>
+            <Text profile="naCellPers" id="r3pers" position="-95px -121px"  text=""/>
+            <Text profile="naCellRel"  id="r3rel"  position="30px -121px"   text=""/>
+            <Text profile="naCellTier" id="r3tier" position="130px -121px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r3editbg"  position="285px -121px"/>
+            <Text   profile="naEditText" id="r3edittxt" position="285px -122px" text="Edit"/>
+            <Button profile="naEditHit"  id="r3edit"    position="285px -121px" onClick="onClickEdit3" onFocus="onEditFocus3" onLeave="onEditLeave3"/>
+
+            <!-- ===== ROW 4 ===== -->
+            <Bitmap profile="naRowBgEven" id="r4bg" position="0px -142px"/>
+            <Text profile="naCellNum"  id="r4num"  position="-340px -143px" text=""/>
+            <Text profile="naCellName" id="r4name" position="-250px -143px" text=""/>
+            <Text profile="naCellPers" id="r4pers" position="-95px -143px"  text=""/>
+            <Text profile="naCellRel"  id="r4rel"  position="30px -143px"   text=""/>
+            <Text profile="naCellTier" id="r4tier" position="130px -143px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r4editbg"  position="285px -143px"/>
+            <Text   profile="naEditText" id="r4edittxt" position="285px -144px" text="Edit"/>
+            <Button profile="naEditHit"  id="r4edit"    position="285px -143px" onClick="onClickEdit4" onFocus="onEditFocus4" onLeave="onEditLeave4"/>
+
+            <!-- ===== ROW 5 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r5bg" position="0px -164px"/>
+            <Text profile="naCellNum"  id="r5num"  position="-340px -165px" text=""/>
+            <Text profile="naCellName" id="r5name" position="-250px -165px" text=""/>
+            <Text profile="naCellPers" id="r5pers" position="-95px -165px"  text=""/>
+            <Text profile="naCellRel"  id="r5rel"  position="30px -165px"   text=""/>
+            <Text profile="naCellTier" id="r5tier" position="130px -165px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r5editbg"  position="285px -165px"/>
+            <Text   profile="naEditText" id="r5edittxt" position="285px -166px" text="Edit"/>
+            <Button profile="naEditHit"  id="r5edit"    position="285px -165px" onClick="onClickEdit5" onFocus="onEditFocus5" onLeave="onEditLeave5"/>
+
+            <!-- ===== ROW 6 ===== -->
+            <Bitmap profile="naRowBgEven" id="r6bg" position="0px -186px"/>
+            <Text profile="naCellNum"  id="r6num"  position="-340px -187px" text=""/>
+            <Text profile="naCellName" id="r6name" position="-250px -187px" text=""/>
+            <Text profile="naCellPers" id="r6pers" position="-95px -187px"  text=""/>
+            <Text profile="naCellRel"  id="r6rel"  position="30px -187px"   text=""/>
+            <Text profile="naCellTier" id="r6tier" position="130px -187px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r6editbg"  position="285px -187px"/>
+            <Text   profile="naEditText" id="r6edittxt" position="285px -188px" text="Edit"/>
+            <Button profile="naEditHit"  id="r6edit"    position="285px -187px" onClick="onClickEdit6" onFocus="onEditFocus6" onLeave="onEditLeave6"/>
+
+            <!-- ===== ROW 7 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r7bg" position="0px -208px"/>
+            <Text profile="naCellNum"  id="r7num"  position="-340px -209px" text=""/>
+            <Text profile="naCellName" id="r7name" position="-250px -209px" text=""/>
+            <Text profile="naCellPers" id="r7pers" position="-95px -209px"  text=""/>
+            <Text profile="naCellRel"  id="r7rel"  position="30px -209px"   text=""/>
+            <Text profile="naCellTier" id="r7tier" position="130px -209px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r7editbg"  position="285px -209px"/>
+            <Text   profile="naEditText" id="r7edittxt" position="285px -210px" text="Edit"/>
+            <Button profile="naEditHit"  id="r7edit"    position="285px -209px" onClick="onClickEdit7" onFocus="onEditFocus7" onLeave="onEditLeave7"/>
+
+            <!-- ===== ROW 8 ===== -->
+            <Bitmap profile="naRowBgEven" id="r8bg" position="0px -230px"/>
+            <Text profile="naCellNum"  id="r8num"  position="-340px -231px" text=""/>
+            <Text profile="naCellName" id="r8name" position="-250px -231px" text=""/>
+            <Text profile="naCellPers" id="r8pers" position="-95px -231px"  text=""/>
+            <Text profile="naCellRel"  id="r8rel"  position="30px -231px"   text=""/>
+            <Text profile="naCellTier" id="r8tier" position="130px -231px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r8editbg"  position="285px -231px"/>
+            <Text   profile="naEditText" id="r8edittxt" position="285px -232px" text="Edit"/>
+            <Button profile="naEditHit"  id="r8edit"    position="285px -231px" onClick="onClickEdit8" onFocus="onEditFocus8" onLeave="onEditLeave8"/>
+
+            <!-- ===== ROW 9 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r9bg" position="0px -252px"/>
+            <Text profile="naCellNum"  id="r9num"  position="-340px -253px" text=""/>
+            <Text profile="naCellName" id="r9name" position="-250px -253px" text=""/>
+            <Text profile="naCellPers" id="r9pers" position="-95px -253px"  text=""/>
+            <Text profile="naCellRel"  id="r9rel"  position="30px -253px"   text=""/>
+            <Text profile="naCellTier" id="r9tier" position="130px -253px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r9editbg"  position="285px -253px"/>
+            <Text   profile="naEditText" id="r9edittxt" position="285px -254px" text="Edit"/>
+            <Button profile="naEditHit"  id="r9edit"    position="285px -253px" onClick="onClickEdit9" onFocus="onEditFocus9" onLeave="onEditLeave9"/>
+
+            <!-- ===== ROW 10 ===== -->
+            <Bitmap profile="naRowBgEven" id="r10bg" position="0px -274px"/>
+            <Text profile="naCellNum"  id="r10num"  position="-340px -275px" text=""/>
+            <Text profile="naCellName" id="r10name" position="-250px -275px" text=""/>
+            <Text profile="naCellPers" id="r10pers" position="-95px -275px"  text=""/>
+            <Text profile="naCellRel"  id="r10rel"  position="30px -275px"   text=""/>
+            <Text profile="naCellTier" id="r10tier" position="130px -275px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r10editbg"  position="285px -275px"/>
+            <Text   profile="naEditText" id="r10edittxt" position="285px -276px" text="Edit"/>
+            <Button profile="naEditHit"  id="r10edit"    position="285px -275px" onClick="onClickEdit10" onFocus="onEditFocus10" onLeave="onEditLeave10"/>
+
+            <!-- ===== ROW 11 ===== -->
+            <Bitmap profile="naRowBgOdd" id="r11bg" position="0px -296px"/>
+            <Text profile="naCellNum"  id="r11num"  position="-340px -297px" text=""/>
+            <Text profile="naCellName" id="r11name" position="-250px -297px" text=""/>
+            <Text profile="naCellPers" id="r11pers" position="-95px -297px"  text=""/>
+            <Text profile="naCellRel"  id="r11rel"  position="30px -297px"   text=""/>
+            <Text profile="naCellTier" id="r11tier" position="130px -297px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r11editbg"  position="285px -297px"/>
+            <Text   profile="naEditText" id="r11edittxt" position="285px -298px" text="Edit"/>
+            <Button profile="naEditHit"  id="r11edit"    position="285px -297px" onClick="onClickEdit11" onFocus="onEditFocus11" onLeave="onEditLeave11"/>
+
+            <!-- ===== ROW 12 ===== -->
+            <Bitmap profile="naRowBgEven" id="r12bg" position="0px -318px"/>
+            <Text profile="naCellNum"  id="r12num"  position="-340px -319px" text=""/>
+            <Text profile="naCellName" id="r12name" position="-250px -319px" text=""/>
+            <Text profile="naCellPers" id="r12pers" position="-95px -319px"  text=""/>
+            <Text profile="naCellRel"  id="r12rel"  position="30px -319px"   text=""/>
+            <Text profile="naCellTier" id="r12tier" position="130px -319px"  text=""/>
+            <Bitmap profile="naEditBg"   id="r12editbg"  position="285px -319px"/>
+            <Text   profile="naEditText" id="r12edittxt" position="285px -320px" text="Edit"/>
+            <Button profile="naEditHit"  id="r12edit"    position="285px -319px" onClick="onClickEdit12" onFocus="onEditFocus12" onLeave="onEditLeave12"/>
+
+            <!-- Bottom divider -->
+            <Bitmap profile="naDivider" id="bottomDivider" position="0px -340px"/>
+
+            <!-- Footer -->
+            <Text profile="naFooter" id="footerText" position="0px -345px" text=""/>
+
+        </GuiElement>
+
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonBack" id="closeButton" text="Close" onClick="onClickClose"/>
+        </BoxLayout>
+
+    </GuiElement>
+
+    <GUIProfiles>
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
+        <!-- Title -->
+        <Profile name="naTitle" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="720px 22px"/>
+            <textSize value="20px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Subtitle -->
+        <Profile name="naSubtitle" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="720px 16px"/>
+            <textSize value="12px"/>
+            <textColor value="0.55 0.75 0.55 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Divider -->
+        <Profile name="naDivider" extends="baseReference" with="anchorTopCenter">
+            <size value="710px 1px"/>
+            <imageColor value="0.3 0.35 0.45 0.8"/>
+        </Profile>
+
+        <!-- Column headers -->
+        <Profile name="naHdrBase" extends="fs25_textDefault" with="anchorTopCenter">
+            <textSize value="11px"/>
+            <textBold value="true"/>
+            <textColor value="0.55 0.7 0.9 1"/>
+        </Profile>
+        <Profile name="naHdrNum" extends="naHdrBase">
+            <size value="30px 14px"/>
+            <textAlignment value="right"/>
+        </Profile>
+        <Profile name="naHdrName" extends="naHdrBase">
+            <size value="150px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="naHdrPersonality" extends="naHdrBase">
+            <size value="100px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="naHdrRel" extends="naHdrBase">
+            <size value="40px 14px"/>
+            <textAlignment value="center"/>
+        </Profile>
+        <Profile name="naHdrTier" extends="naHdrBase">
+            <size value="120px 14px"/>
+            <textAlignment value="left"/>
+        </Profile>
+
+        <!-- Row backgrounds -->
+        <Profile name="naRowBgOdd" extends="baseReference" with="anchorTopCenter">
+            <size value="710px 20px"/>
+            <imageColor value="0.08 0.09 0.12 0.6"/>
+        </Profile>
+        <Profile name="naRowBgEven" extends="baseReference" with="anchorTopCenter">
+            <size value="710px 20px"/>
+            <imageColor value="0.06 0.06 0.09 0.4"/>
+        </Profile>
+
+        <!-- Table cells -->
+        <Profile name="naCellBase" extends="fs25_textDefault" with="anchorTopCenter">
+            <textSize value="12px"/>
+            <textColor value="0.82 0.82 0.82 1"/>
+        </Profile>
+        <Profile name="naCellNum" extends="naCellBase">
+            <size value="30px 18px"/>
+            <textAlignment value="right"/>
+            <textColor value="0.5 0.55 0.65 1"/>
+        </Profile>
+        <Profile name="naCellName" extends="naCellBase">
+            <size value="150px 18px"/>
+            <textAlignment value="left"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+        </Profile>
+        <Profile name="naCellPers" extends="naCellBase">
+            <size value="100px 18px"/>
+            <textAlignment value="left"/>
+        </Profile>
+        <Profile name="naCellRel" extends="naCellBase">
+            <size value="40px 18px"/>
+            <textAlignment value="center"/>
+            <textBold value="true"/>
+        </Profile>
+        <Profile name="naCellTier" extends="naCellBase">
+            <size value="120px 18px"/>
+            <textAlignment value="left"/>
+        </Profile>
+
+        <!-- 3-layer Edit button -->
+        <Profile name="naEditBg" extends="baseReference" with="anchorTopCenter">
+            <size value="55px 18px"/>
+            <imageColor value="0.12 0.2 0.35 0.95"/>
+        </Profile>
+        <Profile name="naEditText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="55px 16px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+        <Profile name="naEditHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="55px 18px"/>
+            <isFocusable value="true"/>
+        </Profile>
+
+        <!-- Footer -->
+        <Profile name="naFooter" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="720px 16px"/>
+            <textSize value="11px"/>
+            <textColor value="0.45 0.5 0.6 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+    </GUIProfiles>
+</GUI>

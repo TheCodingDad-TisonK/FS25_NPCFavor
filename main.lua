@@ -46,11 +46,11 @@
 -- =========================================================
 
 -- Add version tracking
-local MOD_VERSION = "1.2.2.5"
-local MOD_NAME = "FS25_NPCFavor"
-
 local modDirectory = g_currentModDirectory
 local modName = g_currentModName
+
+local modItem = g_modManager:getModByName(modName)
+local modVersion = modItem.version
 
 print("[NPC Favor] Starting mod initialization...")
 
@@ -79,6 +79,7 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCFieldWork.lua")
     source(modDirectory .. "src/scripts/NPCScheduler.lua")
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
+    source(modDirectory .. "src/scripts/NPCFavorHUD.lua")
     source(modDirectory .. "src/scripts/NPCTeleport.lua")
 
     -- GUI
@@ -86,6 +87,8 @@ if modDirectory then
     source(modDirectory .. "src/gui/NPCDialog.lua")
     source(modDirectory .. "src/gui/NPCListDialog.lua")
     source(modDirectory .. "src/gui/NPCFavorManagementDialog.lua")
+    source(modDirectory .. "src/gui/NPCAdminListDialog.lua")
+    source(modDirectory .. "src/gui/NPCAdminEditDialog.lua")
     source(modDirectory .. "src/settings/NPCFavorGUI.lua")
 
     -- Main coordinator
@@ -122,7 +125,9 @@ local function loadedMission(mission, node)
             DialogLoader.init(modDirectory)
             DialogLoader.register("NPCDialog", NPCDialog, "gui/NPCDialog.xml")
             DialogLoader.register("NPCListDialog", NPCListDialog, "gui/NPCListDialog.xml")
-            DialogLoader.register("NPCFavorManagementDialog", NPCFavorManagementDialog, "gui/NPCFavorManagementDialog.xml")  -- NEW
+            DialogLoader.register("NPCFavorManagementDialog", NPCFavorManagementDialog, "gui/NPCFavorManagementDialog.xml")
+            DialogLoader.register("NPCAdminListDialog", NPCAdminListDialog, "gui/NPCAdminListDialog.xml")
+            DialogLoader.register("NPCAdminEditDialog", NPCAdminEditDialog, "gui/NPCAdminEditDialog.xml")
 
             -- Eagerly load ALL dialogs while the mod's ZIP filesystem context
             -- is active.  Lazy loading later fails with "Failed to open xml file"
@@ -130,6 +135,8 @@ local function loadedMission(mission, node)
             DialogLoader.ensureLoaded("NPCDialog")
             DialogLoader.ensureLoaded("NPCListDialog")
             DialogLoader.ensureLoaded("NPCFavorManagementDialog")
+            DialogLoader.ensureLoaded("NPCAdminListDialog")
+            DialogLoader.ensureLoaded("NPCAdminEditDialog")
             npcSystem.npcDialogInstance = DialogLoader.getDialog("NPCDialog")
         end
 
@@ -160,9 +167,10 @@ local function loadedMission(mission, node)
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
+            mission.npcFavorSystem = npcSystem  -- cross-mod bridge
             g_NPCFavorMod = {
-                version = MOD_VERSION,
-                name = MOD_NAME,
+                version = modVersion,
+                name = modName,
                 system = npcSystem
             }
             print("[NPC Favor] Late initialization successful")
@@ -194,15 +202,18 @@ local function load(mission)
     end
 
     if npcSystem == nil then
-        print("[NPC Favor] Initializing version " .. MOD_VERSION .. "...")
+        print("[NPC Favor] Initializing version " .. modVersion .. "...")
         print("[NPC Favor] Creating NPCSystem instance...")
         npcSystem = NPCSystem.new(mission, modDirectory, modName)
 
         if npcSystem then
             getfenv(0)["g_NPCSystem"] = npcSystem
+            -- Cross-mod bridge: g_currentMission is a true shared global visible to all mods.
+            -- getfenv(0) is per-mod scoped in FS25 and NOT shared between mods.
+            mission.npcFavorSystem = npcSystem
             g_NPCFavorMod = {
-                version = MOD_VERSION,
-                name = MOD_NAME,
+                version = modVersion,
+                name = modName,
                 system = npcSystem
             }
 
@@ -305,6 +316,7 @@ local npcInteractActionEventId = nil
 local npcInteractOriginalFunc = nil
 local favorMenuActionEventId = nil     -- NEW for F6
 local npcListActionEventId = nil       -- NEW for F7
+local hudEditModeActionEventId = nil   -- NEW for F8
 
 local function npcInteractActionCallback(self, actionName, inputValue, callbackState, isAnalog)
     if inputValue <= 0 then
@@ -365,7 +377,11 @@ local function npcInteractActionCallback(self, actionName, inputValue, callbackS
 end
 
 -- F6: Open Favor Management
-local function favorMenuActionCallback(actionName, inputValue, callbackState, isAnalog)
+local function favorMenuActionCallback(self, actionName, inputValue, callbackState, isAnalog)
+    if inputValue <= 0 then
+        return
+    end
+
     if npcSystem and npcSystem.isInitialized then
         if DialogLoader and DialogLoader.show then
             DialogLoader.show("NPCFavorManagementDialog", "setNPCSystem", npcSystem)
@@ -376,7 +392,11 @@ local function favorMenuActionCallback(actionName, inputValue, callbackState, is
 end
 
 -- F7: Open NPC List
-local function npcListActionCallback(actionName, inputValue, callbackState, isAnalog)
+local function npcListActionCallback(self, actionName, inputValue, callbackState, isAnalog)
+    if inputValue <= 0 then
+        return
+    end
+
     if npcSystem and npcSystem.isInitialized then
         if DialogLoader and DialogLoader.show then
             DialogLoader.show("NPCListDialog", "setNPCSystem", npcSystem)
@@ -384,6 +404,31 @@ local function npcListActionCallback(actionName, inputValue, callbackState, isAn
             print("[NPC Favor] NPC list dialog not available")
         end
     end
+end
+
+-- Right-click: Toggle HUD Edit Mode (on foot only)
+local function hudEditModeActionCallback(actionName, inputValue, callbackState, isAnalog)
+    print("[NPC Favor] HUD edit callback fired — action=" .. tostring(actionName) .. " inputValue=" .. tostring(inputValue))
+    if not npcSystem or not npcSystem.favorHUD then
+        print("[NPC Favor] HUD edit blocked: npcSystem or favorHUD is nil")
+        return
+    end
+    -- Only allow when player is on foot (not in vehicle)
+    if g_localPlayer and g_localPlayer.getIsInVehicle and g_localPlayer:getIsInVehicle() then
+        print("[NPC Favor] HUD edit blocked: player is in vehicle")
+        return
+    end
+    -- Don't toggle if a dialog/GUI is open
+    if g_gui and g_gui:getIsGuiVisible() then
+        print("[NPC Favor] HUD edit blocked: GUI is visible")
+        return
+    end
+    if npcSystem.settings and npcSystem.settings.favorHudLocked then
+        print("[NPC Favor] HUD is locked — unlock in ESC > Settings to reposition")
+        return
+    end
+    print("[NPC Favor] HUD edit: toggling edit mode")
+    npcSystem.favorHUD:toggleEditMode()
 end
 
 local function hookNPCInteractInput()
@@ -402,34 +447,28 @@ local function hookNPCInteractInput()
         npcInteractOriginalFunc(inputComponent, ...)
 
         if inputComponent.player ~= nil and inputComponent.player.isOwner then
-            local actionId = InputAction.NPC_INTERACT
-            if actionId == nil then
-                print("[NPC Favor] InputAction.NPC_INTERACT not found")
-                return
-            end
-
             g_inputBinding:beginActionEventsModification(PlayerInputComponent.INPUT_CONTEXT_NAME)
 
-            local success, eventId = g_inputBinding:registerActionEvent(
-                actionId,
-                NPCSystem,                   -- Target object (static reference)
-                npcInteractActionCallback,    -- Callback function
-                false,                        -- triggerUp
-                true,                         -- triggerDown
-                false,                        -- triggerAlways
-                false,                        -- startActive (MUST be false)
-                nil,                          -- callbackState
-                true                          -- disableConflictingBindings
-            )
-
-            g_inputBinding:endActionEventsModification()
-
-            if success and eventId ~= nil then
-                npcInteractActionEventId = eventId
+            -- Register E: NPC Interact
+            local actionId = InputAction.NPC_INTERACT
+            if actionId ~= nil then
+                local success, eventId = g_inputBinding:registerActionEvent(
+                    actionId,
+                    NPCSystem,                   -- Target object (static reference)
+                    npcInteractActionCallback,    -- Callback function
+                    false,                        -- triggerUp
+                    true,                         -- triggerDown
+                    false,                        -- triggerAlways
+                    false,                        -- startActive (MUST be false)
+                    nil,                          -- callbackState
+                    true                          -- disableConflictingBindings
+                )
+                if success and eventId ~= nil then
+                    npcInteractActionEventId = eventId
+                end
             end
-        end
 
-        -- Register F6: Favor Menu
+            -- Register F6: Favor Menu
             local favorMenuActionId = InputAction.FAVOR_MENU
             if favorMenuActionId ~= nil then
                 local success, eventId = g_inputBinding:registerActionEvent(
@@ -440,6 +479,7 @@ local function hookNPCInteractInput()
                 )
                 if success and eventId ~= nil then
                     favorMenuActionEventId = eventId
+                    g_inputBinding:setActionEventActive(eventId, true)
                     g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_NORMAL)
                     g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_FAVOR_MENU") or "Favor Menu")
                 end
@@ -456,10 +496,30 @@ local function hookNPCInteractInput()
                 )
                 if success and eventId ~= nil then
                     npcListActionEventId = eventId
+                    g_inputBinding:setActionEventActive(eventId, true)
                     g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_NORMAL)
                     g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_NPC_LIST") or "NPC List")
                 end
             end
+
+            -- Register Right-click: HUD Edit Mode
+            local hudEditActionId = InputAction.HUD_EDIT_MODE
+            if hudEditActionId ~= nil then
+                local success, eventId = g_inputBinding:registerActionEvent(
+                    hudEditActionId,
+                    NPCSystem,
+                    hudEditModeActionCallback,
+                    false, true, false, false, nil, false
+                )
+                if success and eventId ~= nil then
+                    hudEditModeActionEventId = eventId
+                    g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_NORMAL)
+                    g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_HUD_EDIT_MODE") or "Toggle HUD Edit")
+                end
+            end
+
+            g_inputBinding:endActionEventsModification()
+        end
     end
 
 end
@@ -501,6 +561,13 @@ if FSBaseMission and FSBaseMission.update then
             g_inputBinding:setActionEventActive(npcInteractActionEventId, shouldShow)
             if shouldShow then
                 g_inputBinding:setActionEventText(npcInteractActionEventId, promptText)
+            end
+        end
+
+        -- Auto-exit HUD edit mode if player enters a vehicle
+        if npcSystem.favorHUD and npcSystem.favorHUD.editMode then
+            if g_localPlayer and g_localPlayer.getIsInVehicle and g_localPlayer:getIsInVehicle() then
+                npcSystem.favorHUD:exitEditMode()
             end
         end
     end)
@@ -591,7 +658,7 @@ if g_currentMission and g_currentMission.missionInfo then
 end
 
 print("========================================")
-print("     FS25 NPC Favor v" .. MOD_VERSION .. " LOADED     ")
+print("     FS25 NPC Favor v" .. modVersion .. " LOADED     ")
 print("     Living Neighborhood System         ")
 print("     Type 'npcHelp' in console          ")
 print("     for available commands             ")
@@ -620,6 +687,41 @@ addModEventListener({
             npcSystem:onMissionLoaded()
         else
             print("[NPC Favor] npcSystem is nil in onSavegameLoaded")
+        end
+    end,
+    mouseEvent = function(self, posX, posY, isDown, isUp, button)
+        -- Guard helper: any GUI overlay or dialog is open
+        local isGuiOpen = g_gui and (g_gui:getIsGuiVisible() or g_gui:getIsDialogVisible())
+
+        -- Right-click toggle: bypass action event system, detect raw input
+        -- FS25 mouseEvent button numbers: 1=left, 3=right, 2=middle
+        if isDown and button == 3 then
+            if npcSystem and npcSystem.favorHUD then
+                -- Guard: not in vehicle
+                if g_localPlayer and g_localPlayer.getIsInVehicle and g_localPlayer:getIsInVehicle() then
+                    return
+                end
+                -- Guard: no GUI/dialog/popup open
+                if isGuiOpen then
+                    return
+                end
+                -- Guard: HUD not locked
+                if npcSystem.settings and npcSystem.settings.favorHudLocked then
+                    return
+                end
+                print("[NPC Favor] Right-click toggle via mouseEvent — editMode=" .. tostring(npcSystem.favorHUD.editMode))
+                npcSystem.favorHUD:toggleEditMode()
+                return
+            end
+        end
+
+        -- Pass mouse events to HUD when in edit mode (for drag/resize)
+        -- Don't intercept if a dialog/popup opened on top of edit mode
+        if npcSystem and npcSystem.favorHUD and npcSystem.favorHUD.editMode and not isGuiOpen then
+            if isDown or isUp then
+                print(string.format("[NPC Favor] mouseEvent: btn=%d down=%s up=%s pos=%.3f,%.3f", button, tostring(isDown), tostring(isUp), posX, posY))
+            end
+            npcSystem.favorHUD:mouseEvent(posX, posY, isDown, isUp, button)
         end
     end
 })

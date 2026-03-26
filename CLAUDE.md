@@ -4,6 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## !! MANDATORY: Before Writing ANY FS25 API Code !!
+Before implementing any FS25 Lua API call, class usage, or game system interaction,
+ALWAYS check the following local reference folders first. These contain CORRECT,
+PROVEN API documentation - they are the ground truth. Do NOT rely on training data
+for FS25 API specifics; it may be outdated, wrong, or hallucinated.
+
+### Reference Locations
+| Reference | Path | Use for |
+|-----------|------|---------|
+| FS25-Community-LUADOC | `C:\Users\tison\Desktop\FS25 MODS\FS25-Community-LUADOC` | Class APIs, method signatures, function arguments, return values, inheritance chains |
+| FS25-lua-scripting | `C:\Users\tison\Desktop\FS25 MODS\FS25-lua-scripting` | Scripting patterns, working examples, proven integration approaches |
+
+### When to Check (mandatory, not optional)
+- Any `g_currentMission.*` call
+- Any `g_gui.*` / dialog / GUI system usage
+- Any hotspot / map icon API (`MapHotspot`, `PlaceableHotspot`, `IngameMap`, etc.)
+- Any `addMapHotspot` / `removeMapHotspot` usage
+- Any `Class()` / `isa()` / inheritance pattern
+- Any `g_i3DManager` / i3d loading
+- Any `g_overlayManager` / `Overlay.new` usage
+- Any `g_inputBinding` / action event registration
+- Any save/load XML API (`xmlFile:setInt`, `xmlFile:getValue`, etc.)
+- Any `MessageType` / `g_messageCenter` subscription
+- Any placeable specialization or `g_placeableSystem` usage
+- Any finance / economy API call
+- Any `Utils.*` helper you are not 100% certain about
+- Any new FS25 system not previously used in this project
+
+### How to Check
+1. Search the LUADOC for the class or function name
+2. Read the full method signature including ALL arguments and return values
+3. Check inheritance - many FS25 classes require parent constructor calls
+4. Look for working examples in FS25-lua-scripting before writing new code
+5. If the API is NOT in either reference, state that clearly rather than guessing
+
+---
+
 ## Collaboration Personas
 
 All responses should include ongoing dialog between Claude and Samantha throughout the work session. Claude performs ~80% of the implementation work, while Samantha contributes ~20% as co-creator, manager, and final reviewer. Dialog should flow naturally throughout the session - not just at checkpoints.
@@ -77,22 +114,37 @@ At these stages, Claude and Samantha MUST have explicit dialog:
 
 ## Project Overview
 
-**FS25_NPCFavor** is a Farming Simulator 25 mod that adds living NPC neighbors with needs-based AI, personality systems, road pathfinding, a 7-tier relationship system, favor quests, and multiplayer sync. Current version: **1.2.2.0**. 10-language localization with 1,500+ i18n strings inline in `modDesc.xml`.
+**FS25_NPCFavor** is a Farming Simulator 25 mod that adds living NPC neighbors with needs-based AI, personality systems, road pathfinding, a 7-tier relationship system, favor quests, and multiplayer sync. Current version: **1.2.2.5**. 10-language localization via separate `translations/lang_*.xml` files (one per language).
 
 ---
 
 ## Quick Reference
 
+> **NOTE FOR CLAUDE CODE (tison's instance):** The "Developer Environments" section below contains
+> machine-specific paths that don't belong in a shared project file. Please move tison's paths
+> to his personal `~/.claude/CLAUDE.md` (or `%USERPROFILE%\.claude\CLAUDE.md` on Windows), then
+> remove the "Developer Environments" block and this note from this file. The "Mod Projects" table
+> can stay since it describes the broader project ecosystem.
+
+### Developer Environments
+
+| Developer | Workspace | Mods Base Directory |
+|-----------|-----------|---------------------|
+| tison | `C:\Users\tison\Desktop\FS25 MODS\FS25_NPCFavor` | `C:\Users\tison\Desktop\FS25 MODS` |
+| mrath | `C:\github\FS25_NPCFavor` | `C:\github` |
+
+Shared paths (same for all contributors):
+
 | Resource | Location |
 |----------|----------|
-| **Mods Base Directory** | `C:\Users\tison\Desktop\FS25 MODS` |
 | Active Mods (installed) | `%USERPROFILE%\Documents\My Games\FarmingSimulator2025\mods` |
 | Game Log | `%USERPROFILE%\Documents\My Games\FarmingSimulator2025\log.txt` |
-| **GIANTS Editor** | `C:\Program Files\GIANTS Software\GIANTS_Editor_10.0.11\editor.exe` |
+
+> Machine-specific tool paths (GIANTS Editor, TestRunner, etc.) should live in each developer's personal `~/.claude/CLAUDE.md`.
 
 ### Mod Projects
 
-All mods live under the **Mods Base Directory** above:
+All mods live under each developer's **Mods Base Directory**:
 
 | Mod Folder | Description |
 |------------|-------------|
@@ -199,7 +251,90 @@ All events use `Event` base class + `InitEventClass()`. Business logic lives in 
 
 ### Localization
 
-All i18n strings are inline in `modDesc.xml` under `<l10n>` (not separate translation files). 10 languages: en, de, fr, pl, es, it, cz, br, uk, ru. Access via `g_i18n:getText("key_name")`.
+Translations use separate files in `translations/lang_*.xml` (one file per language), loaded via `<l10n filenamePrefix="translations/lang" />` in `modDesc.xml`. 10 languages: en, de, fr, pl, es, it, cz, br, uk, ru. Each file uses flat `<text name="key" text="value" />` format. Access in Lua via `g_i18n:getText("key_name")`. To add a new key, add a `<text>` entry to all 10 files.
+
+---
+
+## Critical Knowledge: GUI System
+
+### Coordinate System
+- **Bottom-left origin**: Y=0 at BOTTOM, increases UP (opposite of web conventions)
+- **Dialog content**: X relative to center (negative=left, positive=right), Y NEGATIVE going down from top
+- All positions in `px` are pixel values; FS25 internally normalizes to screen fractions
+
+### Dialog XML Template (Copy TakeLoanDialog.xml structure!)
+```xml
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement profile="newLayer" />
+    <Bitmap profile="dialogFullscreenBg" id="dialogBg" />
+    <GuiElement profile="dialogBg" id="dialogElement" size="780px 580px">
+        <ThreePartBitmap profile="fs25_dialogBgMiddle" />
+        <ThreePartBitmap profile="fs25_dialogBgTop" />
+        <ThreePartBitmap profile="fs25_dialogBgBottom" />
+        <GuiElement profile="fs25_dialogContentContainer">
+            <!-- X: center-relative | Y: negative = down from top -->
+            <!-- Content goes here -->
+        </GuiElement>
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonOK" onClick="onOk"/>
+        </BoxLayout>
+    </GuiElement>
+</GUI>
+```
+
+### Safe X Positioning (anchorTopCenter)
+X position = element CENTER, not left edge. Calculate: `X ± (width/2)` must stay within `±(container/2 - 15px)`
+
+| Element Width | Max Safe X (750px container) |
+|---------------|------------------------------|
+| 100px | ±310px |
+| 200px | ±260px |
+| 300px | ±210px |
+| 400px | ±160px |
+
+### 3-Layer Button Pattern
+FS25 buttons in custom dialogs require a 3-layer stack for proper rendering:
+```xml
+<!-- Layer 1: Visual background -->
+<Bitmap profile="myButtonBg" id="btn1bg" position="Xpx Ypx"/>
+<!-- Layer 2: Invisible hit area (receives clicks) -->
+<Button profile="myButtonHit" id="btn1" position="Xpx Ypx" onClick="onClickBtn1" visible="false"/>
+<!-- Layer 3: Text label -->
+<Text profile="myButtonText" id="btn1text" position="Xpx Ypx" text="Click Me"/>
+```
+The Button element is invisible; the Bitmap provides visuals; the Text provides the label. All three must be positioned identically.
+
+### Custom GUI Icons (Images from Mod ZIP)
+
+**THE PROBLEM:** FS25 cannot load images specified in XML from within a mod ZIP file. XML attributes like `imageFilename="gui/icons/myicon.png"` will fail or show a corrupted texture atlas.
+
+**THE SOLUTION:** Set images dynamically via Lua using `setImageFilename()`:
+
+```xml
+<!-- In dialog XML: Create Bitmap with id, NO filename attribute -->
+<Profile name="myIconProfile" extends="baseReference" with="anchorTopCenter">
+    <size value="40px 40px"/>
+    <imageSliceId value="noSlice"/>
+</Profile>
+<Bitmap profile="myIconProfile" id="myIconElement" position="0px -20px"/>
+```
+
+```lua
+-- In dialog Lua onCreate(): Set image path dynamically
+function MyDialog:onCreate()
+    MyDialog:superClass().onCreate(self)
+    if self.myIconElement ~= nil then
+        local iconPath = g_currentModDirectory .. "gui/icons/my_icon.png"
+        self.myIconElement:setImageFilename(iconPath)
+    end
+end
+```
+
+**KEY POINTS:**
+- Profile MUST have `imageSliceId value="noSlice"` to prevent atlas slicing
+- Profile MUST extend `baseReference` for proper image rendering
+- Image path in Lua uses `g_currentModDirectory` (full path that works inside ZIP)
+- 256x256 source size recommended for crisp rendering at 40-48px display size
 
 ---
 
@@ -212,10 +347,40 @@ All i18n strings are inline in `modDesc.xml` under `<l10n>` (not separate transl
 | `os.time()` / `os.date()` | Not available in FS25 sandbox | Use `g_currentMission.time` / `.environment.currentDay` |
 | `Slider` widgets | Unreliable events | Use quick buttons or `MultiTextOption` |
 | `DialogElement` base | Deprecated | Use `MessageDialog` pattern |
-| Dialog XML naming callbacks `onClose`/`onOpen` | System lifecycle conflict | Use different callback names |
-| XML `imageFilename` for mod images | Can't load from ZIP | Set dynamically via `setImageFilename()` in Lua |
+| Dialog XML naming callbacks `onClose`/`onOpen` | System lifecycle conflict — causes stack overflow | Use different callback names |
+| XML `imageFilename` for mod images | Can't load from ZIP | Set dynamically via `setImageFilename()` in Lua (see GUI System section) |
 | `MapHotspot` base class | Abstract class has no icon — markers invisible | Use `PlaceableHotspot.new()` + `Overlay.new()` |
 | `registerActionEvent` without `beginActionEventsModification` wrapper | Duplicate keybinds | Use full RVB pattern |
+| `parent="handTool"` in specs | Game prefixes mod name | Use `parent="base"` |
+| `setTextColorByName()` | Doesn't exist in FS25 | Use `setTextColor(r, g, b, a)` |
+| PowerShell `Compress-Archive` | Creates backslash paths in zip | Use `bash` zip or `archiver` npm (FS25 needs forward slashes) |
+
+---
+
+## Lessons Learned
+
+### GUI Dialogs
+- XML root MUST be `<GUI>`, never `<MessageDialog>`
+- Custom profiles: `with="anchorTopCenter"` for dialog content positioning
+- **NEVER** name callbacks `onClose`/`onOpen` — they conflict with system lifecycle and cause stack overflow
+- Use `buttonActivate` profile, not `fs25_buttonSmall` (doesn't exist)
+- `DialogLoader.show("Name", "setData", args...)` for consistent dialog instances
+- Add 10-15px padding to section heights to prevent text clipping
+- Dialog sizes in `dialogBg` are the outer frame; content container is ~30px smaller on each side
+
+### Network Events
+- Check `g_server ~= nil` to detect server/single-player mode
+- Business logic belongs in the static `execute()` method, not in `readStream`/`writeStream`
+
+### UI Elements
+- `MultiTextOption` texts must be set via `setTexts()` in Lua, NOT via XML `<texts>` children
+- 3-Layer buttons: Bitmap background + invisible Button hit area + Text label (see GUI System section)
+- Refresh custom menu: store global ref, call directly (not via inGameMenu hierarchy)
+
+### Player/Vehicle Detection
+- Use `g_localPlayer:getIsInVehicle()` and `getCurrentVehicle()`
+- Don't rely solely on `g_currentMission.controlledVehicle`
+- 4 fallback methods for player position: `g_localPlayer`, `mission.player`, `controlledVehicle`, camera
 
 ---
 
@@ -255,4 +420,46 @@ Type `npcHelp` in the developer console (`~` key) for the full list. Key command
 
 ## File Size Rule: 1500 Lines
 
-If a file exceeds 1500 lines, refactor it into smaller modules with clear single responsibilities. Update `main.lua` source order accordingly. See the FS25_UsedPlus CLAUDE.md for the detailed refactor checklist.
+**RULE**: If you create, append to, or significantly modify a file that exceeds **1500 lines**, you MUST trigger a refactor to break it into smaller, focused modules.
+
+**Why This Matters:**
+- Syntax errors in 1900+ line files are nightmares to find
+- Large files breed bugs, make code review painful, and create merge conflicts
+- Breaking into smaller files forces better separation of concerns
+
+**When to Refactor:**
+- File grows beyond 1500 lines during feature development
+- Adding new functionality would push file over the limit
+- File has multiple responsibilities (dialog logic + business logic + data handling)
+
+**Refactor Checklist:**
+1. Identify logical boundaries (GUI vs business logic vs calculations)
+2. Extract to new files with clear single responsibility
+3. Main file becomes a coordinator/orchestrator
+4. Update `main.lua` source order to load new files in correct phase
+5. Test thoroughly (syntax errors, runtime behavior)
+6. Update comments/documentation
+
+**Exception:** Data files (configs, mappings) can exceed if justified.
+
+---
+
+## No Branding / No Advertising
+
+- **Never** add "Generated with Claude Code", "Co-Authored-By: Claude", or any claude.ai links to commit messages, PR descriptions, code comments, or any other output.
+- **Never** advertise or reference Anthropic, Claude, or claude.ai in any project artifacts.
+- This mod is by its human author(s) — keep it that way.
+
+---
+
+## Session Reminders
+
+1. Read this file first before writing code
+2. Check `log.txt` after changes — look for `[NPC Favor]` or `[NPCEntity]` prefixed lines
+3. GUI: Y=0 at BOTTOM, dialog Y is NEGATIVE going down
+4. No sliders — use quick buttons or MultiTextOption
+5. No `os.time()` — use `g_currentMission.time`
+6. Copy `TakeLoanDialog.xml` pattern for new dialogs
+7. FS25 = Lua 5.1 (no `goto`, no `continue`)
+8. Images from ZIP: set dynamically via `setImageFilename()` in Lua
+9. Build with `bash build.sh --deploy` (always deploy to mods folder)

@@ -4,6 +4,87 @@ All notable changes to the FS25_NPCFavor mod are documented below, organized by 
 
 ---
 
+## v1.2.2.6 -- Favor HUD Rework & Compass Navigation
+
+**Branch:** `feature/favor-ui-improvements` (PR #30)
+**Authors:** XelaNull
+
+### HUD Edit Mode & Resize System (NEW)
+- **Right-click toggle** replaces F8 keybind for entering HUD edit mode
+- **Corner resize handles**: Drag any corner to uniformly scale the HUD (0.5x–2.0x)
+- **Edge resize handles**: Drag left/right edges to adjust width independently (0.5x–2.0x width multiplier)
+- **Camera lock**: Camera rotation freezes during edit mode to prevent accidental camera spin while dragging
+- **Smart guards**: Edit mode blocked when player is in a vehicle, GUI/dialog is open, or HUD is locked in settings
+- **Auto-exit**: Exiting to vehicle or opening a dialog automatically closes edit mode
+- **HUD shortcut buttons**: List, Favors, and Admin dialog quick-access buttons at bottom of HUD box
+- All resize/position/width settings persisted via NPCSettings (XML save/load)
+
+### Compass Direction Arrows (NEW)
+- **Pixel-art compass needle** on each favor row points toward the target NPC relative to camera facing
+- Arrow rotates smoothly via 2D rotation matrix on per-frame grid dots
+- Uses `localDirectionToWorld` camera forward vector for reliable camera-relative angles (avoids `getRotation` sign convention issues)
+- **Distance + cardinal direction text** (e.g., "NE 250m") with color coding: green (<100m), yellow (100–500m), gray (>500m)
+- **Proximity dot**: When within 3m of NPC, arrow replaced with centered dot to avoid erratic `atan2` behavior at near-zero distance
+- 8-direction compass labels (N, NE, E, SE, S, SW, W, NW) localized in all 10 languages
+
+### Flash Notification System (NEW)
+- **HUD-resident notifications** replace game's messageCenter popups for favor events
+- Color-coded by event type: orange (new favor), cyan (progress), green (complete), red (failed), yellow (perfect bonus)
+- Multi-line support with fade-in/pulse/fade-out animation (4s duration)
+- Notification queue ensures messages display sequentially without overlap
+
+### Favor Timer Accuracy Fix
+- Favor expiration timers now use in-game time (`TimeHelper.getGameTimeMs()`) instead of real wall-clock time
+- Timers now correctly scale with game speed (1x, 5x, 120x)
+- New `TimeHelper.getGameTimeMs()` function: returns `currentDay * 86,400,000 + dayTime`
+
+### HUD Visual Polish
+- Drop shadow on HUD background for depth
+- Permanent subtle border (always visible, not just in edit mode)
+- Pulsing blue border during edit mode, green during active resize/drag
+- Version watermark in bottom-right corner
+- Progress bars on favor rows when progress > 0%
+
+### Translations
+- 13 new i18n keys across all 10 language files (compass directions, flash notification templates)
+- Updated edit mode hint text to reference resize capability
+
+### Minor Fixes
+- Favor Management Dialog: border element visibility now toggles with row content
+- NPCSystem boot notification displays mod version number
+- Expanded input event debug logging for troubleshooting keybind issues
+
+---
+
+## v1.2.2.5 -- Translation Rework & Codebase Restore
+
+**Commits:** `869a478` through `b74eab3` (2026-02-10 to 2026-02-12)
+**Authors:** Dueesberch (Christian), TisonK, XelaNull
+**Issues Fixed:** #20 (Merge conflicted files committed)
+**PRs Merged:** #23, #24, #28, #29
+
+### Translation System Rework (PR #28 by Dueesberch)
+- **Extracted translations from modDesc.xml**: Moved ~1,700 lines of inline `<l10n>` translations to 10 separate `translations/lang_*.xml` files (one per language: en, de, fr, pl, es, it, cz, br, uk, ru)
+- Changed `modDesc.xml` from inline `<l10n>` block to `<l10n filenamePrefix="translations/lang" defaultLanguage="en" />` for external loading
+- Added additional translations from past PRs that were missing
+- Removed duplicated translation lines
+- Cleaned up temp working files
+
+### Codebase Restoration (PR #24 by XelaNull)
+- **Reverted whitespace-only reformatting**: TisonK's PR #23 merge introduced massive whitespace changes across 16 files with zero functional code changes. Restored the working v1.2.2.4 codebase with version bump.
+- **Merge conflict cleanup** (fixes #20): TisonK's merge accidentally committed files with `<<<<<<< HEAD` conflict markers. Fixed by removing the conflicted files and restoring from v1.2.2.4.
+
+### Map Hotspot Nil-Guard (TisonK, `869a478`)
+- **Temp fix for PlaceableHotspot crash** (mitigates #18, #26): Added nil-checks for `hotspot.overlay` before proceeding with hotspot creation. The `PlaceableHotspot.lua:213: attempt to index nil with 'width'` error caused map freeze when opening the PDA.
+- Added `setPlaceableType()` method detection with fallback to direct property assignment
+- Abort hotspot creation gracefully if overlay fails to initialize
+
+### Housekeeping
+- Updated CLAUDE.md with developer workspace paths and mod directory listing
+- Added no-branding rule to CLAUDE.md
+
+---
+
 ## v1.2.2.4 -- Settings Persistence & ESC Menu Expansion
 
 **Commit:** `3e8691e` (2026-02-09)
@@ -371,19 +452,34 @@ The original upload establishing the mod's architecture and vision:
 | 4 | erreur lua (renderOverlay in update callback) | squall39 | Closed | Fixed in v1.0.1.0 commit `2f79a7a` (moved rendering to draw callback) |
 | 5 | NPC on player backside after teleport | Dueesberch | Closed | Fixed in v1.2.2.0 (player rotates 180° to face NPC after teleport) |
 | 6 | Floating text after teleport | TisonK | Closed | Fixed in v1.2.2.0 (lastTeleportTime cooldown prevents HUD jank) |
-| 7 | Animations and Progress | | Closed | Fixed in v1.2.2.2 (added "working" to isWalking check for field work animation) |
+| 7 | Animations and Progress | | Open | Partially fixed in v1.2.2.2 (field work animation); walk animation sliding still occurs |
 | 8 | Won't load due to ZIP packaging | Wreyth | Closed | Fixed in v1.2.2.2 (build.sh creates properly structured ZIP) |
 | 9 | Interaction with active favor | TisonK | Closed | Fixed in v1.2.2.0 (Favor Management Dialog with view/cancel/goto/complete) |
 | 10 | Keybinding the npcList UI | TisonK | Closed | Fixed in v1.2.2.0 (F7 keybind opens NPC roster) |
-| 11 | Couple of issues and a suggestion | | Open | |
+| 11 | Couple of issues and a suggestion | crisischrissy | Open | Partial — #14 split out and closed |
 | 12 | NPC Map Hotspot Icons Not Appearing | | Closed | Fixed in v1.2.2.2 (PlaceableHotspot with icon overlay) |
-| 14 | Borrow tractor favor has no interaction | | Open | |
-| 15 | Settings reset when exiting savegame | | Open | Fixed in v1.2.2.4 (UsedPlus save pattern, XMLFile.loadIfExists) |
+| 14 | Borrow tractor favor has no interaction | XelaNull | Closed | Split from #11; vehicle spawning not yet functional |
+| 15 | Settings reset when exiting savegame | XelaNull | Closed | Fixed in v1.2.2.4 (UsedPlus save pattern, XMLFile.loadIfExists) |
+| 18 | attempt to index nil with 'width' | TisonK | Closed | Mitigated in v1.2.2.5 (nil-guard on hotspot overlay); PlaceableHotspot init issue |
+| 19 | Favor UI bugged | TisonK | Closed | Caused by merge conflicts (#20); resolved by codebase restore |
+| 20 | Merge conflicted files committed | Dueesberch | Closed | Fixed in v1.2.2.5 (PR #24 restored clean codebase) |
+| 21 | Mod integration (ContractorMod) | skynyrd47 | Open | Feature request — hire/manage NPCs as workers |
+| 22 | Game freezes after a while | Siamajor | Closed | Related to PlaceableHotspot crash (#18); mitigated by nil-guard |
+| 25 | Keybind issue (F6/F7 not working) | TisonK | Open | F6 Favor Menu and F7 NPC List keybinds reported non-functional |
+| 26 | Error pile d'appel lua (map hotspot crash) | squall39 | Closed | Same root cause as #18; mitigated in v1.2.2.5 |
 
 ## Pull Requests
 
 | # | Title | Author | Status |
 |---|-------|--------|--------|
 | 3 | Feature: Living Neighborhood System v1.1.0 (Fixes #1, #2) | XelaNull | Merged |
-| 17 | v1.2.2.4: Settings Persistence & ESC Menu Expansion (Fixes #15) | XelaNull | Open |
+| 13 | v1.2.2.2: Fix map hotspot night visibility + NPC name labels | XelaNull | Merged |
+| 16 | v1.2.2.3: Fix NPC animations, clothing, field work pathing, HUD | XelaNull | Merged |
+| 17 | v1.2.2.4: Settings Persistence & ESC Menu Expansion (Fixes #15) | XelaNull | Merged |
+| 23 | Updated version in modDesc | TisonK | Merged |
+| 24 | v1.2.2.5: Restore working codebase from v1.2.2.4 | XelaNull | Merged |
+| 27 | Rework translation system (superseded) | Dueesberch | Closed |
+| 28 | Rework translation system | Dueesberch | Merged |
+| 29 | v1.2.2.5: Translation rework and codebase restore | TisonK | Merged |
+| 30 | WIP: Favor UI improvements & 3-layer button fix | XelaNull | Draft |
 

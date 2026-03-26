@@ -142,29 +142,26 @@ function NPCFavorSystem.new(npcSystem)
         longestFavor = nil
     }
     
-    -- Notification system
-    self.notificationQueue = {}
-    self.lastNotificationTime = 0
-    self.notificationCooldown = 5000 -- 5 seconds between notifications
+    -- Flash notifications route through favorHUD (no more messageCenter)
     
     return self
 end
 
 function NPCFavorSystem:update(dt)
-    local currentTime = g_currentMission.time
-    
-    -- Update active favors
+    local currentGameTime = TimeHelper.getGameTimeMs()
+
+    -- Update active favors using in-game clock (scales with game speed)
     for i = #self.activeFavors, 1, -1 do
         local favor = self.activeFavors[i]
-        
-        -- Check if favor expired
-        if favor.expirationTime and currentTime > favor.expirationTime then
+
+        if favor.expirationGameTime then
+            favor.timeRemaining = favor.expirationGameTime - currentGameTime
+        end
+
+        if favor.timeRemaining and favor.timeRemaining <= 0 then
             self:failFavor(favor.id, "time_expired")
             table.remove(self.activeFavors, i)
         else
-            -- Update time remaining
-            favor.timeRemaining = favor.expirationTime - currentTime
-            
             -- Check progress conditions
             self:checkFavorProgress(favor, dt)
         end
@@ -179,9 +176,6 @@ function NPCFavorSystem:update(dt)
             end
         end
     end
-    
-    -- Process notifications
-    self:processNotifications(dt)
     
     -- Random favor requests (with time-based probability)
     if self.npcSystem.settings.enableFavors then
@@ -498,14 +492,11 @@ function NPCFavorSystem:generateFavorRequest()
         -- Update NPC cooldown tracking
         self.npcFavorCooldowns[selectedNPC.id] = selectedNPC.favorCooldown
         
-        -- Add to notification queue
-        self:queueNotification(
-            g_i18n:getText("npc_notification_favor_request") or "Favor Request",
-            string.format(g_i18n:getText("npc_notification_favor_request") or "%s is asking for a favor!", 
-                selectedNPC.name),
-            "favor_request",
-            5000 -- 5 seconds
-        )
+        -- Flash notification on HUD
+        if self.npcSystem.favorHUD then
+            local msg = string.format(g_i18n:getText("npc_hud_new_favor") or "New: %s needs help!", selectedNPC.name)
+            self.npcSystem.favorHUD:flashFavor(msg, {1, 0.9, 0.3, 1})
+        end
         
         -- Log for debugging
         if self.npcSystem.settings.debugMode then
@@ -586,9 +577,9 @@ function NPCFavorSystem:createFavor(npc, favorTypeId)
         progress = 0,
         progressDetails = {},
         
-        -- Time management
-        createdTime = g_currentMission.time,
-        expirationTime = g_currentMission.time + (favorType.duration * 60 * 60 * 1000),
+        -- Time management (uses in-game clock so timers scale with game speed)
+        createdTime = TimeHelper.getGameTimeMs(),
+        expirationGameTime = TimeHelper.getGameTimeMs() + (favorType.duration * 60 * 60 * 1000),
         timeRemaining = favorType.duration * 60 * 60 * 1000,
         estimatedCompletionTime = nil,
         
@@ -754,12 +745,9 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
                 favor.progressDetails.reachedStart = true
                 favor.progress = 33
                 
-                self:queueNotification(
-                    "Favor Progress",
-                    "You've arrived at the pickup location",
-                    "favor_progress",
-                    3000
-                )
+                if self.npcSystem.favorHUD then
+                    self.npcSystem.favorHUD:flashFavor("Arrived at pickup location", {0.3, 0.8, 1, 1})
+                end
             end
         end
         
@@ -776,12 +764,9 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
                 favor.progressDetails.reachedDestination = true
                 favor.progress = 66
                 
-                self:queueNotification(
-                    "Favor Progress",
-                    "You've arrived at the destination",
-                    "favor_progress",
-                    3000
-                )
+                if self.npcSystem.favorHUD then
+                    self.npcSystem.favorHUD:flashFavor("Arrived at destination", {0.3, 0.8, 1, 1})
+                end
             end
         end
     end
@@ -800,12 +785,11 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
                 if distance < 30 then
                     step.completed = true
                     
-                    self:queueNotification(
-                        "Favor Progress",
-                        string.format("Step %d completed: %s", step.id, step.description),
-                        "favor_progress",
-                        3000
-                    )
+                    if self.npcSystem.favorHUD then
+                        self.npcSystem.favorHUD:flashFavor(
+                            string.format("Step %d: %s", step.id, step.description),
+                            {0.3, 0.8, 1, 1})
+                    end
                 end
             end
             
@@ -828,39 +812,6 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
     end
 end
 
-function NPCFavorSystem:queueNotification(title, message, type, duration)
-    table.insert(self.notificationQueue, {
-        title = title,
-        message = message,
-        type = type,
-        duration = duration or 5000,
-        timeAdded = g_currentMission.time
-    })
-end
-
-function NPCFavorSystem:processNotifications(dt)
-    local currentTime = g_currentMission.time
-    
-    -- Check if enough time has passed since last notification
-    if currentTime - self.lastNotificationTime < self.notificationCooldown then
-        return
-    end
-    
-    -- Process next notification in queue
-    if #self.notificationQueue > 0 then
-        local notification = table.remove(self.notificationQueue, 1)
-        
-        -- Show the notification
-        self.npcSystem:showNotification(notification.title, notification.message)
-        
-        self.lastNotificationTime = currentTime
-        
-        -- Log for debugging
-        if self.npcSystem.settings.debugMode then
-            print(string.format("Notification: %s - %s", notification.title, notification.message))
-        end
-    end
-end
 
 
 function NPCFavorSystem:completeFavor(favorId)
@@ -901,15 +852,12 @@ function NPCFavorSystem:completeFavor(favorId)
         self.npcSystem.interactionUI:updateFavorList()
     end
     
-    -- Send notification
-    self:queueNotification(
-        g_i18n:getText("npc_notification_favor_completed") or "Favor Completed",
-        string.format(g_i18n:getText("npc_notification_favor_completed") or "You helped %s. Relationship improved!", 
-            favor.npcName),
-        "favor_completed",
-        5000
-    )
-    
+    -- Flash notification on HUD
+    if self.npcSystem.favorHUD then
+        local msg = string.format(g_i18n:getText("npc_hud_completed") or "Done: %s", favor.description or favor.npcName)
+        self.npcSystem.favorHUD:flashFavor(msg, {0.3, 1, 0.3, 1})
+    end
+
     return true
 end
 
@@ -949,14 +897,11 @@ function NPCFavorSystem:failFavor(favorId, reason)
         self.npcSystem.interactionUI:updateFavorList()
     end
     
-    -- Send notification
-    self:queueNotification(
-        "Favor Failed",
-        string.format("You failed to help %s: %s", 
-            favor.npcName, self:getFailureReasonText(reason)),
-        "favor_failed",
-        5000
-    )
+    -- Flash notification on HUD
+    if self.npcSystem.favorHUD then
+        local msg = string.format(g_i18n:getText("npc_hud_failed") or "Failed: %s", favor.description or favor.npcName)
+        self.npcSystem.favorHUD:flashFavor(msg, {1, 0.3, 0.3, 1})
+    end
     
     return true
 end
@@ -1005,13 +950,11 @@ function NPCFavorSystem:abandonFavor(favorId)
         self.npcSystem.interactionUI:updateFavorList()
     end
     
-    -- Send notification
-    self:queueNotification(
-        "Favor Abandoned",
-        string.format("You abandoned helping %s", favor.npcName),
-        "favor_abandoned",
-        5000
-    )
+    -- Flash notification on HUD
+    if self.npcSystem.favorHUD then
+        local msg = string.format(g_i18n:getText("npc_hud_cancelled") or "Cancelled: %s", favor.description or favor.npcName)
+        self.npcSystem.favorHUD:flashFavor(msg, {1, 0.5, 0.3, 1})
+    end
     
     return true
 end
@@ -1090,13 +1033,12 @@ function NPCFavorSystem:applyFavorRewards(favor)
                 )
             end
 
-            -- Notification about perfect completion
-            self:queueNotification(
-                "Perfect Completion!",
-                string.format("Bonus: +%d relationship, +$%d for completing early!", bonusRel, bonusMoney),
-                "favor_perfect",
-                5000
-            )
+            -- Flash notification for perfect completion
+            if self.npcSystem.favorHUD then
+                local msg = string.format(g_i18n:getText("npc_hud_perfect") or "Perfect! %s bonus!",
+                    string.format("+%d rel, +$%d", bonusRel, bonusMoney))
+                self.npcSystem.favorHUD:flashFavor(msg, {1, 1, 0.3, 1})
+            end
 
             if self.npcSystem.settings.debugMode then
                 print(string.format("PERFECT favor completion bonus: +%d rel, +%d money for %s",
@@ -1217,7 +1159,7 @@ function NPCFavorSystem:restoreFavor(savedFavor)
         end
     end
 
-    local currentTime = g_currentMission and g_currentMission.time or 0
+    local currentGameTime = TimeHelper.getGameTimeMs()
 
     local favor = {
         id = #self.activeFavors + #self.completedFavors + #self.failedFavors + 1,
@@ -1233,13 +1175,13 @@ function NPCFavorSystem:restoreFavor(savedFavor)
         progress = savedFavor.progress or 0,
         progressDetails = {},
 
-        createdTime = currentTime,
-        expirationTime = currentTime + (savedFavor.timeRemaining or 0),
+        createdTime = currentGameTime,
+        expirationGameTime = currentGameTime + (savedFavor.timeRemaining or 0),
         timeRemaining = savedFavor.timeRemaining or 0,
         estimatedCompletionTime = nil,
 
         requirements = favorType and favorType.requirements or {},
-        reward = favorType and favorType.reward or { relationship = 10, money = savedFavor.reward or 0, xp = 0 },
+        reward = favorType and favorType.reward or (type(savedFavor.reward) == "table" and savedFavor.reward or { relationship = 10, money = tonumber(savedFavor.reward) or 0, xp = 0 }),
         penalty = favorType and favorType.penalty or { relationship = -5, reputation = -10 },
 
         location = nil,

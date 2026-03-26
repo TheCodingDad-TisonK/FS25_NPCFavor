@@ -11,6 +11,14 @@ local NPCFavorManagementDialog_mt = Class(NPCFavorManagementDialog, MessageDialo
 
 NPCFavorManagementDialog.MAX_FAVORS = 5  -- Max visible favors
 
+-- 3-layer button color definitions (normal + hover states)
+NPCFavorManagementDialog.BTN_COLORS = {
+    blue  = { BG = {0.12,0.2,0.35,0.95}, BG_H = {0.2,0.32,0.5,1}, TXT = {0.7,0.85,1,1}, TXT_H = {0.9,0.95,1,1} },
+    red   = { BG = {0.35,0.12,0.12,0.95}, BG_H = {0.45,0.18,0.18,1}, TXT = {1,0.7,0.7,1}, TXT_H = {1,0.9,0.9,1} },
+    green = { BG = {0.12,0.35,0.12,0.95}, BG_H = {0.18,0.45,0.18,1}, TXT = {0.7,1,0.7,1}, TXT_H = {0.9,1,0.9,1} },
+}
+NPCFavorManagementDialog.BTN_TYPE_MAP = { view="blue", cancel="red", goto="blue", complete="green" }
+
 function NPCFavorManagementDialog.new(target, custom_mt)
     local self = MessageDialog.new(target, custom_mt or NPCFavorManagementDialog_mt)
     self.npcSystem = nil
@@ -102,7 +110,9 @@ end
 function NPCFavorManagementDialog:clearFavorRow(rowNum)
     local prefix = "favor" .. rowNum
     
-    -- Hide background
+    -- Hide background and border
+    local border = self[prefix .. "border"]
+    if border and border.setVisible then border:setVisible(false) end
     local bg = self[prefix .. "bg"]
     if bg and bg.setVisible then bg:setVisible(false) end
     
@@ -116,11 +126,15 @@ function NPCFavorManagementDialog:clearFavorRow(rowNum)
         end
     end
     
-    -- Hide buttons
+    -- Hide 3-layer buttons (bg + hit + txt)
     local buttons = {"view", "cancel", "goto", "complete"}
     for _, btn in ipairs(buttons) do
         local elem = self[prefix .. btn]
         if elem and elem.setVisible then elem:setVisible(false) end
+        local bgElem = self[prefix .. btn .. "bg"]
+        if bgElem and bgElem.setVisible then bgElem:setVisible(false) end
+        local txtElem = self[prefix .. btn .. "txt"]
+        if txtElem and txtElem.setVisible then txtElem:setVisible(false) end
     end
 end
 
@@ -131,7 +145,9 @@ function NPCFavorManagementDialog:fillFavorRow(rowNum, favor, sys)
     -- Store favor reference
     self.favorIndices[rowNum] = favor
     
-    -- Show background
+    -- Show background and border
+    local border = self[prefix .. "border"]
+    if border and border.setVisible then border:setVisible(true) end
     local bg = self[prefix .. "bg"]
     if bg and bg.setVisible then bg:setVisible(true) end
     
@@ -199,11 +215,15 @@ function NPCFavorManagementDialog:fillFavorRow(rowNum, favor, sys)
         if rewardElem.setTextColor then rewardElem:setTextColor(0.3, 0.9, 0.3, 1) end
     end
     
-    -- Show buttons
+    -- Show 3-layer buttons (bg + hit + txt)
     local buttons = {"view", "cancel", "goto", "complete"}
     for _, btn in ipairs(buttons) do
         local elem = self[prefix .. btn]
         if elem and elem.setVisible then elem:setVisible(true) end
+        local bgElem = self[prefix .. btn .. "bg"]
+        if bgElem and bgElem.setVisible then bgElem:setVisible(true) end
+        local txtElem = self[prefix .. btn .. "txt"]
+        if txtElem and txtElem.setVisible then txtElem:setVisible(true) end
     end
 end
 
@@ -366,6 +386,40 @@ for i = 1, NPCFavorManagementDialog.MAX_FAVORS do
         self:updateDisplay()
         
         print(string.format("[NPC Favor] Completed favor from %s (+$%d, +15 rel)", npcName, reward))
+    end
+end
+
+-- Generate hover handlers for 3-layer button pattern
+for i = 1, NPCFavorManagementDialog.MAX_FAVORS do
+    for _, btn in ipairs({"View", "Cancel", "Goto", "Complete"}) do
+        NPCFavorManagementDialog["onFocusFavor" .. i .. btn] = function(self)
+            self:applyBtnHover(i, btn:lower(), true)
+        end
+        NPCFavorManagementDialog["onLeaveFavor" .. i .. btn] = function(self)
+            self:applyBtnHover(i, btn:lower(), false)
+        end
+    end
+end
+
+--- Apply hover effect to a 3-layer button
+function NPCFavorManagementDialog:applyBtnHover(rowNum, btnName, isHovered)
+    local colorType = self.BTN_TYPE_MAP[btnName]
+    if not colorType then return end
+    local colors = self.BTN_COLORS[colorType]
+    if not colors then return end
+
+    local prefix = "favor" .. rowNum .. btnName
+
+    local bgElem = self[prefix .. "bg"]
+    if bgElem and bgElem.setImageColor then
+        local c = isHovered and colors.BG_H or colors.BG
+        bgElem:setImageColor(nil, c[1], c[2], c[3], c[4])
+    end
+
+    local txtElem = self[prefix .. "txt"]
+    if txtElem and txtElem.setTextColor then
+        local c = isHovered and colors.TXT_H or colors.TXT
+        txtElem:setTextColor(c[1], c[2], c[3], c[4])
     end
 end
 

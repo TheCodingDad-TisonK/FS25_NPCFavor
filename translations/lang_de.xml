@@ -140,5 +140,37 @@
 		<text name="button_complete" text="Abschließen" />
 		<text name="input_FAVOR_MENU" text="Gefallen-Menü" />
 		<text name="input_NPC_LIST" text="NPC-Liste" />
+			<text name="npc_schedule_plans" text="Meine Pläne:" />
+		<text name="input_HUD_EDIT_MODE" text="HUD-Bearbeitung umschalten" />
+		<text name="npc_hud_drag_hint" text="Ziehen zum Verschieben | Ecken zum Skalieren" />
+		<text name="npc_hud_locked_short" text="Gefallen-HUD sperren" />
+		<text name="npc_hud_locked_long" text="Wenn gesperrt, kann die Gefallenliste nicht verschoben oder skaliert werden" />
+		<text name="npc_hud_scale_short" text="Gefallen-HUD Größe" />
+		<text name="npc_hud_scale_long" text="Größe der aktiven Gefallenliste auf dem Bildschirm" />
+		<text name="npc_admin_title" text="NPC Admin-Panel" />
+		<text name="npc_admin_subtitle_fmt" text="%d aktive NPCs  |  Bearbeiten klicken zum Anpassen" />
+		<text name="npc_admin_no_npcs" text="Keine aktiven NPCs. NPCs erscheinen nach der Initialisierung." />
+		<text name="npc_admin_footer" text="Bearbeiten klicken, um NPC-Beziehungswerte anzupassen" />
+		<text name="npc_admin_edit_title" text="NPC bearbeiten: %s" />
+		<text name="npc_admin_relationship_label" text="Beziehung:" />
+		<text name="npc_admin_increase" text="Beziehung erhÃ¶hen" />
+		<text name="npc_admin_decrease" text="Beziehung verringern" />
+		<text name="npc_admin_adjusted" text="Angepasst: %s%d (jetzt %d/100)" />
+		<text name="npc_admin_back" text="ZurÃ¼ck" />
+		<text name="npc_admin_edit" text="Bearb." />
+		<text name="npc_hud_compass_n" text="N" />
+		<text name="npc_hud_compass_ne" text="NO" />
+		<text name="npc_hud_compass_e" text="O" />
+		<text name="npc_hud_compass_se" text="SO" />
+		<text name="npc_hud_compass_s" text="S" />
+		<text name="npc_hud_compass_sw" text="SW" />
+		<text name="npc_hud_compass_w" text="W" />
+		<text name="npc_hud_compass_nw" text="NW" />
+		<text name="npc_hud_new_favor" text="Neu: %s braucht Hilfe!" />
+		<text name="npc_hud_completed" text="Erledigt: %s" />
+		<text name="npc_hud_failed" text="Fehlgeschlagen: %s" />
+		<text name="npc_hud_cancelled" text="Abgebrochen: %s" />
+		<text name="npc_hud_perfect" text="Perfekt! %s Bonus!" />
+		<text name="npc_admin_col_personality" text="PersÃ¶nlichkeit" />
 	</texts>
 </l10n>

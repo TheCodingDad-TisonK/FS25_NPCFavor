@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
     <author>TisonK</author>
-    <version>1.2.2.5</version>
+    <version>1.2.2.6-beta</version>
     <modName>FS25_NPCFavor</modName>
     <title>
         <en>NPC Favor - Living Neighborhood</en>
@@ -28,11 +28,11 @@
         <ru>Добавляет живых соседей NPC, которые работают на своих полях и просят об услугах. Реалистичная симуляция района.</ru>
     </description>
     <iconFilename>icon.dds</iconFilename>
-    
+
     <l10n filenamePrefix="translations/lang" defaultLanguage="en" />
 
     <multiplayer supported="true"/>
-    
+
     <extraSourceFiles>
         <!-- main.lua uses source() to load all other files in the correct order -->
         <sourceFile filename="main.lua" />
@@ -42,6 +42,7 @@
         <action name="NPC_INTERACT" />
         <action name="FAVOR_MENU" />
         <action name="NPC_LIST" />
+        <action name="HUD_EDIT_MODE" />
     </actions>
     <inputBinding>
         <actionBinding action="NPC_INTERACT">
@@ -53,6 +54,8 @@
         <actionBinding action="NPC_LIST">
             <binding device="KB_MOUSE_DEFAULT" input="KEY_F7" />
         </actionBinding>
+        <actionBinding action="HUD_EDIT_MODE">
+            <binding device="KB_MOUSE_DEFAULT" input="MOUSE_BUTTON_RIGHT" />
+        </actionBinding>
     </inputBinding>
 </modDesc>
-

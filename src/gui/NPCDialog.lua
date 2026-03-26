@@ -234,7 +234,7 @@ function NPCDialog:setButtonEnabled(suffix, enabled, text)
 
     if bgElement then
         local c = enabled and self.COLORS.BTN_NORMAL or self.COLORS.BTN_DISABLED
-        bgElement:setImageColor(c[1], c[2], c[3], c[4])
+        bgElement:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
 
     if textElement then
@@ -257,7 +257,7 @@ function NPCDialog:applyHover(suffix, isHovered)
 
     if bgElement then
         local c = isHovered and self.COLORS.BTN_HOVER or self.COLORS.BTN_NORMAL
-        bgElement:setImageColor(c[1], c[2], c[3], c[4])
+        bgElement:setImageColor(nil, c[1], c[2], c[3], c[4])
     end
 
     if textElement then

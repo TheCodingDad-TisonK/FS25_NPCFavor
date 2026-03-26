@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!--
+    FS25_NPCFavor - NPC Admin Edit Dialog
+    Per-NPC relationship editor with +1/+5/+10 and -1/-5/-10 buttons.
+    3-layer button pattern (Bitmap bg + invisible Button hit + Text label)
+    with onFocus/onLeave hover effects.
+-->
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement profile="newLayer" />
+    <Bitmap profile="dialogFullscreenBg" id="dialogBg" />
+
+    <GuiElement profile="dialogBg" id="dialogElement" size="550px 420px">
+        <ThreePartBitmap profile="fs25_dialogBgMiddle" />
+        <ThreePartBitmap profile="fs25_dialogBgTop" />
+        <ThreePartBitmap profile="fs25_dialogBgBottom" />
+
+        <GuiElement profile="fs25_dialogContentContainer">
+
+            <!-- NPC Name -->
+            <Text profile="aeNameText" id="npcNameText" position="0px -15px" text=""/>
+
+            <!-- Personality -->
+            <Text profile="aePersonalityText" id="npcPersonalityText" position="0px -45px" text=""/>
+
+            <!-- Divider -->
+            <Bitmap profile="aeDivider" position="0px -65px"/>
+
+            <!-- Relationship label -->
+            <Text profile="aeRelLabel" id="relLabel" position="0px -75px" text="Relationship:"/>
+
+            <!-- Relationship value (large) -->
+            <Text profile="aeRelValue" id="relValueText" position="0px -100px" text="0"/>
+
+            <!-- Tier name -->
+            <Text profile="aeTierName" id="tierNameText" position="0px -130px" text=""/>
+
+            <!-- Divider -->
+            <Bitmap profile="aeDivider" position="0px -155px"/>
+
+            <!-- Increase section label -->
+            <Text profile="aeSectionLabel" id="incLabel" position="0px -165px" text="Increase Relationship"/>
+
+            <!-- +1 Button (3-layer) -->
+            <Bitmap profile="aeIncBg" id="btnInc1Bg" position="-120px -185px"/>
+            <Button profile="aeIncHit" id="btnInc1" position="-120px -185px" onClick="onClickInc1" onFocus="onFocusInc1" onLeave="onLeaveInc1"/>
+            <Text profile="aeIncText" id="btnInc1Text" position="-120px -189px" text="+1"/>
+
+            <!-- +5 Button (3-layer) -->
+            <Bitmap profile="aeIncBg" id="btnInc5Bg" position="0px -185px"/>
+            <Button profile="aeIncHit" id="btnInc5" position="0px -185px" onClick="onClickInc5" onFocus="onFocusInc5" onLeave="onLeaveInc5"/>
+            <Text profile="aeIncText" id="btnInc5Text" position="0px -189px" text="+5"/>
+
+            <!-- +10 Button (3-layer) -->
+            <Bitmap profile="aeIncBg" id="btnInc10Bg" position="120px -185px"/>
+            <Button profile="aeIncHit" id="btnInc10" position="120px -185px" onClick="onClickInc10" onFocus="onFocusInc10" onLeave="onLeaveInc10"/>
+            <Text profile="aeIncText" id="btnInc10Text" position="120px -189px" text="+10"/>
+
+            <!-- Decrease section label -->
+            <Text profile="aeSectionLabel" id="decLabel" position="0px -225px" text="Decrease Relationship"/>
+
+            <!-- -1 Button (3-layer) -->
+            <Bitmap profile="aeDecBg" id="btnDec1Bg" position="-120px -245px"/>
+            <Button profile="aeDecHit" id="btnDec1" position="-120px -245px" onClick="onClickDec1" onFocus="onFocusDec1" onLeave="onLeaveDec1"/>
+            <Text profile="aeDecText" id="btnDec1Text" position="-120px -249px" text="-1"/>
+
+            <!-- -5 Button (3-layer) -->
+            <Bitmap profile="aeDecBg" id="btnDec5Bg" position="0px -245px"/>
+            <Button profile="aeDecHit" id="btnDec5" position="0px -245px" onClick="onClickDec5" onFocus="onFocusDec5" onLeave="onLeaveDec5"/>
+            <Text profile="aeDecText" id="btnDec5Text" position="0px -249px" text="-5"/>
+
+            <!-- -10 Button (3-layer) -->
+            <Bitmap profile="aeDecBg" id="btnDec10Bg" position="120px -245px"/>
+            <Button profile="aeDecHit" id="btnDec10" position="120px -245px" onClick="onClickDec10" onFocus="onFocusDec10" onLeave="onLeaveDec10"/>
+            <Text profile="aeDecText" id="btnDec10Text" position="120px -249px" text="-10"/>
+
+            <!-- Status feedback -->
+            <Text profile="aeStatusText" id="statusText" position="0px -290px" text=""/>
+
+        </GuiElement>
+
+        <BoxLayout profile="fs25_dialogButtonBox">
+            <Button profile="buttonBack" id="backButton" text="Back" onClick="onClickBack"/>
+        </BoxLayout>
+
+    </GuiElement>
+
+    <GUIProfiles>
+        <Profile name="fs25_guiElement" extends="baseReference"/>
+
+        <!-- NPC Name -->
+        <Profile name="aeNameText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="480px 25px"/>
+            <textSize value="22px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Personality -->
+        <Profile name="aePersonalityText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="400px 18px"/>
+            <textSize value="14px"/>
+            <textColor value="0.6 0.8 0.6 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Divider -->
+        <Profile name="aeDivider" extends="baseReference" with="anchorTopCenter">
+            <size value="480px 1px"/>
+            <imageColor value="0.3 0.35 0.45 0.8"/>
+        </Profile>
+
+        <!-- Relationship label -->
+        <Profile name="aeRelLabel" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="300px 16px"/>
+            <textSize value="13px"/>
+            <textColor value="0.6 0.65 0.7 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Relationship value (large) -->
+        <Profile name="aeRelValue" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="200px 28px"/>
+            <textSize value="28px"/>
+            <textBold value="true"/>
+            <textColor value="1 1 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Tier name -->
+        <Profile name="aeTierName" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="300px 20px"/>
+            <textSize value="16px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Section labels -->
+        <Profile name="aeSectionLabel" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="400px 16px"/>
+            <textSize value="12px"/>
+            <textColor value="0.5 0.55 0.65 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Green (+) button background -->
+        <Profile name="aeIncBg" extends="baseReference" with="anchorTopCenter">
+            <size value="100px 35px"/>
+            <imageColor value="0.12 0.28 0.12 0.95"/>
+        </Profile>
+        <!-- Green (+) button hit area -->
+        <Profile name="aeIncHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="100px 35px"/>
+            <isFocusable value="true"/>
+        </Profile>
+        <!-- Green (+) button text -->
+        <Profile name="aeIncText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="100px 26px"/>
+            <textSize value="16px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 1 0.7 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Red (-) button background -->
+        <Profile name="aeDecBg" extends="baseReference" with="anchorTopCenter">
+            <size value="100px 35px"/>
+            <imageColor value="0.28 0.12 0.12 0.95"/>
+        </Profile>
+        <!-- Red (-) button hit area -->
+        <Profile name="aeDecHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="100px 35px"/>
+            <isFocusable value="true"/>
+        </Profile>
+        <!-- Red (-) button text -->
+        <Profile name="aeDecText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="100px 26px"/>
+            <textSize value="16px"/>
+            <textBold value="true"/>
+            <textColor value="1 0.7 0.7 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+
+        <!-- Status feedback text -->
+        <Profile name="aeStatusText" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="480px 18px"/>
+            <textSize value="13px"/>
+            <textBold value="true"/>
+            <textColor value="0.6 0.8 0.6 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+    </GUIProfiles>
+</GUI>
