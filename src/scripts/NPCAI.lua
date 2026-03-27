@@ -1792,6 +1792,14 @@ function NPCAI:updateDrivingState(npc, dt)
                 x = npc.position.x, y = npc.position.y, z = npc.position.z
             }
         end
+
+        -- Sync real commute vehicle to NPC logical position
+        if npc.realCar and npc.realCar.rootNode then
+            pcall(function()
+                setTranslation(npc.realCar.rootNode, npc.position.x, npc.position.y, npc.position.z)
+                setRotation(npc.realCar.rootNode, 0, npc.rotation.y, 0)
+            end)
+        end
     else
         -- No destination — timer-based driving (existing fallback behavior)
         npc.vehicleTimer = (npc.vehicleTimer or 0) + dt
@@ -1827,6 +1835,14 @@ function NPCAI:updateDrivingState(npc, dt)
                 npc.currentVehicle.position = {
                     x = npc.position.x, y = npc.position.y, z = npc.position.z
                 }
+            end
+
+            -- Sync real commute vehicle to NPC logical position
+            if npc.realCar and npc.realCar.rootNode then
+                pcall(function()
+                    setTranslation(npc.realCar.rootNode, npc.position.x, npc.position.y, npc.position.z)
+                    setRotation(npc.realCar.rootNode, 0, npc.rotation.y, 0)
+                end)
             end
         end
     end
@@ -2245,6 +2261,11 @@ function NPCAI:stopDriving(npc, skipStateChange)
         npc.currentVehicle.currentTask = nil
         npc.currentVehicle.driver = nil
         npc.currentVehicle = nil
+    end
+
+    -- Remove real commute vehicle if it wasn't already cleaned up by handleDrivingArrival
+    if npc.realCar and self.npcSystem.removeNPCCar then
+        self.npcSystem:removeNPCCar(npc)
     end
 
     if not skipStateChange then
@@ -3449,6 +3470,17 @@ function NPCAI:startCommute(npc, targetX, targetZ, callback)
             end)
         end
     end
+
+    -- Hide walking character immediately (real vehicle spawns async below)
+    pcall(function()
+        local ent = entityMgr and entityMgr.npcEntities and entityMgr.npcEntities[npc.id]
+        if ent and ent.node then setVisibility(ent.node, false) end
+    end)
+
+    -- Spawn a real vehicle so the NPC visually drives rather than walks
+    if self.npcSystem.spawnNPCCar then
+        self.npcSystem:spawnNPCCar(npc, nil)
+    end
 end
 
 --- Handle NPC arrival after a vehicle commute.
@@ -3479,6 +3511,11 @@ function NPCAI:handleDrivingArrival(npc, destX, destZ)
                 entityMgr:showTractorProp(npc, false)
             end)
         end
+    end
+
+    -- Remove real commute vehicle before restoring NPC appearance
+    if npc.realCar and self.npcSystem.removeNPCCar then
+        self.npcSystem:removeNPCCar(npc)
     end
 
     -- Clean up transport state

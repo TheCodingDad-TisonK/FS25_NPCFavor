@@ -1499,6 +1499,10 @@ NPCSystem.TRACTOR_POOL = {
     "data/vehicles/fendt/vario200/vario200.xml",
 }
 
+--- Pool of commute vehicles (cars/pickups). Falls back to TRACTOR_POOL if empty.
+-- Populated at runtime via discoverVehiclesFromStore or store-item validation.
+NPCSystem.COMMUTE_VEHICLE_POOL = {}
+
 --- Pool of base-game implement XML paths (plows/cultivators for field work).
 NPCSystem.IMPLEMENT_POOL = {
     "data/vehicles/poettinger/servoT6000Plus/servoT6000Plus.xml",
@@ -1545,8 +1549,23 @@ function NPCSystem:validateVehiclePools()
     self.TRACTOR_POOL = validTractors
     self.IMPLEMENT_POOL = validImplements
 
-    print(string.format("[NPC Favor] Vehicle pools validated: %d tractors, %d implements",
-        #self.TRACTOR_POOL, #self.IMPLEMENT_POOL))
+    -- Build commute vehicle pool: try car/pickup discovery first, fall back to tractors
+    local commuteKeywords = {"car", "pickup", "sedan", "hatchback", "suv"}
+    local foundCars = {}
+    for _, kw in ipairs(commuteKeywords) do
+        local cars = self:discoverVehiclesFromStore(kw)
+        for _, path in ipairs(cars) do
+            table.insert(foundCars, path)
+        end
+    end
+    if #foundCars > 0 then
+        self.COMMUTE_VEHICLE_POOL = foundCars
+    else
+        self.COMMUTE_VEHICLE_POOL = self.TRACTOR_POOL  -- fallback: drive a tractor to work
+    end
+
+    print(string.format("[NPC Favor] Vehicle pools validated: %d tractors, %d implements, %d commute",
+        #self.TRACTOR_POOL, #self.IMPLEMENT_POOL, #self.COMMUTE_VEHICLE_POOL))
 end
 
 --- Discover valid vehicles from the store by category keyword.
@@ -1801,6 +1820,84 @@ function NPCSystem:removeNPCTractor(npc)
     end
 
     npc.isSeatedInVehicle = false
+end
+
+--- Spawn a commute vehicle for an NPC (car or tractor fallback).
+-- Hides walking entity on spawn; caller must call removeNPCCar on arrival.
+-- @param npc       NPC data table
+-- @param callback  Optional function(vehicle) called after spawn attempt
+function NPCSystem:spawnNPCCar(npc, callback)
+    if not VehicleLoadingData then
+        if callback then callback(nil) end
+        return
+    end
+
+    local pool = (self.COMMUTE_VEHICLE_POOL and #self.COMMUTE_VEHICLE_POOL > 0)
+        and self.COMMUTE_VEHICLE_POOL or self.TRACTOR_POOL
+    if not pool or #pool == 0 then
+        if callback then callback(nil) end
+        return
+    end
+
+    local seed = npc.appearanceSeed or npc.id or 1
+    local vehicleFile = pool[(seed % #pool) + 1]
+
+    local loadingData = VehicleLoadingData.new()
+    loadingData:setFilename(vehicleFile)
+    loadingData:setPosition(npc.position.x, nil, npc.position.z)
+    loadingData:setRotation(0, npc.rotation.y or 0, 0)
+
+    local spectatorFarmId = FarmManager.SPECTATOR_FARM_ID or 0
+    loadingData:setOwnerFarmId(spectatorFarmId)
+    loadingData:setPropertyState(VehiclePropertyState.OWNED)
+    loadingData:setIsRegistered(true)
+    loadingData:setAddToPhysics(true)
+    loadingData:setIsSaved(false)
+
+    loadingData:load(function(vehicle, loadingState, args)
+        if vehicle then
+            -- Guard: NPC must still be in DRIVING state
+            if not npc.isActive or npc.aiState ~= "driving" then
+                pcall(function() g_currentMission:removeVehicle(vehicle) end)
+                if callback then callback(nil) end
+                return
+            end
+            npc.realCar = vehicle
+            vehicle.isNPCVehicle = true
+            self:lockNPCVehicle(vehicle)
+            self:seatNPCInVehicle(npc, vehicle)
+            if self.settings.debugMode then
+                print(string.format("[NPC Favor] Commute vehicle spawned for %s — %s",
+                    npc.name or "?", vehicleFile))
+            end
+        else
+            -- Spawn failed: restore entity visibility (was hidden in startCommute)
+            local entity = self.entityManager and self.entityManager.npcEntities[npc.id]
+            if entity and entity.node then
+                pcall(function() setVisibility(entity.node, true) end)
+            end
+        end
+        if callback then callback(vehicle) end
+    end, self, {npc = npc})
+end
+
+--- Remove an NPC's commute vehicle and restore their walking character.
+-- @param npc  NPC data table
+function NPCSystem:removeNPCCar(npc)
+    if not npc.realCar then return end
+
+    -- Restore walking entity visibility
+    local entity = self.entityManager and self.entityManager.npcEntities[npc.id]
+    if entity and entity.node then
+        pcall(function() setVisibility(entity.node, true) end)
+    end
+    npc.isSeatedInVehicle = false
+
+    -- Remove vehicle from world
+    pcall(function()
+        g_currentMission:removeVehicle(npc.realCar)
+    end)
+    npc.realCar = nil
 end
 
 --- Activate an NPC's parked tractor for field work (hybrid mode).
@@ -2818,6 +2915,9 @@ function NPCSystem:clearAllNPCs()
         -- Remove real vehicles before entity cleanup
         if npc.realTractor then
             self:removeNPCTractor(npc)
+        end
+        if npc.realCar then
+            self:removeNPCCar(npc)
         end
         self.entityManager:removeNPCEntity(npc)
     end

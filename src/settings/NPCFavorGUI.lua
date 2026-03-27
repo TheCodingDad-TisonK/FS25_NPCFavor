@@ -53,6 +53,7 @@ function NPCFavorGUI:registerConsoleCommands()
     addConsoleCommand("npcVehicleMode", "Switch vehicle mode (hybrid/realistic/visual)", "npcVehicleMode", self)
     addConsoleCommand("npcFavors", "Open favor management dialog", "npcFavors", self)
     addConsoleCommand("npcAdmin", "Open NPC admin panel", "npcAdmin", self)
+    addConsoleCommand("npcForceFavor", "Force a favor request (testing)", "npcForceFavor", self)
 
     print("[NPC Favor] Console commands registered successfully")
 end
@@ -117,6 +118,7 @@ npcProbe            - Probe animation system APIs
 npcFavors           - Open favor management dialog
 npcAdmin            - Open NPC admin panel (adjust relationships)
 npcVehicleMode [mode] - Switch vehicle mode (hybrid/realistic/visual)
+npcForceFavor       - Force generate a favor request (testing)
 npcTest             - Test function
 
 === Interaction ===
@@ -161,6 +163,18 @@ end
 function NPCFavorGUI:npcTest()
     print("[NPC Favor] Test function called - console commands are working!")
     return "NPC Favor test successful. Type 'npcHelp' for commands."
+end
+
+function NPCFavorGUI:npcForceFavor()
+    if not g_NPCSystem or not g_NPCSystem.favorSystem then
+        return "NPC System not initialized"
+    end
+    local result = g_NPCSystem.favorSystem:generateFavorRequest()
+    if result then
+        return "Favor generated! Check HUD flash or type 'npcFavors' to see active favors."
+    else
+        return "No favor generated — no eligible NPCs (need relationship >= 10 and favorCooldown = 0)"
+    end
 end
 
 function NPCFavorGUI:npcGoto(num)

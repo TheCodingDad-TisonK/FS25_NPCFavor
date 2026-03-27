@@ -238,9 +238,10 @@ function NPCFavorSystem:tryGenerateFavorRequest(dt)
     local hour = self.npcSystem.scheduler:getCurrentHour()
     local activeFavorCount = #self.activeFavors
     local maxActiveFavors = self.npcSystem.settings.maxNPCs * 2 -- Allow up to 2 favors per NPC
-    
-    -- Higher probability during working hours
-    local baseProbability = 0.001 -- 0.1% chance per attempt
+
+    -- Base probability scaled by favorFrequency setting (higher = less frequent)
+    local freq = (self.npcSystem.settings and self.npcSystem.settings.favorFrequency) or 3
+    local baseProbability = 0.05 / math.max(1, freq)
     local timeFactor = 1.0
     
     if hour >= 8 and hour <= 18 then
@@ -519,7 +520,7 @@ function NPCFavorSystem:generateFavorRequest()
             cooldownDays = cooldownDays + 1 -- Generous NPCs ask less often
         end
         
-        selectedNPC.favorCooldown = cooldownDays * 24 * 60 * 60 * 1000
+        selectedNPC.favorCooldown = cooldownDays * 300  -- 5 real-seconds per "day" (dt is real seconds)
         selectedNPC.lastFavorTime = g_currentMission.time
         
         -- Update NPC cooldown tracking
