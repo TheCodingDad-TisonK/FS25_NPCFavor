@@ -227,6 +227,7 @@ function NPCSystem.new(mission, modDirectory, modName)
 
     self.fieldWork = NPCFieldWork.new()
     self.gui = NPCFavorGUI.new(self)
+    self.contractorBridge = ContractorModBridge.new(self)
 
     self.dailyEvents = {}
     self.scheduledNPCInteractions = {}
@@ -327,6 +328,11 @@ function NPCSystem:onMissionLoaded()
                 
                 -- Initialize NPCs (fresh spawn)
                 self:initializeNPCs()
+
+                -- Bridge ContractorMod workers into the favor system.
+                -- Must run AFTER initializeNPCs() and BEFORE loadFromXMLFile()
+                -- so that contractor uniqueIds exist when save data is matched.
+                self.contractorBridge:initialize()
 
                 -- Restore saved state (relationships, positions, favor history)
                 local missionInfo = nil
@@ -2113,6 +2119,7 @@ function NPCSystem:update(dt)
     if self.isServer then
         -- SERVER: Full simulation
         self:updateNPCs(dt)                    -- AI states + entity positions
+        self.contractorBridge:update(dt)       -- Sync ContractorMod worker positions
         self.scheduler:update(dt)              -- Time tracking + daily events
         self.favorSystem:update(dt)            -- Favor timers + generation
         self.relationshipManager:update(dt)    -- Mood decay + behavior updates
@@ -3966,5 +3973,8 @@ function NPCSystem:delete()
     end
     if self.favorHUD and self.favorHUD.delete then
         self.favorHUD:delete()
+    end
+    if self.contractorBridge then
+        self.contractorBridge:delete()
     end
 end
