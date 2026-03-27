@@ -231,8 +231,17 @@
             <!-- ===== BOTTOM DIVIDER ===== -->
             <Bitmap profile="nlDivider" id="bottomDivider" position="0px -380px"/>
 
-            <!-- ===== FOOTER ===== -->
+            <!-- ===== PAGINATION FOOTER ===== -->
+            <!-- Prev button (3-layer) -->
+            <Bitmap profile="nlPageBtnBg"  id="prevBtnBg"  position="-280px -384px"/>
+            <Text   profile="nlPageBtnTxt" id="prevBtnTxt" position="-280px -385px" text="Prev"/>
+            <Button profile="nlPageBtnHit" id="prevBtn"    position="-280px -384px" onClick="onClickPrev"/>
+            <!-- Page / hint text -->
             <Text profile="nlFooter" id="footerText" position="0px -385px" text=""/>
+            <!-- Next button (3-layer) -->
+            <Bitmap profile="nlPageBtnBg"  id="nextBtnBg"  position="280px -384px"/>
+            <Text   profile="nlPageBtnTxt" id="nextBtnTxt" position="280px -385px" text="Next"/>
+            <Button profile="nlPageBtnHit" id="nextBtn"    position="280px -384px" onClick="onClickNext"/>
 
         </GuiElement>
 
@@ -362,6 +371,23 @@
         <!-- Layer 3: Invisible hit area -->
         <Profile name="nlGoHit" extends="emptyPanel" with="anchorTopCenter">
             <size value="42px 16px"/>
+            <isFocusable value="true"/>
+        </Profile>
+
+        <!-- ===== PAGINATION BUTTONS ===== -->
+        <Profile name="nlPageBtnBg" extends="baseReference" with="anchorTopCenter">
+            <size value="60px 16px"/>
+            <imageColor value="0.12 0.2 0.35 0.95"/>
+        </Profile>
+        <Profile name="nlPageBtnTxt" extends="fs25_textDefault" with="anchorTopCenter">
+            <size value="60px 14px"/>
+            <textSize value="10px"/>
+            <textBold value="true"/>
+            <textColor value="0.7 0.85 1 1"/>
+            <textAlignment value="center"/>
+        </Profile>
+        <Profile name="nlPageBtnHit" extends="emptyPanel" with="anchorTopCenter">
+            <size value="60px 16px"/>
             <isFocusable value="true"/>
         </Profile>
 

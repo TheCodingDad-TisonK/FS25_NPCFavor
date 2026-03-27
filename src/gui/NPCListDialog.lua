@@ -18,8 +18,10 @@ NPCListDialog.COLUMNS = {"num", "name", "act", "dist", "rel", "farm"}
 
 function NPCListDialog.new(target, custom_mt)
     local self = MessageDialog.new(target, custom_mt or NPCListDialog_mt)
-    self.npcSystem = nil
+    self.npcSystem   = nil
     self.rowNPCIndex = {}  -- rowNum -> activeNPCs index
+    self.currentPage = 1
+    self.totalPages  = 1
     return self
 end
 
@@ -44,6 +46,7 @@ function NPCListDialog:onOpen()
         print("[NPC Favor] NPCListDialog:onOpen() error: " .. tostring(err))
         return
     end
+    self.currentPage = 1  -- always start on page 1
     self:updateDisplay()
 end
 
@@ -53,6 +56,19 @@ function NPCListDialog:updateDisplay()
         if self.titleText then self.titleText:setText("NPC System Not Available") end
         return
     end
+
+    -- Count active NPCs and compute pagination
+    local totalNPCs = 0
+    if sys.activeNPCs then
+        for _, npc in ipairs(sys.activeNPCs) do
+            if npc.isActive then totalNPCs = totalNPCs + 1 end
+        end
+    end
+    self.totalPages = math.max(1, math.ceil(totalNPCs / self.MAX_ROWS))
+    self.currentPage = math.min(self.currentPage, self.totalPages)
+
+    local pageStart = (self.currentPage - 1) * self.MAX_ROWS + 1
+    local pageEnd   = self.currentPage * self.MAX_ROWS
 
     -- Reset row->NPC mapping
     self.rowNPCIndex = {}
@@ -76,13 +92,17 @@ function NPCListDialog:updateDisplay()
         self:clearRow(i)
     end
 
-    -- Fill rows from active NPCs
-    local rowIdx = 0
+    -- Fill rows for current page only
+    local npcCount = 0
+    local rowIdx   = 0
     if sys.activeNPCs then
         for i, npc in ipairs(sys.activeNPCs) do
-            if npc.isActive and rowIdx < self.MAX_ROWS then
-                rowIdx = rowIdx + 1
-                self:fillRow(rowIdx, i, npc, sys)
+            if npc.isActive then
+                npcCount = npcCount + 1
+                if npcCount >= pageStart and npcCount <= pageEnd then
+                    rowIdx = rowIdx + 1
+                    self:fillRow(rowIdx, i, npc, sys)
+                end
             end
         end
     end
@@ -93,15 +113,29 @@ function NPCListDialog:updateDisplay()
         if bg then bg:setVisible(false) end
     end
 
-    -- Hide bottom divider if we used all rows (it'll overlap the button box)
+    -- Bottom divider
     if self.bottomDivider then
         self.bottomDivider:setVisible(rowIdx > 0)
     end
 
-    -- Footer
+    -- Footer: hint on single page, page indicator on multi-page
     if self.footerText then
-        self.footerText:setText("Click Go to teleport to an NPC  |  Press E near NPC to interact")
+        if self.totalPages > 1 then
+            self.footerText:setText(string.format("Page %d / %d", self.currentPage, self.totalPages))
+        else
+            self.footerText:setText("Click Go to teleport  |  Press E near NPC to interact")
+        end
     end
+
+    -- Prev / Next button visibility
+    local showPrev = self.totalPages > 1 and self.currentPage > 1
+    local showNext = self.totalPages > 1 and self.currentPage < self.totalPages
+    if self.prevBtnBg  then self.prevBtnBg:setVisible(showPrev)  end
+    if self.prevBtnTxt then self.prevBtnTxt:setVisible(showPrev) end
+    if self.prevBtn    then self.prevBtn:setVisible(showPrev)    end
+    if self.nextBtnBg  then self.nextBtnBg:setVisible(showNext)  end
+    if self.nextBtnTxt then self.nextBtnTxt:setVisible(showNext) end
+    if self.nextBtn    then self.nextBtn:setVisible(showNext)    end
 end
 
 --- Clear a row's cells, hide its background and Go button layers.
@@ -292,6 +326,20 @@ function NPCListDialog:getPersonalityColor(personality)
     }
     local c = colors[personality] or {1, 1, 1}
     return c[1], c[2], c[3]
+end
+
+function NPCListDialog:onClickPrev()
+    if self.currentPage > 1 then
+        self.currentPage = self.currentPage - 1
+        self:updateDisplay()
+    end
+end
+
+function NPCListDialog:onClickNext()
+    if self.currentPage < self.totalPages then
+        self.currentPage = self.currentPage + 1
+        self:updateDisplay()
+    end
 end
 
 function NPCListDialog:onClickClose()
