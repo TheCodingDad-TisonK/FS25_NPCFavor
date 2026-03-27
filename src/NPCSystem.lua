@@ -1842,22 +1842,43 @@ function NPCSystem:spawnNPCCar(npc, callback)
     local seed = npc.appearanceSeed or npc.id or 1
     local vehicleFile = pool[(seed % #pool) + 1]
 
+    -- Spawn 15 m ahead of the NPC in the direction of travel so the vehicle
+    -- starts outside the home building rather than clipped into it.
+    local spawnX, spawnZ = npc.position.x, npc.position.z
+    if npc.driveDestination then
+        local dx = npc.driveDestination.x - npc.position.x
+        local dz = npc.driveDestination.z - npc.position.z
+        local dist = math.sqrt(dx * dx + dz * dz)
+        if dist > 20 then
+            spawnX = npc.position.x + (dx / dist) * 15
+            spawnZ = npc.position.z + (dz / dist) * 15
+        end
+    end
+
     local loadingData = VehicleLoadingData.new()
     loadingData:setFilename(vehicleFile)
-    loadingData:setPosition(npc.position.x, nil, npc.position.z)
+    loadingData:setPosition(spawnX, nil, spawnZ)
     loadingData:setRotation(0, npc.rotation.y or 0, 0)
 
-    local spectatorFarmId = FarmManager.SPECTATOR_FARM_ID or 0
-    loadingData:setOwnerFarmId(spectatorFarmId)
+    -- Use the player's farm so createAgent/setAITarget work (spectator farm blocks AI helpers)
+    local playerFarmId = (g_currentMission and g_currentMission.player and g_currentMission.player.farmId) or 1
+    loadingData:setOwnerFarmId(playerFarmId)
     loadingData:setPropertyState(VehiclePropertyState.OWNED)
     loadingData:setIsRegistered(true)
     loadingData:setAddToPhysics(true)
     loadingData:setIsSaved(false)
 
     loadingData:load(function(vehicle, loadingState, args)
+        -- Clear pending flag regardless of outcome
+        npc.pendingVehicleLoad = false
+
         if vehicle then
-            -- Guard: NPC must still be in DRIVING state
-            if not npc.isActive or npc.aiState ~= "driving" then
+            -- Guard: NPC must still be in DRIVING state and awake
+            if not npc.isActive or npc.aiState ~= "driving" or npc.isSleeping then
+                if self.settings.debugMode then
+                    print(string.format("[NPC Favor] spawnNPCCar: discarding orphan vehicle for %s (state=%s sleeping=%s)",
+                        npc.name or "?", tostring(npc.aiState), tostring(npc.isSleeping)))
+                end
                 pcall(function() g_currentMission:removeVehicle(vehicle) end)
                 if callback then callback(nil) end
                 return
@@ -1866,6 +1887,7 @@ function NPCSystem:spawnNPCCar(npc, callback)
             vehicle.isNPCVehicle = true
             self:lockNPCVehicle(vehicle)
             self:seatNPCInVehicle(npc, vehicle)
+            self:startNPCCarDriving(npc, vehicle)
             if self.settings.debugMode then
                 print(string.format("[NPC Favor] Commute vehicle spawned for %s — %s",
                     npc.name or "?", vehicleFile))
@@ -1881,10 +1903,52 @@ function NPCSystem:spawnNPCCar(npc, callback)
     end, self, {npc = npc})
 end
 
+--- Start AI driving on the NPC's commute vehicle toward npc.driveDestination.
+-- Calls prepareForAIDriving; NPCAI:updateDrivingState polls readiness and calls setAITarget.
+-- @param npc      NPC data table (must have driveDestination set)
+-- @param vehicle  Spawned commute vehicle
+function NPCSystem:startNPCCarDriving(npc, vehicle)
+    if not vehicle or not npc.driveDestination then return end
+    if not vehicle.createAgent or not vehicle.setAITarget then return end
+
+    -- Minimal task proxy: called back by AIDrivable when target is reached or errors
+    local task = {
+        onTargetReached = function()
+            npc.vehicleReachedTarget = true
+        end,
+        onError = function(_, msg)
+            if self.settings.debugMode then
+                print("[NPC Favor] AI commute error for " .. (npc.name or "?") .. ": " .. tostring(msg))
+            end
+        end,
+    }
+    npc.realCarTask = task
+    npc.realCarPreparing = true
+
+    pcall(function()
+        vehicle:createAgent(1)
+        vehicle:prepareForAIDriving()
+    end)
+
+    if self.settings.debugMode then
+        print(string.format("[NPC Favor] AI driving prepared for %s → (%.0f, %.0f)",
+            npc.name or "?", npc.driveDestination.x, npc.driveDestination.z))
+    end
+end
+
 --- Remove an NPC's commute vehicle and restore their walking character.
 -- @param npc  NPC data table
 function NPCSystem:removeNPCCar(npc)
     if not npc.realCar then return end
+
+    -- Stop AI driving cleanly before removing
+    pcall(function()
+        if npc.realCar.unsetAITarget then npc.realCar:unsetAITarget() end
+        if npc.realCar.deleteAgent   then npc.realCar:deleteAgent()   end
+    end)
+    npc.realCarTask     = nil
+    npc.realCarPreparing = nil
+    npc.vehicleReachedTarget = nil
 
     -- Restore walking entity visibility
     local entity = self.entityManager and self.entityManager.npcEntities[npc.id]
@@ -2246,6 +2310,58 @@ function NPCSystem:update(dt)
         if self.vehicleCheckTimer >= 2 then  -- check every 2 seconds
             self.vehicleCheckTimer = 0
             self:ejectPlayerFromNPCVehicles()
+        end
+
+        -- Bug 1 fix: orphan vehicle cleanup — remove vehicles whose NPC left DRIVING state
+        -- after the async spawn completed (e.g. NPC went to sleep mid-commute).
+        self.orphanCheckTimer = (self.orphanCheckTimer or 0) + dt
+        if self.orphanCheckTimer >= 60 then
+            self.orphanCheckTimer = 0
+            for _, npc in ipairs(self.activeNPCs) do
+                if npc.realCar and npc.aiState ~= "driving" and not npc.pendingVehicleLoad then
+                    if self.settings.debugMode then
+                        print(string.format("[NPC Favor] Orphan vehicle cleanup: removing car for %s (state=%s)",
+                            npc.name or "?", tostring(npc.aiState)))
+                    end
+                    self:removeNPCCar(npc)
+                end
+            end
+        end
+
+        -- Bug 4 fix: deferred field assignment for NPCs whose field was nil at init
+        -- (g_fieldManager.fields may have been empty when the NPC was first created).
+        self.fieldRetryTimer = (self.fieldRetryTimer or 0) + dt
+        if self.fieldRetryTimer >= 5 then
+            self.fieldRetryTimer = 0
+            for _, npc in ipairs(self.activeNPCs) do
+                if not npc.assignedField and npc.homePosition then
+                    npc.assignedField = self:findNearestField(npc.homePosition.x, npc.homePosition.z, npc.id)
+                    -- After 30s without a real field, create a synthetic one so the NPC can work
+                    if not npc.assignedField then
+                        npc._fieldRetryAge = (npc._fieldRetryAge or 0) + 5
+                        if npc._fieldRetryAge >= 30 then
+                            local angle = math.random() * math.pi * 2
+                            local dist  = math.random(80, 200)
+                            npc.assignedField = {
+                                id = 0,
+                                center = {
+                                    x = npc.homePosition.x + math.cos(angle) * dist,
+                                    y = npc.homePosition.y,
+                                    z = npc.homePosition.z + math.sin(angle) * dist
+                                },
+                                size = 1,
+                                isSynthetic = true
+                            }
+                            if self.settings.debugMode then
+                                print(string.format("[NPC Favor] Synthetic field assigned to %s after field-manager timeout",
+                                    npc.name or "?"))
+                            end
+                        end
+                    else
+                        npc._fieldRetryAge = nil  -- found a real field; clear the counter
+                    end
+                end
+            end
         end
 
         -- Process delayed vehicle re-locks (async finalization workaround)
@@ -3335,6 +3451,13 @@ function NPCSystem:_doSaveToXMLFile(missionInfo)
                 xmlFile:setString(favorKey .. "#description", favor.description or "")
                 xmlFile:setFloat(favorKey .. "#timeRemaining", favor.timeRemaining or 0)
                 xmlFile:setInt(favorKey .. "#progress", favor.progress or 0)
+                xmlFile:setBool(favorKey .. "#awaitingConfirmation", favor.awaitingConfirmation or false)
+                if favor.taskData then
+                    xmlFile:setBool(favorKey .. "#loanAmountDeducted", favor.taskData.loanAmountDeducted or false)
+                    if favor.taskData.loanAmount then
+                        xmlFile:setFloat(favorKey .. "#loanAmount", favor.taskData.loanAmount)
+                    end
+                end
                 if type(favor.reward) == "table" then
                     xmlFile:setFloat(favorKey .. "#rewardRelationship", favor.reward.relationship or 0)
                     xmlFile:setFloat(favorKey .. "#rewardMoney", favor.reward.money or 0)
@@ -3510,6 +3633,9 @@ function NPCSystem:loadFromXMLFile(missionInfo)
                 description = xmlFile:getString(favorKey .. "#description", ""),
                 timeRemaining = xmlFile:getFloat(favorKey .. "#timeRemaining", 0),
                 progress = xmlFile:getInt(favorKey .. "#progress", 0),
+                awaitingConfirmation = xmlFile:getBool(favorKey .. "#awaitingConfirmation", false),
+                loanAmountDeducted = xmlFile:getBool(favorKey .. "#loanAmountDeducted", false),
+                loanAmount = xmlFile:getFloat(favorKey .. "#loanAmount", nil),
                 reward = {
                     relationship = xmlFile:getFloat(favorKey .. "#rewardRelationship", 0),
                     money = xmlFile:getFloat(favorKey .. "#rewardMoney", xmlFile:getFloat(favorKey .. "#reward", 0)),

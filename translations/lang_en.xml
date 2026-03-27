@@ -39,6 +39,10 @@
 		<text name="npc_favor_water_animals" text="Water my animals" />
 		<text name="npc_favor_retrieve_equipment" text="Retrieve stuck equipment" />
 		<text name="npc_favor_pick_up_supplies" text="Pick up supplies for me" />
+		<text name="npc_favor_watch_property" text="Watch my property" />
+		<text name="npc_favor_loan_money" text="Loan me some money" />
+		<text name="npc_favor_watch_patrol" text="Patrol the property (%d/%d checked)" />
+		<text name="npc_favor_loan_repay_btn" text="Repay Loan ($%d)" />
 		<text name="npc_notification_favor_request" text="%s is asking for a favor!" />
 		<text name="npc_notification_favor_completed" text="You helped %s. Relationship improved!" />
 		<text name="npc_notification_npc_working" text="%s is now working on their field" />
@@ -46,7 +50,9 @@
 		<text name="npc_dialog_btn_work" text="Ask about work" />
 		<text name="npc_dialog_btn_favor" text="Ask for favor" />
 		<text name="npc_dialog_btn_favor_progress" text="Check favor progress" />
-		<text name="npc_dialog_btn_favor_locked" text="Ask for favor (need rel 20+)" />
+		<text name="npc_dialog_btn_favor_accept" text="Accept Favor" />
+		<text name="npc_dialog_btn_favor_complete" text="Complete Favor" />
+		<text name="npc_dialog_btn_favor_locked" text="Ask for favor (need rel 25+)" />
 		<text name="npc_dialog_btn_gift" text="Give gift ($500)" />
 		<text name="npc_dialog_btn_gift_locked" text="Give gift (need rel 30+)" />
 		<text name="npc_dialog_btn_relationship" text="Relationship info" />
@@ -78,6 +84,7 @@
 		<text name="npc_rel_max_reached" text="MAX level reached!" />
 		<text name="npc_rel_trend_up" text="(trending up)" />
 		<text name="npc_rel_trend_down" text="(trending down)" />
+		<text name="npc_decay_warning" text="Relationship with %s will decay soon!" />
 		<text name="npc_rel_no_info" text="No relationship information available." />
 		<text name="npc_dialog_favor_help_request" text="Could you help me with something? Check the favor list!" />
 		<text name="npc_dialog_favor_nothing" text="I don't need anything right now, but thanks for asking!" />

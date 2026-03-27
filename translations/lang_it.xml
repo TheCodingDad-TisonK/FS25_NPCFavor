@@ -175,5 +175,12 @@
 		<text name="npc_hud_cancelled" text="Annullato: %s" />
 		<text name="npc_hud_perfect" text="Perfetto! %s bonus!" />
 		<text name="npc_admin_col_personality" text="Personalità" />
+		<text name="npc_favor_watch_property" text="Watch my property" />
+		<text name="npc_favor_loan_money" text="Loan me some money" />
+		<text name="npc_favor_watch_patrol" text="Patrol the property (%d/%d checked)" />
+		<text name="npc_favor_loan_repay_btn" text="Repay Loan ($%d)" />
+		<text name="npc_dialog_btn_favor_accept" text="Accept Favor" />
+		<text name="npc_dialog_btn_favor_complete" text="Complete Favor" />
+		<text name="npc_decay_warning" text="Relationship with %s will decay soon!" />
 	</texts>
 </l10n>
