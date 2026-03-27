@@ -810,11 +810,25 @@ function NPCFavorHUD:draw()
             setTextBold(false)
 
             -- Compass needle + distance (right side of line 1)
+            -- Active/in_progress: point to first incomplete step; pending: point to NPC
             if playerX then
-                local npc = self.npcSystem:getNPCById(favor.npcId)
-                local npcPos = npc and npc.position
-                if npcPos and npcPos.x then
-                    local distText, distColor, dirAngle, dist = self:getDistanceInfo(playerX, playerZ, npcPos.x, npcPos.z)
+                local targetX, targetZ
+                if favor.status ~= "pending" and favor.steps and #favor.steps > 0 then
+                    for _, step in ipairs(favor.steps) do
+                        if not step.completed and step.location then
+                            targetX = step.location.x
+                            targetZ = step.location.z
+                            break
+                        end
+                    end
+                end
+                if not targetX then
+                    local npc = self.npcSystem:getNPCById(favor.npcId)
+                    local npcPos = npc and npc.position
+                    if npcPos then targetX, targetZ = npcPos.x, npcPos.z end
+                end
+                if targetX then
+                    local distText, distColor, dirAngle, dist = self:getDistanceInfo(playerX, playerZ, targetX, targetZ)
 
                     -- Compass needle indicator (camera-relative direction)
                     local ar = (g_screenWidth or 1920) / (g_screenHeight or 1080)
@@ -825,7 +839,6 @@ function NPCFavorHUD:draw()
                     if dist and dist >= 3 then
                         self:drawCompassNeedle(needleCX, needleCY, camAngle - dirAngle, distColor)
                     else
-                        -- Too close: show a centered dot instead of directional arrow
                         self:drawProximityDot(needleCX, needleCY, distColor)
                     end
 
@@ -836,8 +849,21 @@ function NPCFavorHUD:draw()
                 end
             end
 
-            -- Line 2: Description (left) + time remaining (right)
-            local desc = favor.description or ""
+            -- Line 2: Current step description for active/in_progress, or "(talk to accept)" for pending
+            local desc
+            if favor.status == "pending" then
+                desc = "(talk to accept) " .. (favor.description or "")
+            elseif favor.steps and #favor.steps > 0 then
+                for _, step in ipairs(favor.steps) do
+                    if not step.completed then
+                        desc = step.description
+                        break
+                    end
+                end
+                desc = desc or (favor.description or "")
+            else
+                desc = favor.description or ""
+            end
             if string.len(desc) > 34 then
                 desc = string.sub(desc, 1, 32) .. ".."
             end
