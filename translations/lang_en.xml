@@ -36,6 +36,9 @@
 		<text name="npc_favor_transport_goods" text="Transport goods to market" />
 		<text name="npc_favor_fix_fence" text="Fix broken fence" />
 		<text name="npc_favor_deliver_seeds" text="Deliver seeds to my farm" />
+		<text name="npc_favor_water_animals" text="Water my animals" />
+		<text name="npc_favor_retrieve_equipment" text="Retrieve stuck equipment" />
+		<text name="npc_favor_pick_up_supplies" text="Pick up supplies for me" />
 		<text name="npc_notification_favor_request" text="%s is asking for a favor!" />
 		<text name="npc_notification_favor_completed" text="You helped %s. Relationship improved!" />
 		<text name="npc_notification_npc_working" text="%s is now working on their field" />

@@ -119,6 +119,39 @@ function NPCFavorSystem.new(npcSystem)
             penalty = {relationship = -15, reputation = -30},
             requirements = {minRelationship = 40},
             category = "security"
+        },
+        {
+            id = "water_animals",
+            name = "npc_favor_water_animals",
+            description = "Water my animals while I'm away",
+            difficulty = 1,
+            duration = 4,
+            reward = {relationship = 8, money = 150, xp = 20},
+            penalty = {relationship = -2, reputation = -5},
+            requirements = {minRelationship = 10},
+            category = "animal_care"
+        },
+        {
+            id = "retrieve_equipment",
+            name = "npc_favor_retrieve_equipment",
+            description = "Retrieve my stuck equipment from the field",
+            difficulty = 2,
+            duration = 12,
+            reward = {relationship = 15, money = 400, xp = 45},
+            penalty = {relationship = -5, reputation = -10},
+            requirements = {minRelationship = 20},
+            category = "fieldwork"
+        },
+        {
+            id = "pick_up_supplies",
+            name = "npc_favor_pick_up_supplies",
+            description = "Pick up supplies from the co-op for me",
+            difficulty = 1,
+            duration = 10,
+            reward = {relationship = 12, money = 350, xp = 35},
+            penalty = {relationship = -3, reputation = -8},
+            requirements = {minRelationship = 15},
+            category = "delivery"
         }
     }
     
@@ -691,33 +724,116 @@ end
 
 function NPCFavorSystem:generateFavorSteps(favorType, npc)
     local steps = {}
-    
+    local home = npc.homePosition
+
     if favorType.id == "borrow_tractor" then
-        steps = {
-            {id = 1, description = "Go to NPC's farm", completed = false, location = npc.homePosition},
-            {id = 2, description = "Find the tractor", completed = false, location = nil},
-            {id = 3, description = "Use tractor for a day", completed = false, location = nil},
-            {id = 4, description = "Return tractor", completed = false, location = npc.homePosition}
+        -- Step 2 uses field center if available, else a random offset from home
+        local fieldPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(60, 120) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(60, 120) * (math.random(2) == 1 and 1 or -1)
         }
+        steps = {
+            {id = 1, description = "Pick up tractor keys at NPC's farm",   completed = false, location = home},
+            {id = 2, description = "Drive tractor out to the field",        completed = false, location = fieldPos},
+            {id = 3, description = "Return tractor to NPC's farm",          completed = false, location = home}
+        }
+
+    elseif favorType.id == "fix_fence" then
+        -- Materials are ~50-80m away; fence is ~18m off from the farm entrance
+        local angle1 = math.random() * math.pi * 2
+        local dist1  = 50 + math.random() * 30
+        local materialsPos = {
+            x = home.x + math.cos(angle1) * dist1,
+            y = home.y,
+            z = home.z + math.sin(angle1) * dist1
+        }
+        local angle2 = angle1 + (math.pi * 0.5)
+        local fencePos = {
+            x = home.x + math.cos(angle2) * 18,
+            y = home.y,
+            z = home.z + math.sin(angle2) * 18
+        }
+        steps = {
+            {id = 1, description = "Meet at NPC's farm to assess the damage", completed = false, location = home},
+            {id = 2, description = "Collect repair materials nearby",          completed = false, location = materialsPos},
+            {id = 3, description = "Repair the fence",                         completed = false, location = fencePos}
+        }
+
     elseif favorType.id == "help_harvest" then
-        steps = {
-            {id = 1, description = "Go to the field", completed = false, location = npc.assignedField and npc.assignedField.center or npc.homePosition},
-            {id = 2, description = "Harvest the crops", completed = false, location = nil},
-            {id = 3, description = "Transport harvest to storage", completed = false, location = nil}
+        local fieldPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(40, 100) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(40, 100) * (math.random(2) == 1 and 1 or -1)
         }
+        steps = {
+            {id = 1, description = "Go to the field",                     completed = false, location = fieldPos},
+            {id = 2, description = "Transport harvest back to storage",    completed = false, location = home}
+        }
+
     elseif favorType.id == "transport_goods" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 500, y = 0, z = home.z + math.sin(a) * 500}
+        end
         steps = {
-            {id = 1, description = "Load goods at NPC's farm", completed = false, location = npc.homePosition},
-            {id = 2, description = "Transport to market", completed = false, location = self:findNearestSellPoint(npc.homePosition.x, npc.homePosition.z)},
-            {id = 3, description = "Sell goods", completed = false, location = nil}
+            {id = 1, description = "Load goods at NPC's farm",  completed = false, location = home},
+            {id = 2, description = "Deliver to market",          completed = false, location = sellPoint}
         }
-    else
-        -- Default single step
+
+    elseif favorType.id == "deliver_seeds" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 500, y = 0, z = home.z + math.sin(a) * 500}
+        end
         steps = {
-            {id = 1, description = "Complete the task", completed = false, location = nil}
+            {id = 1, description = "Pick up seeds at the co-op",     completed = false, location = sellPoint},
+            {id = 2, description = "Deliver seeds to NPC's farm",    completed = false, location = home}
+        }
+
+    elseif favorType.id == "water_animals" then
+        local angle = math.random() * math.pi * 2
+        local waterPos = {
+            x = home.x + math.cos(angle) * 20,
+            y = home.y,
+            z = home.z + math.sin(angle) * 20
+        }
+        steps = {
+            {id = 1, description = "Go to NPC's farm",    completed = false, location = home},
+            {id = 2, description = "Water the animals",   completed = false, location = waterPos}
+        }
+
+    elseif favorType.id == "retrieve_equipment" then
+        local equipPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(80, 130) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(80, 130) * (math.random(2) == 1 and 1 or -1)
+        }
+        steps = {
+            {id = 1, description = "Find the stuck equipment in the field", completed = false, location = equipPos},
+            {id = 2, description = "Bring it back to NPC's farm",           completed = false, location = home}
+        }
+
+    elseif favorType.id == "pick_up_supplies" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 400, y = 0, z = home.z + math.sin(a) * 400}
+        end
+        steps = {
+            {id = 1, description = "Pick up supplies at the co-op",     completed = false, location = sellPoint},
+            {id = 2, description = "Deliver supplies to NPC's farm",    completed = false, location = home}
+        }
+
+    else
+        -- Default: meet at NPC's farm to complete the task
+        steps = {
+            {id = 1, description = "Complete the task at NPC's farm", completed = false, location = home}
         }
     end
-    
+
     return steps
 end
 
@@ -771,39 +887,44 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
         end
     end
     
-    -- Multi-step favor progress
+    -- Multi-step favor progress (sequential: only check the first incomplete step)
     if favor.steps and #favor.steps > 0 then
         local completedSteps = 0
-        
+        local activeStep = nil
+
         for _, step in ipairs(favor.steps) do
-            if not step.completed and step.location then
-                local distance = VectorHelper.distance3D(
-                    playerPos.x, playerPos.y, playerPos.z,
-                    step.location.x or 0, step.location.y or 0, step.location.z or 0
-                )
-                
-                if distance < 30 then
-                    step.completed = true
-                    
-                    if self.npcSystem.favorHUD then
-                        self.npcSystem.favorHUD:flashFavor(
-                            string.format("Step %d: %s", step.id, step.description),
-                            {0.3, 0.8, 1, 1})
-                    end
-                end
-            end
-            
             if step.completed then
                 completedSteps = completedSteps + 1
+            elseif activeStep == nil then
+                activeStep = step  -- first incomplete step
             end
         end
-        
+
+        -- Only check proximity for the active (first incomplete) step
+        if activeStep and activeStep.location then
+            local distance = VectorHelper.distance3D(
+                playerPos.x, playerPos.y, playerPos.z,
+                activeStep.location.x or 0, activeStep.location.y or 0, activeStep.location.z or 0
+            )
+
+            if distance < 30 then
+                activeStep.completed = true
+                completedSteps = completedSteps + 1
+
+                if self.npcSystem.favorHUD then
+                    self.npcSystem.favorHUD:flashFavor(
+                        string.format("Step %d: %s", activeStep.id, activeStep.description),
+                        {0.3, 0.8, 1, 1})
+                end
+            end
+        end
+
         -- Update overall progress
         local newProgress = (completedSteps / #favor.steps) * 100
         if newProgress > favor.progress then
             favor.progress = newProgress
         end
-        
+
         -- Check if all steps are completed
         if completedSteps == #favor.steps and favor.progress < 100 then
             favor.progress = 100

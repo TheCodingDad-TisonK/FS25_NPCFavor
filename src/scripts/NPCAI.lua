@@ -3349,13 +3349,13 @@ function NPCAI:chooseTransportMode(npc, distance)
     if npc.realTractor and distance > 100
        and self.npcSystem and self.npcSystem.settings
        and self.npcSystem.settings.npcVehicleMode == "realistic" then
-        return "tractor"
+        return "drive_tractor"
     end
 
     -- Vehicle commute prop for long distances
     if distance > 150 and self.npcSystem and self.npcSystem.settings
        and self.npcSystem.settings.npcDriveVehicles then
-        return "vehicle"
+        return "drive_car"
     end
 
     return "walk"

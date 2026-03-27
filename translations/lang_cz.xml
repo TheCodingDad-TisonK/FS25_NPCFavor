@@ -36,6 +36,9 @@
 		<text name="npc_favor_transport_goods" text="Přepravit zboží na trh" />
 		<text name="npc_favor_fix_fence" text="Opravit rozbitý plot" />
 		<text name="npc_favor_deliver_seeds" text="Dodat semena na mou farmu" />
+		<text name="npc_favor_water_animals" text="Water my animals" />
+		<text name="npc_favor_retrieve_equipment" text="Retrieve stuck equipment" />
+		<text name="npc_favor_pick_up_supplies" text="Pick up supplies for me" />
 		<text name="npc_notification_favor_request" text="%s žádá o laskavost!" />
 		<text name="npc_notification_favor_completed" text="Pomohl jste %s. Vztah vylepšen!" />
 		<text name="npc_notification_npc_working" text="%s nyní pracuje na svém poli" />
