@@ -3388,9 +3388,11 @@ function NPCAI:chooseTransportMode(npc, distance)
         return "drive_tractor"
     end
 
-    -- Vehicle commute prop for long distances
+    -- Vehicle commute for long distances — only if a commute vehicle pool exists
     if distance > 150 and self.npcSystem and self.npcSystem.settings
-       and self.npcSystem.settings.npcDriveVehicles then
+       and self.npcSystem.settings.npcDriveVehicles
+       and self.npcSystem.COMMUTE_VEHICLE_POOL
+       and #self.npcSystem.COMMUTE_VEHICLE_POOL > 0 then
         return "drive_car"
     end
 

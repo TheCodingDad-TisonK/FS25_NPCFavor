@@ -1558,11 +1558,10 @@ function NPCSystem:validateVehiclePools()
             table.insert(foundCars, path)
         end
     end
-    if #foundCars > 0 then
-        self.COMMUTE_VEHICLE_POOL = foundCars
-    else
-        self.COMMUTE_VEHICLE_POOL = self.TRACTOR_POOL  -- fallback: drive a tractor to work
-    end
+    -- No tractor fallback: if no commute vehicles found, NPCs walk instead.
+    -- Using tractors as commute vehicles caused map-filling since every commute
+    -- spawned a real tractor that didn't get cleaned up reliably.
+    self.COMMUTE_VEHICLE_POOL = foundCars
 
     print(string.format("[NPC Favor] Vehicle pools validated: %d tractors, %d implements, %d commute",
         #self.TRACTOR_POOL, #self.IMPLEMENT_POOL, #self.COMMUTE_VEHICLE_POOL))
@@ -1832,8 +1831,13 @@ function NPCSystem:spawnNPCCar(npc, callback)
         return
     end
 
-    local pool = (self.COMMUTE_VEHICLE_POOL and #self.COMMUTE_VEHICLE_POOL > 0)
-        and self.COMMUTE_VEHICLE_POOL or self.TRACTOR_POOL
+    -- Guard: don't double-spawn. If NPC already has a car or a load is in-flight, bail.
+    if npc.realCar or npc.pendingVehicleLoad then
+        if callback then callback(npc.realCar) end
+        return
+    end
+
+    local pool = self.COMMUTE_VEHICLE_POOL
     if not pool or #pool == 0 then
         if callback then callback(nil) end
         return
@@ -1881,6 +1885,15 @@ function NPCSystem:spawnNPCCar(npc, callback)
                 end
                 pcall(function() g_currentMission:removeVehicle(vehicle) end)
                 if callback then callback(nil) end
+                return
+            end
+            -- Guard: race condition — if a second spawn somehow completed first, discard this one
+            if npc.realCar then
+                if self.settings.debugMode then
+                    print(string.format("[NPC Favor] spawnNPCCar: race condition discard for %s", npc.name or "?"))
+                end
+                pcall(function() g_currentMission:removeVehicle(vehicle) end)
+                if callback then callback(npc.realCar) end
                 return
             end
             npc.realCar = vehicle
@@ -2315,7 +2328,7 @@ function NPCSystem:update(dt)
         -- Bug 1 fix: orphan vehicle cleanup — remove vehicles whose NPC left DRIVING state
         -- after the async spawn completed (e.g. NPC went to sleep mid-commute).
         self.orphanCheckTimer = (self.orphanCheckTimer or 0) + dt
-        if self.orphanCheckTimer >= 60 then
+        if self.orphanCheckTimer >= 15 then
             self.orphanCheckTimer = 0
             for _, npc in ipairs(self.activeNPCs) do
                 if npc.realCar and npc.aiState ~= "driving" and not npc.pendingVehicleLoad then
