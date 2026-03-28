@@ -22,11 +22,15 @@ local LOG_PREFIX = "[NPC Favor][ContractorBridge]"
 local SYNC_INTERVAL = 5.0  -- seconds between worker list polls
 
 -- ── Phase 3: Interaction trigger constants ──────────────────
-local PROX_WORK_RADIUS = 60.0   -- metres: co-work proximity range
-local GREET_RADIUS     = 8.0    -- metres: on-foot greeting range
-local WORK_TICK_SECS   = 30.0   -- seconds of proximity needed for +1 relationship
-local WORK_MAX_DAY     = 5      -- max co-work relationship gains per worker per game-day
-local PHASE3_INTERVAL  = 1.0    -- seconds between proximity checks
+local PROX_WORK_RADIUS       = 60.0   -- metres: co-work proximity range
+local GREET_RADIUS           = 8.0    -- metres: on-foot greeting range
+local WORK_TICK_SECS         = 30.0   -- seconds of proximity needed for +1 relationship
+local WORK_MAX_DAY           = 5      -- max co-work relationship gains per worker per game-day
+local PHASE3_INTERVAL        = 1.0    -- seconds between proximity checks
+local JOB_COMPLETE_REL_GAIN  = 3      -- relationship reward when a worker finishes a job
+local JOB_COMPLETE_MAX_DAY   = 3      -- max job-complete rewards per worker per game-day
+local CRASH_DAMAGE_THRESHOLD = 0.5    -- damage fraction (0–1) that counts as a crash
+local CRASH_REL_PENALTY      = -3     -- relationship penalty per crash event
 
 function ContractorModBridge.new(npcSystem)
     local self = setmetatable({}, ContractorModBridge)
@@ -37,10 +41,13 @@ function ContractorModBridge.new(npcSystem)
     self.syncTimer       = 0
 
     -- Phase 3 state (not persisted — resets on load, day-keyed caps auto-expire)
-    self.phase3Timer    = 0
-    self.workProxAccum  = {}  -- npcId → accumulated seconds within co-work range
-    self.workDayGains   = {}  -- npcId → {day, count}
-    self.greetCooldowns = {}  -- npcId → last game-day a greeting was awarded
+    self.phase3Timer          = 0
+    self.workProxAccum        = {}  -- npcId → accumulated seconds within co-work range
+    self.workDayGains         = {}  -- npcId → {day, count}  (co-work daily cap)
+    self.greetCooldowns       = {}  -- npcId → last game-day a greeting was awarded
+    self.jobCompleteDayGains  = {}  -- npcId → {day, count}  (job-complete daily cap)
+    self.crashFired           = {}  -- npcId → bool (reset when vehicle changes)
+    self.vehicleDamageTracked = {}  -- npcId → last known damage fraction (0–1)
 
     return self
 end
@@ -159,10 +166,23 @@ function ContractorModBridge:syncWorkers()
                             npc.position.x, npc.position.y, npc.position.z = wx, wy, wz
                         end
                     end
-                    if worker.currentVehicle ~= nil then
-                        npc.currentVehicle = worker.currentVehicle
-                        npc.currentAction  = "working"
+                    local prevVehicle = npc.currentVehicle
+                    local newVehicle  = worker.currentVehicle
+
+                    -- Vehicle changed → reset crash tracking for this worker
+                    if newVehicle ~= prevVehicle then
+                        self.crashFired[npc.id]            = false
+                        self.vehicleDamageTracked[npc.id]  = 0
                     end
+
+                    -- Job completion: worker just finished (vehicle non-nil → nil)
+                    if prevVehicle ~= nil and newVehicle == nil then
+                        self:onWorkerJobComplete(npc)
+                    end
+
+                    -- Always sync vehicle state (was sticky before — only set, never cleared)
+                    npc.currentVehicle = newVehicle
+                    npc.currentAction  = newVehicle ~= nil and "working" or "idle"
                 end
             end
         end
@@ -408,8 +428,54 @@ function ContractorModBridge:updatePhase3(dt)
                         end
                     end
                 end
+
+                -- ── Vehicle crash detection ────────────────────
+                local v = npc.currentVehicle
+                if v and v.getDamageAmount and not self.crashFired[npcId] then
+                    local ok, dmg = pcall(function() return v:getDamageAmount() end)
+                    if ok and dmg then
+                        local prevDmg = self.vehicleDamageTracked[npcId] or 0
+                        if dmg >= CRASH_DAMAGE_THRESHOLD and prevDmg < CRASH_DAMAGE_THRESHOLD then
+                            self.crashFired[npcId] = true
+                            self:onWorkerCrash(npc)
+                        end
+                        self.vehicleDamageTracked[npcId] = dmg
+                    end
+                end
             end
         end
+    end
+end
+
+-- Called when a worker's vehicle transitions from non-nil to nil (job done).
+function ContractorModBridge:onWorkerJobComplete(npc)
+    local rm = self.npcSystem.relationshipManager
+    if not rm then return end
+
+    local currentDay = self:getCurrentGameDay()
+    local dayGain    = self.jobCompleteDayGains[npc.id]
+    if not dayGain or dayGain.day ~= currentDay then
+        self.jobCompleteDayGains[npc.id] = {day = currentDay, count = 0}
+        dayGain = self.jobCompleteDayGains[npc.id]
+    end
+
+    if dayGain.count < JOB_COMPLETE_MAX_DAY then
+        dayGain.count = dayGain.count + 1
+        rm:updateRelationship(npc.id, JOB_COMPLETE_REL_GAIN, "contractor_job_complete")
+        if self.npcSystem.settings and self.npcSystem.settings.debugMode then
+            print(string.format("%s Job complete: NPC #%d +%d rel (day count %d/%d)",
+                LOG_PREFIX, npc.id, JOB_COMPLETE_REL_GAIN, dayGain.count, JOB_COMPLETE_MAX_DAY))
+        end
+    end
+end
+
+-- Called when a contractor worker's vehicle takes a damage spike above threshold.
+function ContractorModBridge:onWorkerCrash(npc)
+    local rm = self.npcSystem.relationshipManager
+    if not rm then return end
+    rm:updateRelationship(npc.id, CRASH_REL_PENALTY, "contractor_crash")
+    if self.npcSystem.settings and self.npcSystem.settings.debugMode then
+        print(string.format("%s Crash: NPC #%d %d rel", LOG_PREFIX, npc.id, CRASH_REL_PENALTY))
     end
 end
 
@@ -457,9 +523,12 @@ function ContractorModBridge:getCurrentGameDay()
 end
 
 function ContractorModBridge:delete()
-    self.isActive         = false
-    self.contractorNPCMap = {}
-    self.workProxAccum    = {}
-    self.workDayGains     = {}
-    self.greetCooldowns   = {}
+    self.isActive                = false
+    self.contractorNPCMap        = {}
+    self.workProxAccum           = {}
+    self.workDayGains            = {}
+    self.greetCooldowns          = {}
+    self.jobCompleteDayGains     = {}
+    self.crashFired              = {}
+    self.vehicleDamageTracked    = {}
 end
