@@ -21,6 +21,13 @@ ContractorModBridge.__index = ContractorModBridge
 local LOG_PREFIX = "[NPC Favor][ContractorBridge]"
 local SYNC_INTERVAL = 5.0  -- seconds between worker list polls
 
+-- ── Phase 3: Interaction trigger constants ──────────────────
+local PROX_WORK_RADIUS = 60.0   -- metres: co-work proximity range
+local GREET_RADIUS     = 8.0    -- metres: on-foot greeting range
+local WORK_TICK_SECS   = 30.0   -- seconds of proximity needed for +1 relationship
+local WORK_MAX_DAY     = 5      -- max co-work relationship gains per worker per game-day
+local PHASE3_INTERVAL  = 1.0    -- seconds between proximity checks
+
 function ContractorModBridge.new(npcSystem)
     local self = setmetatable({}, ContractorModBridge)
     self.npcSystem       = npcSystem
@@ -28,6 +35,13 @@ function ContractorModBridge.new(npcSystem)
     -- Maps worker.index → npc.id for workers we've already registered
     self.contractorNPCMap = {}
     self.syncTimer       = 0
+
+    -- Phase 3 state (not persisted — resets on load, day-keyed caps auto-expire)
+    self.phase3Timer    = 0
+    self.workProxAccum  = {}  -- npcId → accumulated seconds within co-work range
+    self.workDayGains   = {}  -- npcId → {day, count}
+    self.greetCooldowns = {}  -- npcId → last game-day a greeting was awarded
+
     return self
 end
 
@@ -320,9 +334,132 @@ function ContractorModBridge:update(dt)
         self.syncTimer = 0
         self:syncWorkers()
     end
+
+    -- Phase 3: proximity checks run every ~1s (cheaper than every frame)
+    self.phase3Timer = self.phase3Timer + dt
+    if self.phase3Timer >= PHASE3_INTERVAL then
+        local elapsed = self.phase3Timer
+        self.phase3Timer = 0
+        self:updatePhase3(elapsed)
+    end
+end
+
+-- ============================================================
+-- Phase 3: Interaction Triggers
+-- ============================================================
+
+-- Co-work proximity: player in vehicle within PROX_WORK_RADIUS of an active
+--   worker → +1 relationship every WORK_TICK_SECS, capped at WORK_MAX_DAY/day.
+-- Daily greeting: player on foot within GREET_RADIUS → +2, once per game-day.
+function ContractorModBridge:updatePhase3(dt)
+    local rm = self.npcSystem.relationshipManager
+    if not rm then return end
+
+    local px, py, pz = self:getPlayerPosition()
+    if not px then return end
+
+    local inVehicle  = self:isPlayerInVehicle()
+    local currentDay = self:getCurrentGameDay()
+
+    for workerIdx, npcId in pairs(self.contractorNPCMap) do
+        local npc = self.npcSystem:getNPCById(npcId)
+        if npc and npc.isActive then
+            local nx, nz = npc.position.x, npc.position.z
+
+            -- Skip workers whose position hasn't synced yet
+            if nx ~= 0 or nz ~= 0 then
+                local dist = math.sqrt((px - nx)^2 + (pz - nz)^2)
+
+                -- ── Co-work proximity ──────────────────────────
+                if inVehicle and dist <= PROX_WORK_RADIUS then
+                    self.workProxAccum[npcId] = (self.workProxAccum[npcId] or 0) + dt
+
+                    if self.workProxAccum[npcId] >= WORK_TICK_SECS then
+                        self.workProxAccum[npcId] = self.workProxAccum[npcId] - WORK_TICK_SECS
+
+                        -- Enforce daily cap
+                        local dayGain = self.workDayGains[npcId]
+                        if not dayGain or dayGain.day ~= currentDay then
+                            self.workDayGains[npcId] = {day = currentDay, count = 0}
+                            dayGain = self.workDayGains[npcId]
+                        end
+
+                        if dayGain.count < WORK_MAX_DAY then
+                            dayGain.count = dayGain.count + 1
+                            rm:updateRelationship(npcId, 1, "contractor_cowork")
+                            if self.npcSystem.settings and self.npcSystem.settings.debugMode then
+                                print(string.format("%s Co-work tick: NPC #%d +1 rel (day cap %d/%d)",
+                                    LOG_PREFIX, npcId, dayGain.count, WORK_MAX_DAY))
+                            end
+                        end
+                    end
+                else
+                    -- Out of range or player not in vehicle — reset accumulator
+                    self.workProxAccum[npcId] = 0
+                end
+
+                -- ── Daily greeting ─────────────────────────────
+                if not inVehicle and dist <= GREET_RADIUS then
+                    if self.greetCooldowns[npcId] ~= currentDay then
+                        self.greetCooldowns[npcId] = currentDay
+                        rm:updateRelationship(npcId, 2, "contractor_greeting")
+                        if self.npcSystem.settings and self.npcSystem.settings.debugMode then
+                            print(string.format("%s Greeting: NPC #%d +2 rel", LOG_PREFIX, npcId))
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Returns player world position using the 4-fallback pattern.
+function ContractorModBridge:getPlayerPosition()
+    if g_localPlayer and g_localPlayer.rootNode and g_localPlayer.rootNode ~= 0 then
+        local ok, x, y, z = pcall(getWorldTranslation, g_localPlayer.rootNode)
+        if ok and x then return x, y, z end
+    end
+    if g_currentMission and g_currentMission.player
+    and g_currentMission.player.rootNode then
+        local ok, x, y, z = pcall(getWorldTranslation, g_currentMission.player.rootNode)
+        if ok and x then return x, y, z end
+    end
+    if g_currentMission and g_currentMission.controlledVehicle then
+        local v = g_currentMission.controlledVehicle
+        if v and v.rootNode then
+            local ok, x, y, z = pcall(getWorldTranslation, v.rootNode)
+            if ok and x then return x, y, z end
+        end
+    end
+    local ok, x, y, z = pcall(function()
+        local cam = getCamera()
+        return getWorldTranslation(cam)
+    end)
+    if ok and x then return x, y, z end
+    return nil
+end
+
+-- Returns true if the local player is currently in a vehicle.
+function ContractorModBridge:isPlayerInVehicle()
+    if g_localPlayer and g_localPlayer.getIsInVehicle then
+        local ok, result = pcall(function() return g_localPlayer:getIsInVehicle() end)
+        if ok then return result end
+    end
+    return g_currentMission ~= nil and g_currentMission.controlledVehicle ~= nil
+end
+
+-- Returns the current in-game day number (used for daily caps).
+function ContractorModBridge:getCurrentGameDay()
+    if g_currentMission and g_currentMission.environment then
+        return g_currentMission.environment.currentDay or 0
+    end
+    return 0
 end
 
 function ContractorModBridge:delete()
     self.isActive         = false
     self.contractorNPCMap = {}
+    self.workProxAccum    = {}
+    self.workDayGains     = {}
+    self.greetCooldowns   = {}
 end
