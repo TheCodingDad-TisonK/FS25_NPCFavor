@@ -1767,6 +1767,26 @@ function NPCAI:updateDrivingState(npc, dt)
             return
         end
 
+        -- If commute vehicle is ready, hand control over to the game's AI driver
+        if npc.realCar and npc.realCarPreparing then
+            local ok, ready = pcall(function() return npc.realCar:getIsAIReadyToDrive() end)
+            if ok and ready then
+                npc.realCarPreparing = false
+                pcall(function()
+                    local destX = npc.driveDestination.x
+                    local destZ = npc.driveDestination.z
+                    local terrainY = getTerrainHeightAtWorldPos(g_terrainNode, destX, 0, destZ)
+                    local ddx = destX - npc.position.x
+                    local ddz = destZ - npc.position.z
+                    local ddist = math.sqrt(ddx * ddx + ddz * ddz)
+                    local dirX2 = ddist > 0.1 and ddx / ddist or 0
+                    local dirZ2 = ddist > 0.1 and ddz / ddist or 1
+                    -- 30 km/h speed cap matches driveSpeed for cars
+                    npc.realCar:setAITarget(npc.realCarTask, destX, terrainY, destZ, dirX2, 0, dirZ2, 30)
+                end)
+            end
+        end
+
         -- Drive toward destination at transport-mode-appropriate speed
         -- Cars: 8.3 m/s (~30 km/h), Tractors: 5.5 m/s (~20 km/h), Default: 5.0 m/s
         local baseSpeed = npc.driveSpeed or 5.0
@@ -1792,6 +1812,9 @@ function NPCAI:updateDrivingState(npc, dt)
                 x = npc.position.x, y = npc.position.y, z = npc.position.z
             }
         end
+
+        -- Real commute vehicle stays at its spawn point (physics-owned).
+        -- Teleporting it each frame fights the physics engine and causes clipping.
     else
         -- No destination — timer-based driving (existing fallback behavior)
         npc.vehicleTimer = (npc.vehicleTimer or 0) + dt
@@ -1827,6 +1850,14 @@ function NPCAI:updateDrivingState(npc, dt)
                 npc.currentVehicle.position = {
                     x = npc.position.x, y = npc.position.y, z = npc.position.z
                 }
+            end
+
+            -- Sync real commute vehicle to NPC logical position
+            if npc.realCar and npc.realCar.rootNode then
+                pcall(function()
+                    setTranslation(npc.realCar.rootNode, npc.position.x, npc.position.y, npc.position.z)
+                    setRotation(npc.realCar.rootNode, 0, npc.rotation.y, 0)
+                end)
             end
         end
     end
@@ -2024,7 +2055,7 @@ end
 -- on distance and profession for the commute.
 -- @param npc  NPC data table (requires npc.assignedField)
 function NPCAI:startWorking(npc)
-    if not npc.assignedField then
+    if not npc.assignedField or not npc.assignedField.center then
         self:setState(npc, self.STATES.IDLE)
         return
     end
@@ -2245,6 +2276,11 @@ function NPCAI:stopDriving(npc, skipStateChange)
         npc.currentVehicle.currentTask = nil
         npc.currentVehicle.driver = nil
         npc.currentVehicle = nil
+    end
+
+    -- Remove real commute vehicle if it wasn't already cleaned up by handleDrivingArrival
+    if npc.realCar and self.npcSystem.removeNPCCar then
+        self.npcSystem:removeNPCCar(npc)
     end
 
     if not skipStateChange then
@@ -3349,13 +3385,15 @@ function NPCAI:chooseTransportMode(npc, distance)
     if npc.realTractor and distance > 100
        and self.npcSystem and self.npcSystem.settings
        and self.npcSystem.settings.npcVehicleMode == "realistic" then
-        return "tractor"
+        return "drive_tractor"
     end
 
-    -- Vehicle commute prop for long distances
+    -- Vehicle commute for long distances — only if a commute vehicle pool exists
     if distance > 150 and self.npcSystem and self.npcSystem.settings
-       and self.npcSystem.settings.npcDriveVehicles then
-        return "vehicle"
+       and self.npcSystem.settings.npcDriveVehicles
+       and self.npcSystem.COMMUTE_VEHICLE_POOL
+       and #self.npcSystem.COMMUTE_VEHICLE_POOL > 0 then
+        return "drive_car"
     end
 
     return "walk"
@@ -3449,6 +3487,20 @@ function NPCAI:startCommute(npc, targetX, targetZ, callback)
             end)
         end
     end
+
+    -- Hide walking character — real commute vehicle takes over visually.
+    -- Restored by removeNPCCar on arrival or if spawn fails.
+    pcall(function()
+        local ent = entityMgr and entityMgr.npcEntities and entityMgr.npcEntities[npc.id]
+        if ent and ent.node then setVisibility(ent.node, false) end
+    end)
+
+    -- Spawn the commute vehicle (async). driveDestination is already set above
+    -- so spawnNPCCar can offset the spawn point away from the home building.
+    if self.npcSystem.spawnNPCCar then
+        npc.pendingVehicleLoad = true
+        self.npcSystem:spawnNPCCar(npc, nil)
+    end
 end
 
 --- Handle NPC arrival after a vehicle commute.
@@ -3479,6 +3531,11 @@ function NPCAI:handleDrivingArrival(npc, destX, destZ)
                 entityMgr:showTractorProp(npc, false)
             end)
         end
+    end
+
+    -- Remove real commute vehicle before restoring NPC appearance
+    if npc.realCar and self.npcSystem.removeNPCCar then
+        self.npcSystem:removeNPCCar(npc)
     end
 
     -- Clean up transport state

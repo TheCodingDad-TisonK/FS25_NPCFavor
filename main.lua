@@ -81,6 +81,7 @@ if modDirectory then
     source(modDirectory .. "src/scripts/NPCInteractionUI.lua")
     source(modDirectory .. "src/scripts/NPCFavorHUD.lua")
     source(modDirectory .. "src/scripts/NPCTeleport.lua")
+    source(modDirectory .. "src/scripts/ContractorModBridge.lua")
 
     -- GUI
     source(modDirectory .. "src/gui/DialogLoader.lua")

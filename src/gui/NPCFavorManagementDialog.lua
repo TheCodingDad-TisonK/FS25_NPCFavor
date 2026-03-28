@@ -319,7 +319,7 @@ for i = 1, NPCFavorManagementDialog.MAX_FAVORS do
         local npcName = npc and npc.name or "Unknown"
         
         -- Cancel the favor
-        self.npcSystem.favorSystem:cancelFavor(favor.id)
+        self.npcSystem.favorSystem:abandonFavor(favor.id)
         
         -- Reduce relationship - FIXED METHOD NAME
         if npc and self.npcSystem.relationshipManager then

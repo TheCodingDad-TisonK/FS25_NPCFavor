@@ -119,6 +119,39 @@ function NPCFavorSystem.new(npcSystem)
             penalty = {relationship = -15, reputation = -30},
             requirements = {minRelationship = 40},
             category = "security"
+        },
+        {
+            id = "water_animals",
+            name = "npc_favor_water_animals",
+            description = "Water my animals while I'm away",
+            difficulty = 1,
+            duration = 4,
+            reward = {relationship = 8, money = 150, xp = 20},
+            penalty = {relationship = -2, reputation = -5},
+            requirements = {minRelationship = 10},
+            category = "animal_care"
+        },
+        {
+            id = "retrieve_equipment",
+            name = "npc_favor_retrieve_equipment",
+            description = "Retrieve my stuck equipment from the field",
+            difficulty = 2,
+            duration = 12,
+            reward = {relationship = 15, money = 400, xp = 45},
+            penalty = {relationship = -5, reputation = -10},
+            requirements = {minRelationship = 20},
+            category = "fieldwork"
+        },
+        {
+            id = "pick_up_supplies",
+            name = "npc_favor_pick_up_supplies",
+            description = "Pick up supplies from the co-op for me",
+            difficulty = 1,
+            duration = 10,
+            reward = {relationship = 12, money = 350, xp = 35},
+            penalty = {relationship = -3, reputation = -8},
+            requirements = {minRelationship = 15},
+            category = "delivery"
         }
     }
     
@@ -170,10 +203,7 @@ function NPCFavorSystem:update(dt)
     -- Update NPC cooldowns
     for npcId, cooldown in pairs(self.npcFavorCooldowns) do
         if cooldown > 0 then
-            self.npcFavorCooldowns[npcId] = cooldown - dt
-            if self.npcFavorCooldowns[npcId] < 0 then
-                self.npcFavorCooldowns[npcId] = 0
-            end
+            self.npcFavorCooldowns[npcId] = math.max(0, cooldown - dt)
         end
     end
     
@@ -205,9 +235,10 @@ function NPCFavorSystem:tryGenerateFavorRequest(dt)
     local hour = self.npcSystem.scheduler:getCurrentHour()
     local activeFavorCount = #self.activeFavors
     local maxActiveFavors = self.npcSystem.settings.maxNPCs * 2 -- Allow up to 2 favors per NPC
-    
-    -- Higher probability during working hours
-    local baseProbability = 0.001 -- 0.1% chance per attempt
+
+    -- Base probability scaled by favorFrequency setting (higher = less frequent)
+    local freq = (self.npcSystem.settings and self.npcSystem.settings.favorFrequency) or 3
+    local baseProbability = 0.05 / math.max(1, freq)
     local timeFactor = 1.0
     
     if hour >= 8 and hour <= 18 then
@@ -247,7 +278,7 @@ function NPCFavorSystem:generateFavorLocation(npc, favorType)
             z = npc.homePosition.z
         }
         location.destination = self:findNearestSellPoint(npc.homePosition.x, npc.homePosition.z)
-    elseif favorType.category == "fieldwork" and npc.assignedField then
+    elseif favorType.category == "fieldwork" and npc.assignedField and npc.assignedField.center then
         location.type = "field"
         location.x = npc.assignedField.center.x
         location.z = npc.assignedField.center.z
@@ -267,6 +298,9 @@ function NPCFavorSystem:generateTaskData(favorType, npc)
     if favorType.id == "borrow_tractor" then
         taskData.vehicleId = nil -- Will be assigned when NPC lends vehicle
         taskData.returnTime = g_currentMission.time + (24 * 60 * 60 * 1000)
+    elseif favorType.id == "loan_money" then
+        taskData.loanAmount = 5000
+        taskData.loanAmountDeducted = false
     elseif favorType.id == "help_harvest" then
         taskData.fieldId = npc.assignedField and npc.assignedField.id
         taskData.requiredAmount = math.random(1000, 5000) -- liters
@@ -486,7 +520,7 @@ function NPCFavorSystem:generateFavorRequest()
             cooldownDays = cooldownDays + 1 -- Generous NPCs ask less often
         end
         
-        selectedNPC.favorCooldown = cooldownDays * 24 * 60 * 60 * 1000
+        selectedNPC.favorCooldown = cooldownDays * 300  -- 5 real-seconds per "day" (dt is real seconds)
         selectedNPC.lastFavorTime = g_currentMission.time
         
         -- Update NPC cooldown tracking
@@ -691,33 +725,142 @@ end
 
 function NPCFavorSystem:generateFavorSteps(favorType, npc)
     local steps = {}
-    
+    local home = npc.homePosition
+
+    if not home then
+        return {{id = 1, description = "Complete the task", completed = false, location = nil}}
+    end
+
     if favorType.id == "borrow_tractor" then
-        steps = {
-            {id = 1, description = "Go to NPC's farm", completed = false, location = npc.homePosition},
-            {id = 2, description = "Find the tractor", completed = false, location = nil},
-            {id = 3, description = "Use tractor for a day", completed = false, location = nil},
-            {id = 4, description = "Return tractor", completed = false, location = npc.homePosition}
+        -- Step 2 uses field center if available, else a random offset from home
+        local fieldPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(60, 120) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(60, 120) * (math.random(2) == 1 and 1 or -1)
         }
+        steps = {
+            {id = 1, description = "Pick up tractor keys at NPC's farm",   completed = false, location = home},
+            {id = 2, description = "Drive tractor out to the field",        completed = false, location = fieldPos},
+            {id = 3, description = "Return tractor to NPC's farm",          completed = false, location = home}
+        }
+
+    elseif favorType.id == "fix_fence" then
+        -- Materials are ~50-80m away; fence is ~18m off from the farm entrance
+        local angle1 = math.random() * math.pi * 2
+        local dist1  = 50 + math.random() * 30
+        local materialsPos = {
+            x = home.x + math.cos(angle1) * dist1,
+            y = home.y,
+            z = home.z + math.sin(angle1) * dist1
+        }
+        local angle2 = angle1 + (math.pi * 0.5)
+        local fencePos = {
+            x = home.x + math.cos(angle2) * 18,
+            y = home.y,
+            z = home.z + math.sin(angle2) * 18
+        }
+        steps = {
+            {id = 1, description = "Meet at NPC's farm to assess the damage", completed = false, location = home},
+            {id = 2, description = "Collect repair materials nearby",          completed = false, location = materialsPos},
+            {id = 3, description = "Repair the fence",                         completed = false, location = fencePos}
+        }
+
     elseif favorType.id == "help_harvest" then
-        steps = {
-            {id = 1, description = "Go to the field", completed = false, location = npc.assignedField and npc.assignedField.center or npc.homePosition},
-            {id = 2, description = "Harvest the crops", completed = false, location = nil},
-            {id = 3, description = "Transport harvest to storage", completed = false, location = nil}
+        local fieldPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(40, 100) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(40, 100) * (math.random(2) == 1 and 1 or -1)
         }
+        steps = {
+            {id = 1, description = "Go to the field",                     completed = false, location = fieldPos},
+            {id = 2, description = "Transport harvest back to storage",    completed = false, location = home}
+        }
+
     elseif favorType.id == "transport_goods" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 500, y = 0, z = home.z + math.sin(a) * 500}
+        end
         steps = {
-            {id = 1, description = "Load goods at NPC's farm", completed = false, location = npc.homePosition},
-            {id = 2, description = "Transport to market", completed = false, location = self:findNearestSellPoint(npc.homePosition.x, npc.homePosition.z)},
-            {id = 3, description = "Sell goods", completed = false, location = nil}
+            {id = 1, description = "Load goods at NPC's farm",  completed = false, location = home},
+            {id = 2, description = "Deliver to market",          completed = false, location = sellPoint}
         }
-    else
-        -- Default single step
+
+    elseif favorType.id == "deliver_seeds" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 500, y = 0, z = home.z + math.sin(a) * 500}
+        end
         steps = {
-            {id = 1, description = "Complete the task", completed = false, location = nil}
+            {id = 1, description = "Pick up seeds at the co-op",     completed = false, location = sellPoint},
+            {id = 2, description = "Deliver seeds to NPC's farm",    completed = false, location = home}
+        }
+
+    elseif favorType.id == "water_animals" then
+        local angle = math.random() * math.pi * 2
+        local waterPos = {
+            x = home.x + math.cos(angle) * 20,
+            y = home.y,
+            z = home.z + math.sin(angle) * 20
+        }
+        steps = {
+            {id = 1, description = "Go to NPC's farm",    completed = false, location = home},
+            {id = 2, description = "Water the animals",   completed = false, location = waterPos}
+        }
+
+    elseif favorType.id == "retrieve_equipment" then
+        local equipPos = (npc.assignedField and npc.assignedField.center) or {
+            x = home.x + math.random(80, 130) * (math.random(2) == 1 and 1 or -1),
+            y = home.y,
+            z = home.z + math.random(80, 130) * (math.random(2) == 1 and 1 or -1)
+        }
+        steps = {
+            {id = 1, description = "Find the stuck equipment in the field", completed = false, location = equipPos},
+            {id = 2, description = "Bring it back to NPC's farm",           completed = false, location = home}
+        }
+
+    elseif favorType.id == "pick_up_supplies" then
+        local sellPoint = self:findNearestSellPoint(home.x, home.z)
+        if VectorHelper.distance2D(home.x, home.z, sellPoint.x, sellPoint.z) > 1000 then
+            local a = math.random() * math.pi * 2
+            sellPoint = {x = home.x + math.cos(a) * 400, y = 0, z = home.z + math.sin(a) * 400}
+        end
+        steps = {
+            {id = 1, description = "Pick up supplies at the co-op",     completed = false, location = sellPoint},
+            {id = 2, description = "Deliver supplies to NPC's farm",    completed = false, location = home}
+        }
+
+    elseif favorType.id == "watch_property" then
+        -- 4 patrol points in a loose square around the property (~35m from home)
+        local p1 = {x = home.x + 35, y = home.y, z = home.z + 35}
+        local p2 = {x = home.x - 35, y = home.y, z = home.z + 35}
+        local p3 = {x = home.x - 35, y = home.y, z = home.z - 35}
+        local p4 = {x = home.x + 35, y = home.y, z = home.z - 35}
+        steps = {
+            {id = 1, description = "Go to NPC's farm to start watching", completed = false, location = home},
+            {id = 2, description = "Patrol the property (0/3 checked)", completed = false, location = home,
+                isPatrolStep = true,
+                patrolData = {required = 3, done = 0, positions = {p1, p2, p3, p4}, visited = {}}},
+            {id = 3, description = "Report back to NPC", completed = false, location = home,
+                requiresConfirmation = true}
+        }
+
+    elseif favorType.id == "loan_money" then
+        steps = {
+            {id = 1, description = "Meet NPC at their farm to hand over the money", completed = false, location = home},
+            {id = 2, description = "Wait for NPC to repay the loan",                 completed = false, location = home,
+                isLoanRepayStep = true}
+        }
+
+    else
+        -- Default: meet at NPC's farm to complete the task
+        steps = {
+            {id = 1, description = "Complete the task at NPC's farm", completed = false, location = home}
         }
     end
-    
+
     return steps
 end
 
@@ -725,7 +868,12 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
     if not favor or not self.npcSystem then
         return
     end
-    
+
+    -- Don't auto-complete pending favors — player must accept them first
+    if favor.status == "pending" then
+        return
+    end
+
     -- Safety check for player position
     local playerPos = self.npcSystem.playerPosition
     if not playerPos or not self.npcSystem.playerPositionValid then
@@ -771,43 +919,109 @@ function NPCFavorSystem:checkFavorProgress(favor, dt)
         end
     end
     
-    -- Multi-step favor progress
+    -- Multi-step favor progress (sequential: only check the first incomplete step)
     if favor.steps and #favor.steps > 0 then
+        -- Awaiting player confirmation in NPC dialog — suppress proximity checks
+        if favor.awaitingConfirmation then return end
+
         local completedSteps = 0
-        
+        local activeStep = nil
+
         for _, step in ipairs(favor.steps) do
-            if not step.completed and step.location then
+            if step.completed then
+                completedSteps = completedSteps + 1
+            elseif activeStep == nil then
+                activeStep = step  -- first incomplete step
+            end
+        end
+
+        -- Only check the active (first incomplete) step
+        if activeStep and activeStep.location then
+
+            if activeStep.isLoanRepayStep then
+                -- Dialog-driven only — proximity cannot complete a loan repay step
+
+            elseif activeStep.isPatrolStep then
+                local pd = activeStep.patrolData
+                if pd then
+                    for i, pos in ipairs(pd.positions) do
+                        if not pd.visited[i] then
+                            local dist = VectorHelper.distance3D(
+                                playerPos.x, playerPos.y, playerPos.z,
+                                pos.x, pos.y or playerPos.y, pos.z)
+                            if dist < 30 then
+                                pd.visited[i] = true
+                                pd.done = pd.done + 1
+                                local patrolText = string.format(
+                                    g_i18n:getText("npc_favor_watch_patrol") or "Patrol the property (%d/%d checked)",
+                                    pd.done, pd.required)
+                                activeStep.description = patrolText
+                                if self.npcSystem.favorHUD then
+                                    self.npcSystem.favorHUD:flashFavor(patrolText, {0.3, 0.8, 1, 1})
+                                end
+                            end
+                        end
+                    end
+                    if pd.done >= pd.required then
+                        activeStep.completed = true
+                        completedSteps = completedSteps + 1
+                        if self.npcSystem.favorHUD then
+                            self.npcSystem.favorHUD:flashFavor("Property patrol complete!", {0.3, 0.8, 1, 1})
+                        end
+                    end
+                end
+
+            else
+                -- Normal proximity step
                 local distance = VectorHelper.distance3D(
                     playerPos.x, playerPos.y, playerPos.z,
-                    step.location.x or 0, step.location.y or 0, step.location.z or 0
-                )
-                
+                    activeStep.location.x or 0, activeStep.location.y or 0, activeStep.location.z or 0)
+
                 if distance < 30 then
-                    step.completed = true
-                    
+                    -- Deduct loan on step-1 arrival for loan_money favors
+                    if favor.type == "loan_money" and activeStep.id == 1
+                        and not (favor.taskData and favor.taskData.loanAmountDeducted) then
+                        local loanAmount = (favor.taskData and favor.taskData.loanAmount) or 5000
+                        local farmId = g_currentMission.player and g_currentMission.player.farmId
+                        if farmId then
+                            g_currentMission:addMoney(-loanAmount, farmId, MoneyType.OTHER, true)
+                        end
+                        if favor.taskData then favor.taskData.loanAmountDeducted = true end
+                    end
+
+                    activeStep.completed = true
+                    completedSteps = completedSteps + 1
+
                     if self.npcSystem.favorHUD then
                         self.npcSystem.favorHUD:flashFavor(
-                            string.format("Step %d: %s", step.id, step.description),
+                            string.format("Step %d: %s", activeStep.id, activeStep.description),
                             {0.3, 0.8, 1, 1})
                     end
                 end
             end
-            
-            if step.completed then
-                completedSteps = completedSteps + 1
-            end
         end
-        
+
         -- Update overall progress
         local newProgress = (completedSteps / #favor.steps) * 100
         if newProgress > favor.progress then
             favor.progress = newProgress
         end
-        
+
         -- Check if all steps are completed
         if completedSteps == #favor.steps and favor.progress < 100 then
             favor.progress = 100
-            self:completeFavor(favor.id)
+            local lastStep = favor.steps[#favor.steps]
+            if lastStep and lastStep.requiresConfirmation then
+                -- Pause here; player must press "Complete Favor" in NPC dialog
+                favor.awaitingConfirmation = true
+                if self.npcSystem.favorHUD then
+                    self.npcSystem.favorHUD:flashFavor(
+                        "Patrol done — talk to " .. (favor.npcName or "NPC") .. " to finish",
+                        {0.3, 1.0, 0.3, 1})
+                end
+            else
+                self:completeFavor(favor.id)
+            end
         end
     end
 end
@@ -1141,6 +1355,74 @@ function NPCFavorSystem:getActiveFavors()
     return self.activeFavors
 end
 
+--- Return the pending (unaccepted) favor for a specific NPC, or nil.
+function NPCFavorSystem:getPendingFavorForNPC(npcId)
+    for _, favor in ipairs(self.activeFavors) do
+        if favor.npcId == npcId and favor.status == "pending" then
+            return favor
+        end
+    end
+    return nil
+end
+
+--- Return the active/in-progress favor for a specific NPC, or nil.
+function NPCFavorSystem:getActiveFavorForNPC(npcId)
+    for _, favor in ipairs(self.activeFavors) do
+        if favor.npcId == npcId and (favor.status == "active" or favor.status == "in_progress") then
+            return favor
+        end
+    end
+    return nil
+end
+
+--- Transition the pending favor for npcId to active (player has accepted it).
+-- @return the favor table if found, nil otherwise
+function NPCFavorSystem:acceptFavorForNPC(npcId)
+    for _, favor in ipairs(self.activeFavors) do
+        if favor.npcId == npcId and favor.status == "pending" then
+            favor.status = "active"
+            favor.startTime = TimeHelper.getGameTimeMs()
+            if self.npcSystem.favorHUD then
+                local msg = string.format("Favor accepted: %s", favor.description or favor.name or "")
+                self.npcSystem.favorHUD:flashFavor(msg, {0.3, 1.0, 0.3, 1})
+            end
+            return favor
+        end
+    end
+    return nil
+end
+
+--- Force-generate a favor specifically for a given NPC (used from the dialog).
+-- Skips weighted NPC-selection and cooldown checks (player is talking to this NPC directly).
+-- @param npc  NPC data table
+-- @return favor table if created, nil if no eligible favor types
+function NPCFavorSystem:generateFavorForNPC(npc)
+    if not npc or not npc.isActive then return nil end
+
+    -- If this NPC already has any favor (pending or active), don't create another
+    for _, favor in ipairs(self.activeFavors) do
+        if favor.npcId == npc.id then return nil end
+    end
+
+    local available = {}
+    for _, favorType in ipairs(self.favorTypes) do
+        if self:checkFavorRequirements(npc, favorType) then
+            table.insert(available, favorType)
+        end
+    end
+    if #available == 0 then return nil end
+
+    local selectedType = available[math.random(#available)]
+    local favor = self:createFavor(npc, selectedType.id)
+    if favor then
+        table.insert(self.activeFavors, favor)
+        local cooldownDays = (self.npcSystem.settings and self.npcSystem.settings.favorFrequency) or 3
+        npc.favorCooldown = cooldownDays * 300
+        self.npcFavorCooldowns[npc.id] = npc.favorCooldown
+    end
+    return favor
+end
+
 --- Restore an active favor from saved data (called during loadFromXMLFile).
 -- Reconstructs the favor structure from minimal saved fields and re-inserts it
 -- into the active favors list with recalculated expiration time.
@@ -1185,8 +1467,12 @@ function NPCFavorSystem:restoreFavor(savedFavor)
         penalty = favorType and favorType.penalty or { relationship = -5, reputation = -10 },
 
         location = nil,
-        taskData = {},
-        startTime = currentTime,
+        taskData = {
+            loanAmount          = savedFavor.loanAmount or nil,
+            loanAmountDeducted  = savedFavor.loanAmountDeducted or false,
+        },
+        awaitingConfirmation = savedFavor.awaitingConfirmation or false,
+        startTime = currentGameTime,
         completionTime = nil,
         completionDuration = nil,
         playerNotes = "",
