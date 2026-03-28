@@ -2055,7 +2055,7 @@ end
 -- on distance and profession for the commute.
 -- @param npc  NPC data table (requires npc.assignedField)
 function NPCAI:startWorking(npc)
-    if not npc.assignedField then
+    if not npc.assignedField or not npc.assignedField.center then
         self:setState(npc, self.STATES.IDLE)
         return
     end

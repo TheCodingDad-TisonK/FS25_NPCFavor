@@ -203,10 +203,7 @@ function NPCFavorSystem:update(dt)
     -- Update NPC cooldowns
     for npcId, cooldown in pairs(self.npcFavorCooldowns) do
         if cooldown > 0 then
-            self.npcFavorCooldowns[npcId] = cooldown - dt
-            if self.npcFavorCooldowns[npcId] < 0 then
-                self.npcFavorCooldowns[npcId] = 0
-            end
+            self.npcFavorCooldowns[npcId] = math.max(0, cooldown - dt)
         end
     end
     
@@ -281,7 +278,7 @@ function NPCFavorSystem:generateFavorLocation(npc, favorType)
             z = npc.homePosition.z
         }
         location.destination = self:findNearestSellPoint(npc.homePosition.x, npc.homePosition.z)
-    elseif favorType.category == "fieldwork" and npc.assignedField then
+    elseif favorType.category == "fieldwork" and npc.assignedField and npc.assignedField.center then
         location.type = "field"
         location.x = npc.assignedField.center.x
         location.z = npc.assignedField.center.z

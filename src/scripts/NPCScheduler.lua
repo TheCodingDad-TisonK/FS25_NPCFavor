@@ -758,7 +758,7 @@ function NPCScheduler:updateAIStateForActivity(npc, activity)
         if activity == "commute" or activity == "commute_home" then
             if activity == "commute" then
                 -- Go to work location
-                if npc.assignedField then
+                if npc.assignedField and npc.assignedField.center then
                     aiSystem:startWalkingTo(npc, npc.assignedField.center.x, npc.assignedField.center.z)
                 end
             else
