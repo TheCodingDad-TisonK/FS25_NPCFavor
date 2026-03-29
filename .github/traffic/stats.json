@@ -1,0 +1,177 @@
+[
+  {
+    "timestamp": "2026-03-29T12:02:18Z",
+    "date": "2026-03-29",
+    "views": {
+      "count": 629,
+      "uniques": 175
+    },
+    "clones": {
+      "count": 181,
+      "uniques": 84
+    },
+    "referrers": [
+      {
+        "referrer": "github.com",
+        "count": 149,
+        "uniques": 59
+      },
+      {
+        "referrer": "Google",
+        "count": 103,
+        "uniques": 36
+      },
+      {
+        "referrer": "kingmods.net",
+        "count": 28,
+        "uniques": 11
+      },
+      {
+        "referrer": "DuckDuckGo",
+        "count": 21,
+        "uniques": 4
+      },
+      {
+        "referrer": "Bing",
+        "count": 18,
+        "uniques": 11
+      },
+      {
+        "referrer": "symbaloo.com",
+        "count": 7,
+        "uniques": 1
+      },
+      {
+        "referrer": "Yahoo",
+        "count": 3,
+        "uniques": 2
+      },
+      {
+        "referrer": "chatgpt.com",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "referrer": "modhoster.de",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "referrer": "search.brave.com",
+        "count": 1,
+        "uniques": 1
+      }
+    ],
+    "popular_paths": [
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor",
+        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor: Living NPC neighbors with AI fiel...",
+        "count": 286,
+        "uniques": 150
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
+        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor at development · GitHub",
+        "count": 63,
+        "uniques": 23
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
+        "title": "GitHub · Where software is built",
+        "count": 60,
+        "uniques": 26
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases",
+        "title": "Releases · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 40,
+        "uniques": 27
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5",
+        "title": "Release Fix · TheCodingDad-TisonK/FS25_NPCFavor · GitHub",
+        "count": 24,
+        "uniques": 14
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/21",
+        "title": "Mod integration · Issue #21 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 23,
+        "uniques": 15
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/39",
+        "title": "corrupted main menu · Issue #39 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 8,
+        "uniques": 5
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/wiki",
+        "title": "Home · TheCodingDad-TisonK/FS25_NPCFavor Wiki · GitHub",
+        "count": 6,
+        "uniques": 5
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/branches",
+        "title": "Branches · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 6,
+        "uniques": 3
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/43",
+        "title": "Compatibility question · Issue #43 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 6,
+        "uniques": 3
+      }
+    ],
+    "releases": [
+      {
+        "assets": [
+          {
+            "downloads": 216,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.5"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 74,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.4"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 15,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.0"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 9,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "1.2.2.1"
+      },
+      {
+        "assets": [],
+        "tag": "v1,2,1,0"
+      },
+      {
+        "assets": [],
+        "tag": "v1.0.0.0"
+      }
+    ],
+    "stars": 27,
+    "forks": 2,
+    "watchers": 5
+  }
+]

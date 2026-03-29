@@ -1,0 +1,54 @@
+{
+  "2026-03-29": [
+    {
+      "referrer": "github.com",
+      "count": 149,
+      "uniques": 59
+    },
+    {
+      "referrer": "Google",
+      "count": 103,
+      "uniques": 36
+    },
+    {
+      "referrer": "kingmods.net",
+      "count": 28,
+      "uniques": 11
+    },
+    {
+      "referrer": "DuckDuckGo",
+      "count": 21,
+      "uniques": 4
+    },
+    {
+      "referrer": "Bing",
+      "count": 18,
+      "uniques": 11
+    },
+    {
+      "referrer": "symbaloo.com",
+      "count": 7,
+      "uniques": 1
+    },
+    {
+      "referrer": "Yahoo",
+      "count": 3,
+      "uniques": 2
+    },
+    {
+      "referrer": "chatgpt.com",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "referrer": "modhoster.de",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "referrer": "search.brave.com",
+      "count": 1,
+      "uniques": 1
+    }
+  ]
+}

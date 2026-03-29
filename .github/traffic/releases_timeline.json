@@ -1,0 +1,32 @@
+{
+  "v1.2.2.5": {
+    "published_at": "2026-02-11T08:59:21Z",
+    "tag": "v1.2.2.5",
+    "peak_downloads": 216
+  },
+  "v1.2.2.4": {
+    "published_at": "2026-02-10T08:31:55Z",
+    "tag": "v1.2.2.4",
+    "peak_downloads": 74
+  },
+  "v1.2.2.0": {
+    "published_at": "2026-02-09T22:06:15Z",
+    "tag": "v1.2.2.0",
+    "peak_downloads": 15
+  },
+  "1.2.2.1": {
+    "published_at": "2026-02-10T00:00:28Z",
+    "tag": "1.2.2.1",
+    "peak_downloads": 9
+  },
+  "v1,2,1,0": {
+    "published_at": "2026-02-09T07:14:00Z",
+    "tag": "v1,2,1,0",
+    "peak_downloads": 0
+  },
+  "v1.0.0.0": {
+    "published_at": "2026-02-07T05:20:56Z",
+    "tag": "v1.0.0.0",
+    "peak_downloads": 0
+  }
+}
