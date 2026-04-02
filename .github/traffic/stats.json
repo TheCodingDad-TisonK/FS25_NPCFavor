@@ -690,31 +690,26 @@
     "watchers": 5
   },
   {
-    "timestamp": "2026-04-02T06:03:41Z",
+    "timestamp": "2026-04-02T12:40:12Z",
     "date": "2026-04-02",
     "views": {
-      "count": 607,
-      "uniques": 165
+      "count": 550,
+      "uniques": 160
     },
     "clones": {
-      "count": 250,
-      "uniques": 117
+      "count": 285,
+      "uniques": 125
     },
     "referrers": [
       {
         "referrer": "github.com",
-        "count": 155,
-        "uniques": 56
+        "count": 153,
+        "uniques": 54
       },
       {
         "referrer": "Google",
-        "count": 94,
-        "uniques": 34
-      },
-      {
-        "referrer": "kingmods.net",
-        "count": 27,
-        "uniques": 10
+        "count": 83,
+        "uniques": 31
       },
       {
         "referrer": "DuckDuckGo",
@@ -722,8 +717,13 @@
         "uniques": 3
       },
       {
-        "referrer": "Bing",
+        "referrer": "kingmods.net",
         "count": 16,
+        "uniques": 7
+      },
+      {
+        "referrer": "Bing",
+        "count": 15,
         "uniques": 9
       },
       {
@@ -737,7 +737,7 @@
         "uniques": 1
       },
       {
-        "referrer": "Yahoo",
+        "referrer": "alice.yandex.ru",
         "count": 1,
         "uniques": 1
       }
@@ -745,63 +745,63 @@
     "popular_paths": [
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor",
-        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor: Living NPC neighbors with AI fiel...",
-        "count": 273,
-        "uniques": 140
-      },
-      {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
-        "title": "GitHub · Where software is built",
-        "count": 51,
-        "uniques": 22
+        "title": "Overview",
+        "count": 263,
+        "uniques": 134
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases",
-        "title": "Releases · TheCodingDad-TisonK/FS25_NPCFavor · GitHub",
+        "title": "/releases",
         "count": 44,
-        "uniques": 25
+        "uniques": 22
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
-        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor at development · GitHub",
-        "count": 44,
-        "uniques": 23
+        "title": "/tree/development",
+        "count": 41,
+        "uniques": 22
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5",
-        "title": "Release Fix · TheCodingDad-TisonK/FS25_NPCFavor · GitHub",
-        "count": 34,
+        "title": "/releases/tag/v1.2.2.5",
+        "count": 32,
         "uniques": 16
       },
       {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
+        "title": "/issues",
+        "count": 31,
+        "uniques": 19
+      },
+      {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/21",
-        "title": "Mod integration · Issue #21 · TheCodingDad-TisonK/FS25_NPCFavor",
-        "count": 19,
-        "uniques": 13
+        "title": "/issues/21",
+        "count": 12,
+        "uniques": 10
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/pulls",
-        "title": "Pull requests · TheCodingDad-TisonK/FS25_NPCFavor",
-        "count": 6,
-        "uniques": 5
-      },
-      {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/wiki",
-        "title": "Home · TheCodingDad-TisonK/FS25_NPCFavor Wiki · GitHub",
+        "title": "/pulls",
         "count": 6,
         "uniques": 5
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/branches",
-        "title": "Branches · TheCodingDad-TisonK/FS25_NPCFavor",
+        "title": "/branches",
         "count": 6,
         "uniques": 4
       },
       {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/39",
-        "title": "corrupted main menu · Issue #39 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/blob/main/CHANGELOG.md",
+        "title": "/blob/main/CHANGELOG.md",
         "count": 6,
-        "uniques": 4
+        "uniques": 3
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/43",
+        "title": "/issues/43",
+        "count": 6,
+        "uniques": 3
       }
     ],
     "releases": [

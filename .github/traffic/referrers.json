@@ -200,18 +200,13 @@
   "2026-04-02": [
     {
       "referrer": "github.com",
-      "count": 155,
-      "uniques": 56
+      "count": 153,
+      "uniques": 54
     },
     {
       "referrer": "Google",
-      "count": 94,
-      "uniques": 34
-    },
-    {
-      "referrer": "kingmods.net",
-      "count": 27,
-      "uniques": 10
+      "count": 83,
+      "uniques": 31
     },
     {
       "referrer": "DuckDuckGo",
@@ -219,8 +214,13 @@
       "uniques": 3
     },
     {
-      "referrer": "Bing",
+      "referrer": "kingmods.net",
       "count": 16,
+      "uniques": 7
+    },
+    {
+      "referrer": "Bing",
+      "count": 15,
       "uniques": 9
     },
     {
@@ -234,7 +234,7 @@
       "uniques": 1
     },
     {
-      "referrer": "Yahoo",
+      "referrer": "alice.yandex.ru",
       "count": 1,
       "uniques": 1
     }
