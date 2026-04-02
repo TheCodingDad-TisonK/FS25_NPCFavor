@@ -688,5 +688,170 @@
     "stars": 27,
     "forks": 2,
     "watchers": 5
+  },
+  {
+    "timestamp": "2026-04-02T06:03:41Z",
+    "date": "2026-04-02",
+    "views": {
+      "count": 607,
+      "uniques": 165
+    },
+    "clones": {
+      "count": 250,
+      "uniques": 117
+    },
+    "referrers": [
+      {
+        "referrer": "github.com",
+        "count": 155,
+        "uniques": 56
+      },
+      {
+        "referrer": "Google",
+        "count": 94,
+        "uniques": 34
+      },
+      {
+        "referrer": "kingmods.net",
+        "count": 27,
+        "uniques": 10
+      },
+      {
+        "referrer": "DuckDuckGo",
+        "count": 20,
+        "uniques": 3
+      },
+      {
+        "referrer": "Bing",
+        "count": 16,
+        "uniques": 9
+      },
+      {
+        "referrer": "symbaloo.com",
+        "count": 7,
+        "uniques": 1
+      },
+      {
+        "referrer": "chatgpt.com",
+        "count": 3,
+        "uniques": 1
+      },
+      {
+        "referrer": "Yahoo",
+        "count": 1,
+        "uniques": 1
+      }
+    ],
+    "popular_paths": [
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor",
+        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor: Living NPC neighbors with AI fiel...",
+        "count": 273,
+        "uniques": 140
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
+        "title": "GitHub · Where software is built",
+        "count": 51,
+        "uniques": 22
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases",
+        "title": "Releases · TheCodingDad-TisonK/FS25_NPCFavor · GitHub",
+        "count": 44,
+        "uniques": 25
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
+        "title": "GitHub - TheCodingDad-TisonK/FS25_NPCFavor at development · GitHub",
+        "count": 44,
+        "uniques": 23
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5",
+        "title": "Release Fix · TheCodingDad-TisonK/FS25_NPCFavor · GitHub",
+        "count": 34,
+        "uniques": 16
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/21",
+        "title": "Mod integration · Issue #21 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 19,
+        "uniques": 13
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/pulls",
+        "title": "Pull requests · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 6,
+        "uniques": 5
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/wiki",
+        "title": "Home · TheCodingDad-TisonK/FS25_NPCFavor Wiki · GitHub",
+        "count": 6,
+        "uniques": 5
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/branches",
+        "title": "Branches · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 6,
+        "uniques": 4
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/39",
+        "title": "corrupted main menu · Issue #39 · TheCodingDad-TisonK/FS25_NPCFavor",
+        "count": 6,
+        "uniques": 4
+      }
+    ],
+    "releases": [
+      {
+        "assets": [
+          {
+            "downloads": 220,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.5"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 74,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.4"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 15,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "v1.2.2.0"
+      },
+      {
+        "assets": [
+          {
+            "downloads": 9,
+            "name": "FS25_NPCFavor.zip"
+          }
+        ],
+        "tag": "1.2.2.1"
+      },
+      {
+        "assets": [],
+        "tag": "v1,2,1,0"
+      },
+      {
+        "assets": [],
+        "tag": "v1.0.0.0"
+      }
+    ],
+    "stars": 27,
+    "forks": 2,
+    "watchers": 5
   }
 ]
