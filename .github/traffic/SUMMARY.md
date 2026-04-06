@@ -1,7 +1,7 @@
 # Repository Traffic Dashboard
 
-**Last updated:** 2026-04-06T06:22:48Z
-**Days tracked:** 9 | **Download snapshots:** 36 (hourly)
+**Last updated:** 2026-04-06T12:39:48Z
+**Days tracked:** 9 | **Download snapshots:** 37 (hourly)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Metric | 14-Day Total | Unique |
 |--------|-------------|--------|
-| Page Views | 521 | 156 |
-| Git Clones | 370 | 156 |
+| Page Views | 479 | 158 |
+| Git Clones | 422 | 177 |
 
-> **Engagement:** 3.3 pages per visitor (14-day avg)
+> **Engagement:** 3.0 pages per visitor (14-day avg)
 
 ---
 
@@ -30,9 +30,9 @@
 
 ![Conversion](charts/conversion.png)
 
-> **14-day conversion:** 482 of 156 visitors cloned or downloaded (**308.9%**)
+> **14-day conversion:** 503 of 158 visitors cloned or downloaded (**318.3%**)
 >
-> Unique cloners: 156 | Release downloads: 326
+> Unique cloners: 177 | Release downloads: 326
 
 ---
 
@@ -43,8 +43,8 @@
 | Channel | Count |
 |---------|-------|
 | Zip Downloads | 326 |
-| Git Clones (14-day) | 370 |
-| **Total Acquisitions** | **696** |
+| Git Clones (14-day) | 422 |
+| **Total Acquisitions** | **748** |
 
 ---
 
@@ -55,11 +55,11 @@
 | Source | Views | Unique |
 |--------|-------|--------|
 | github.com | 163 | 56 |
-| Google | 77 | 28 |
-| DuckDuckGo | 19 | 2 |
-| Bing | 13 | 7 |
-| kingmods.net | 13 | 5 |
-| symbaloo.com | 7 | 1 |
+| Google | 51 | 30 |
+| DuckDuckGo | 15 | 1 |
+| Bing | 13 | 8 |
+| kingmods.net | 7 | 3 |
+| symbaloo.com | 6 | 1 |
 | Yahoo | 3 | 2 |
 | chatgpt.com | 2 | 1 |
 | alice.yandex.ru | 1 | 1 |
@@ -82,16 +82,16 @@
 
 | Page | Views | Unique |
 |------|-------|--------|
-| `/TheCodingDad-TisonK/FS25_NPCFavor` | 260 | 127 |
-| `/TheCodingDad-TisonK/FS25_NPCFavor/releases` | 47 | 22 |
-| `/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5` | 34 | 16 |
-| `/TheCodingDad-TisonK/FS25_NPCFavor/tree/development` | 33 | 16 |
-| `/TheCodingDad-TisonK/FS25_NPCFavor/issues` | 22 | 14 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor` | 259 | 128 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor/releases` | 44 | 21 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor/tree/development` | 34 | 16 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5` | 31 | 15 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor/issues` | 21 | 13 |
 | `/TheCodingDad-TisonK/FS25_NPCFavor/issues/21` | 9 | 8 |
 | `/TheCodingDad-TisonK/FS25_NPCFavor/blob/main/CHANGELOG.md` | 6 | 3 |
 | `/TheCodingDad-TisonK/FS25_NPCFavor/issues/43` | 6 | 3 |
 | `/TheCodingDad-TisonK/FS25_NPCFavor/pull/41` | 6 | 3 |
-| `/TheCodingDad-TisonK/FS25_NPCFavor/blob/main/docs/ai-system.md` | 5 | 4 |
+| `/TheCodingDad-TisonK/FS25_NPCFavor/pulls` | 5 | 5 |
 
 ---
 
