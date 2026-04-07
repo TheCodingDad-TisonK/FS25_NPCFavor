@@ -1530,26 +1530,26 @@
     "watchers": 5
   },
   {
-    "timestamp": "2026-04-07T06:10:54Z",
+    "timestamp": "2026-04-07T12:48:19Z",
     "date": "2026-04-07",
     "views": {
-      "count": 479,
-      "uniques": 158
+      "count": 487,
+      "uniques": 162
     },
     "clones": {
-      "count": 422,
-      "uniques": 177
+      "count": 459,
+      "uniques": 189
     },
     "referrers": [
       {
         "referrer": "github.com",
-        "count": 163,
-        "uniques": 56
+        "count": 173,
+        "uniques": 60
       },
       {
         "referrer": "Google",
-        "count": 51,
-        "uniques": 30
+        "count": 45,
+        "uniques": 27
       },
       {
         "referrer": "DuckDuckGo",
@@ -1591,32 +1591,32 @@
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor",
         "title": "Overview",
-        "count": 259,
-        "uniques": 128
+        "count": 263,
+        "uniques": 132
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases",
         "title": "/releases",
-        "count": 44,
-        "uniques": 21
+        "count": 43,
+        "uniques": 20
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
         "title": "/tree/development",
-        "count": 34,
-        "uniques": 16
+        "count": 37,
+        "uniques": 15
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5",
         "title": "/releases/tag/v1.2.2.5",
-        "count": 31,
-        "uniques": 15
+        "count": 28,
+        "uniques": 14
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
         "title": "/issues",
-        "count": 21,
-        "uniques": 13
+        "count": 20,
+        "uniques": 12
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/21",
@@ -1625,14 +1625,14 @@
         "uniques": 8
       },
       {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/blob/main/CHANGELOG.md",
-        "title": "/blob/main/CHANGELOG.md",
-        "count": 6,
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/43",
+        "title": "/issues/43",
+        "count": 7,
         "uniques": 3
       },
       {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues/43",
-        "title": "/issues/43",
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/blob/main/CHANGELOG.md",
+        "title": "/blob/main/CHANGELOG.md",
         "count": 6,
         "uniques": 3
       },
