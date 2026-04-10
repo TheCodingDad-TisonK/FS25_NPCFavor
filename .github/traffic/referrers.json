@@ -566,13 +566,13 @@
   "2026-04-10": [
     {
       "referrer": "github.com",
-      "count": 187,
+      "count": 178,
       "uniques": 61
     },
     {
       "referrer": "Google",
-      "count": 47,
-      "uniques": 29
+      "count": 45,
+      "uniques": 27
     },
     {
       "referrer": "DuckDuckGo",
@@ -586,8 +586,8 @@
     },
     {
       "referrer": "kingmods.net",
-      "count": 5,
-      "uniques": 2
+      "count": 8,
+      "uniques": 3
     },
     {
       "referrer": "symbaloo.com",
