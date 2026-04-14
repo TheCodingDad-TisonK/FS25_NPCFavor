@@ -2720,26 +2720,26 @@
     "watchers": 5
   },
   {
-    "timestamp": "2026-04-14T06:23:08Z",
+    "timestamp": "2026-04-14T12:52:40Z",
     "date": "2026-04-14",
     "views": {
-      "count": 423,
-      "uniques": 147
+      "count": 419,
+      "uniques": 146
     },
     "clones": {
-      "count": 679,
-      "uniques": 237
+      "count": 699,
+      "uniques": 243
     },
     "referrers": [
       {
         "referrer": "github.com",
-        "count": 167,
-        "uniques": 43
+        "count": 177,
+        "uniques": 47
       },
       {
         "referrer": "Google",
-        "count": 48,
-        "uniques": 32
+        "count": 45,
+        "uniques": 29
       },
       {
         "referrer": "Bing",
@@ -2748,28 +2748,23 @@
       },
       {
         "referrer": "kingmods.net",
-        "count": 6,
+        "count": 7,
         "uniques": 4
       },
       {
         "referrer": "Yahoo",
-        "count": 3,
-        "uniques": 2
+        "count": 5,
+        "uniques": 3
       },
       {
         "referrer": "symbaloo.com",
-        "count": 3,
+        "count": 5,
         "uniques": 1
       },
       {
         "referrer": "yandex.ru",
         "count": 2,
         "uniques": 2
-      },
-      {
-        "referrer": "chatgpt.com",
-        "count": 2,
-        "uniques": 1
       },
       {
         "referrer": "alice.yandex.ru",
@@ -2781,26 +2776,26 @@
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor",
         "title": "Overview",
-        "count": 241,
-        "uniques": 119
-      },
-      {
-        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
-        "title": "/tree/development",
-        "count": 38,
-        "uniques": 15
+        "count": 237,
+        "uniques": 118
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases",
         "title": "/releases",
+        "count": 38,
+        "uniques": 24
+      },
+      {
+        "path": "/TheCodingDad-TisonK/FS25_NPCFavor/tree/development",
+        "title": "/tree/development",
         "count": 36,
-        "uniques": 22
+        "uniques": 14
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/releases/tag/v1.2.2.5",
         "title": "/releases/tag/v1.2.2.5",
-        "count": 25,
-        "uniques": 14
+        "count": 28,
+        "uniques": 17
       },
       {
         "path": "/TheCodingDad-TisonK/FS25_NPCFavor/issues",
