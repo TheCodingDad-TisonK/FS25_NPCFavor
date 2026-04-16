@@ -838,13 +838,13 @@
   "2026-04-16": [
     {
       "referrer": "github.com",
-      "count": 196,
-      "uniques": 46
+      "count": 203,
+      "uniques": 47
     },
     {
       "referrer": "Google",
-      "count": 46,
-      "uniques": 30
+      "count": 51,
+      "uniques": 32
     },
     {
       "referrer": "Bing",
@@ -872,7 +872,7 @@
       "uniques": 2
     },
     {
-      "referrer": "alice.yandex.ru",
+      "referrer": "DuckDuckGo",
       "count": 1,
       "uniques": 1
     }
