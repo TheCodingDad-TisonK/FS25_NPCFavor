@@ -880,13 +880,13 @@
   "2026-04-17": [
     {
       "referrer": "github.com",
-      "count": 203,
-      "uniques": 47
+      "count": 205,
+      "uniques": 49
     },
     {
       "referrer": "Google",
-      "count": 51,
-      "uniques": 32
+      "count": 53,
+      "uniques": 30
     },
     {
       "referrer": "Bing",
@@ -905,7 +905,7 @@
     },
     {
       "referrer": "symbaloo.com",
-      "count": 4,
+      "count": 5,
       "uniques": 1
     },
     {
