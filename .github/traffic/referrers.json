@@ -876,5 +876,47 @@
       "count": 1,
       "uniques": 1
     }
+  ],
+  "2026-04-17": [
+    {
+      "referrer": "github.com",
+      "count": 203,
+      "uniques": 47
+    },
+    {
+      "referrer": "Google",
+      "count": 51,
+      "uniques": 32
+    },
+    {
+      "referrer": "Bing",
+      "count": 10,
+      "uniques": 7
+    },
+    {
+      "referrer": "kingmods.net",
+      "count": 7,
+      "uniques": 4
+    },
+    {
+      "referrer": "Yahoo",
+      "count": 5,
+      "uniques": 3
+    },
+    {
+      "referrer": "symbaloo.com",
+      "count": 4,
+      "uniques": 1
+    },
+    {
+      "referrer": "yandex.ru",
+      "count": 2,
+      "uniques": 2
+    },
+    {
+      "referrer": "DuckDuckGo",
+      "count": 1,
+      "uniques": 1
+    }
   ]
 }
