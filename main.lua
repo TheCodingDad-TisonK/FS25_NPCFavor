@@ -690,7 +690,9 @@ addModEventListener({
             print("[NPC Favor] npcSystem is nil in onSavegameLoaded")
         end
     end,
-    mouseEvent = function(self, posX, posY, isDown, isUp, button)
+    mouseEvent = function(self, posX, posY, isDown, isUp, button, eventUsed)
+        if eventUsed then return eventUsed end
+
         -- Guard helper: any GUI overlay or dialog is open
         local isGuiOpen = g_gui and (g_gui:getIsGuiVisible() or g_gui:getIsDialogVisible())
 
@@ -700,19 +702,19 @@ addModEventListener({
             if npcSystem and npcSystem.favorHUD then
                 -- Guard: not in vehicle
                 if g_localPlayer and g_localPlayer.getIsInVehicle and g_localPlayer:getIsInVehicle() then
-                    return
+                    return eventUsed
                 end
                 -- Guard: no GUI/dialog/popup open
                 if isGuiOpen then
-                    return
+                    return eventUsed
                 end
                 -- Guard: HUD not locked
                 if npcSystem.settings and npcSystem.settings.favorHudLocked then
-                    return
+                    return eventUsed
                 end
                 print("[NPC Favor] Right-click toggle via mouseEvent — editMode=" .. tostring(npcSystem.favorHUD.editMode))
                 npcSystem.favorHUD:toggleEditMode()
-                return
+                return true
             end
         end
 
@@ -722,8 +724,9 @@ addModEventListener({
             if isDown or isUp then
                 print(string.format("[NPC Favor] mouseEvent: btn=%d down=%s up=%s pos=%.3f,%.3f", button, tostring(isDown), tostring(isUp), posX, posY))
             end
-            npcSystem.favorHUD:mouseEvent(posX, posY, isDown, isUp, button)
+            eventUsed = npcSystem.favorHUD:mouseEvent(posX, posY, isDown, isUp, button, eventUsed) or eventUsed
         end
+        return eventUsed
     end
 })
 

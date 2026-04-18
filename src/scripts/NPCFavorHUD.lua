@@ -200,8 +200,8 @@ end
 -- Mouse Event (drag logic)
 -- =========================================================
 
-function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button)
-    if not self.editMode then return end
+function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button, eventUsed)
+    if not self.editMode then return false end
 
     -- Check button clicks (edit mode only, left-click)
     if isDown and button == 1 then
@@ -210,7 +210,7 @@ function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button)
             print("[NPC Favor] HUD button clicked: " .. btn.id)
             self:exitEditMode()
             DialogLoader.show(btn.action, "setNPCSystem", self.npcSystem)
-            return
+            return true
         end
     end
 
@@ -225,7 +225,7 @@ function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button)
             self.resizing = false
             self.edgeDragStartX = posX
             self.edgeDragStartWidth = self.widthMult
-            return
+            return true
         end
 
         -- Check corner handles (uniform scale resize)
@@ -238,7 +238,7 @@ function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button)
             self.resizeStartMouseX = posX
             self.resizeStartMouseY = posY
             self.resizeStartScale = self.scale
-            return
+            return true
         end
 
         -- Fall through to drag if click is on body
@@ -299,6 +299,8 @@ function NPCFavorHUD:mouseEvent(posX, posY, isDown, isUp, button)
         self.widthMult = math.max(self.MIN_WIDTH_MULT, math.min(self.MAX_WIDTH_MULT, newMult))
         self:clampPosition()
     end
+
+    return true
 end
 
 -- =========================================================
